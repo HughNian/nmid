@@ -1,8 +1,6 @@
 <div align="center">
-    <a href="https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo%EF%BC%8850x65%EF%BC%89.png" alt="nmid Logo" width="160"></a>
+    <a href="http://www.niansong.top"><img src="https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo%EF%BC%8850x65%EF%BC%89.png" alt="nmid Logo" width="160"></a>
 </div>
-
-<br>
 
 ## nmid介绍
 
