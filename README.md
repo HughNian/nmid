@@ -1,8 +1,8 @@
-## nmid
+## nmid介绍
 
 ![logo](https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo%EF%BC%8850x65%EF%BC%89.png)
 
-nmid 意思为中场指挥官，足球场上的中场就是统领进攻防守的核心。咱们这里是服务程序的调度核心。  
+nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的核心。咱们这里是服务程序的调度核心。是微服务调度系统。
 
 1.server目录为nmid微服务调度服务端  
 
@@ -12,7 +12,8 @@ nmid 意思为中场指挥官，足球场上的中场就是统领进攻防守的
 
 4.run目录为demo运行目录。都为go实现  
 
-#### I/O的通信协议
+## I/O的通信协议
+
 - 包结构   
 
     1.包头：链接类型[uint32/4字节]+数据类型[uint32/4字节]+包体长度[uint32/4字节]   
