@@ -94,11 +94,21 @@ func (pool *ConnectPool) GetConnect(id string) *Connect {
 }
 
 func (pool *ConnectPool) DelConnect(id string) {
+	if pool.TotalNum == 0 {
+		return
+	}
+
 	var fc *Connect
 	for _, c := range pool.Pool {
 		if c != nil && c.Id == id {
 			fc = c
+		} else {
+			fc = nil
 		}
+	}
+
+	if nil == fc {
+		return
 	}
 
 	pool.Lock()
