@@ -1,6 +1,10 @@
-## nmid介绍
+<div align="center">
+    <a href="https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo%EF%BC%8850x65%EF%BC%89.png" alt="nmid Logo" width="160"></a>
+</div>
 
-![logo](https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo%EF%BC%8850x65%EF%BC%89.png)
+<br>
+
+## nmid介绍
 
 nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的核心。咱们这里是服务程序的调度核心。是微服务调度系统。
 
