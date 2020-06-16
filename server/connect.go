@@ -70,12 +70,12 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.RunClient = nil
 	c.isFree = 0
 
-	pool.TotalNum++
-	if pool.TotalNum <= MAX_POOL_SIZE {
+	if pool.TotalNum < MAX_POOL_SIZE {
 		pool.Pool[pool.TotalNum] = c
 	} else {
 		pool.Pool = append(pool.Pool, c)
 	}
+	pool.TotalNum++
 
 	return c
 }

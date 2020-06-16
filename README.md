@@ -50,6 +50,320 @@ make
 
 ```
 
+## 使用
+
+```go`
+客户端代码
+
+package main
+
+import (
+	cli "nmid-go/client"
+	"fmt"
+	"log"
+	"github.com/vmihailenco/msgpack"
+	"os"
+)
+
+const SERVERHOST = "192.168.1.176"
+const SERVERPORT = "6808"
+
+func main() {
+	var client *cli.Client
+	var err error
+
+	serverAddr := SERVERHOST + ":" + SERVERPORT
+	client, err = cli.NewClient("tcp", serverAddr)
+	if nil == client || err != nil {
+		log.Println(err)
+		return
+	}
+	defer client.Close()
+
+	client.ErrHandler= func(e error) {
+		log.Println(e)
+		fmt.Println("client err here")
+		//client.Close()
+	}
+
+	respHandler := func(resp *cli.Response) {
+		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				log.Println("ret empty")
+				return
+			}
+
+			var retStruct cli.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				log.Fatalln(err)
+				return
+			}
+
+			if retStruct.Code != 0 {
+				log.Println(retStruct.Msg)
+				return
+			}
+
+			fmt.Println(string(retStruct.Data))
+		}
+	}
+
+
+	//1 单个入参
+	paramsName1 := []string{"name:niansong"}
+	params1, err := msgpack.Marshal(&paramsName1)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("ToUpper", params1, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	//2 多个入参，参数中间以:分隔，xx:xxx
+	paramsName2 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	params2, err := msgpack.Marshal(&paramsName2)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params2, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	paramsName3 := []string{"name:niansong", "pwd:123456"}
+	params3, err := msgpack.Marshal(&paramsName3)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("PostInfo", params3, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	paramsName4 := []string{"order_sn:MBO993889253", "order_type:4"}
+	params4, err := msgpack.Marshal(&paramsName4)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params4, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	paramsName5 := []string{"name:niansong", "pwd:123456"}
+	params5, err := msgpack.Marshal(&paramsName5)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("PostInfo", params5, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	//2 多个入参，参数中间以:分隔，xx:xxx
+	paramsName6 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	params6, err := msgpack.Marshal(&paramsName6)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params6, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	//2 多个入参，参数中间以:分隔，xx:xxx
+	paramsName7 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	params7, err := msgpack.Marshal(&paramsName7)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params7, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	//2 多个入参，参数中间以:分隔，xx:xxx
+	paramsName8 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	params8, err := msgpack.Marshal(&paramsName8)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params8, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	//2 多个入参，参数中间以:分隔，xx:xxx
+	paramsName9 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	params9, err := msgpack.Marshal(&paramsName9)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("GetOrderInfo", params9, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	paramsName10 := []string{"key:Go was publicly announced in November 2009, and version 1.0 was released in March 2012. Go is widely used in production at Google and in many other organizations and open-source projects.Gopher mascot.In November 2016, the Go and Go Mono fonts were released by type designers Charles Bigelow and Kris Holmes specifically for use by the Go project. Go and Go Mono fonts are sans-serif and monospaced respectively. Both fonts adhere to WGL4 and were designed to be legible, with a large x-height and distinct letterforms, by conforming to the DIN 1450 standard.In April 2018, the original logo was replaced with a stylized GO slanting right with trailing streamlines. However, the Gopher mascot remained the same."}
+	params10, err := msgpack.Marshal(&paramsName10)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+		os.Exit(1)
+	}
+	err = client.Do("ToUpper", params10, respHandler)
+	if nil != err {
+		fmt.Println(err)
+	}
+}
+
+```
+
+```go`
+服务端代码
+
+package main
+
+import (
+	ser "nmid-go/server"
+)
+
+func main() {
+	var server *ser.Server
+	server = ser.NewServer()
+
+	if nil == server {
+		return
+	}
+
+	server.ServerRun()
+}
+
+```
+
+```go`
+工作端代码
+
+package main
+
+import (
+	wor "nmid-go/worker"
+	"fmt"
+	"strings"
+	"log"
+	"github.com/vmihailenco/msgpack"
+)
+
+const SERVERHOST = "192.168.1.176"
+const SERVERPORT = "6808"
+
+//单个入参
+func ToUpper(job wor.Job) ([]byte, error) {
+	resp := job.GetResponse()
+	if nil == resp {
+		return []byte(``), fmt.Errorf("response data error")
+	}
+
+	if resp.ParamsType == wor.PARAMS_TYPE_MUL {
+		return []byte(``), fmt.Errorf("params num error")
+	}
+
+	name := resp.StrParams[0]
+
+	retStruct := wor.GetRetStruct()
+	retStruct.Msg = "ok"
+	retStruct.Data = []byte(strings.ToUpper(name))
+	ret, err := msgpack.Marshal(retStruct)
+	if nil != err {
+		return []byte(``), err
+	}
+
+	resp.RetLen = uint32(len(ret))
+	resp.Ret = ret
+
+	return ret, nil
+}
+
+//多个入参
+func GetOrderInfo(job wor.Job) ([]byte, error) {
+	resp := job.GetResponse()
+	if nil == resp {
+		return []byte(``), fmt.Errorf("response data error")
+	}
+
+	if resp.ParamsType != wor.PARAMS_TYPE_MUL {
+		return []byte(``), fmt.Errorf("params num error")
+	}
+
+	orderSn, orderType := "", ""
+	for _, v := range resp.StrParams {
+		column := strings.Split(v, string(wor.PARAMS_SCOPE))
+		switch column[0] {
+			case "order_sn":
+				orderSn = column[1]
+			case "order_type":
+				orderType = column[1]
+		}
+	}
+
+	retStruct := wor.GetRetStruct()
+	if orderSn == "MBO993889253" && orderType == "4" {
+		retStruct.Msg  = "ok"
+		retStruct.Data = []byte("good goods")
+	} else {
+		retStruct.Code = 100
+		retStruct.Msg  = "params error"
+		retStruct.Data = []byte(``)
+	}
+
+	ret, err := msgpack.Marshal(retStruct)
+	if nil != err {
+		return []byte(``), err
+	}
+
+	resp.RetLen = uint32(len(ret))
+	resp.Ret = ret
+
+	return ret, nil
+}
+
+func main() {
+	var worker *wor.Worker
+	var err error
+
+	serverAddr := SERVERHOST + ":" + SERVERPORT
+	worker = wor.NewWorker()
+	err = worker.AddServer("tcp", serverAddr)
+	if err != nil {
+		log.Fatalln(err)
+		worker.WorkerClose()
+		return
+	}
+
+	worker.AddFunction("ToUpper", ToUpper)
+	worker.AddFunction("GetOrderInfo", GetOrderInfo)
+
+	if err = worker.WorkerReady(); err != nil {
+		log.Fatalln(err)
+		worker.WorkerClose()
+		return
+	}
+
+	worker.WorkerDo()
+}
+
+```
+
 ## I/O的通信协议
 
 - 包结构   
@@ -69,7 +383,7 @@ make
         包体包含 = 方法长度值+方法名称+msgpack后参数长度值+msgpack后的参数值   
         
         client请求参数数据：参数都为字符串数组，入参为  
-        []string{"order_sn:MBO993889253", "order_type:4"}，xx:xxx形式，以:分隔
+        []string{"order_sn:MBO993889253", "order_type:4"}，xx:xxx形式，必须以:分隔
         类似key:value。
         
         
@@ -81,7 +395,7 @@ make
         包体包含 = 方法长度值+msgpack后参数长度值+方法名称+msgpack后的参数值    
         
         server请求参数数据：参数都为字符串数组，入参为  
-        []string{"order_sn:MBO993889253", "order_type:4"}，xx:xxx形式，以:分隔
+        []string{"order_sn:MBO993889253", "order_type:4"}，xx:xxx形式，必须以:分隔
         类似key:value。可以理解为server做了client的透传。    
         
         
@@ -105,7 +419,7 @@ make
         包体长度 = UINT32_SIZE + HandleLen + UINT32_SIZE + ParamsLen + UINT32_SIZE + RetLen   
         方法名长度值空间+方法名长度空间+msgpack后参数长度值空间+msgpack后参数长度空间+msgpack后结果长度值空间+msgpack后结果长度空间
                                   
-        包体包含 = 方法长度值+msgpack后参数长度值+方法名称+msgpack后的参数值+msgpack后结果长度值+msgpack后结果值   
+        包体包含 = 方法长度值+msgpack后参数长度值+msgpack后结果长度值+方法名称+msgpack后的参数值+msgpack后结果值   
         
         worker返回结果数据：返回数据为统一格式结构体
         type RetStruct struct {
