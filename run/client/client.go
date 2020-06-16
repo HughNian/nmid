@@ -163,7 +163,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	paramsName10 := []string{"Go was publicly announced in November 2009, and version 1.0 was released in March 2012. Go is widely used in production at Google and in many other organizations and open-source projects.Gopher mascot.In November 2016, the Go and Go Mono fonts were released by type designers Charles Bigelow and Kris Holmes specifically for use by the Go project. Go and Go Mono fonts are sans-serif and monospaced respectively. Both fonts adhere to WGL4 and were designed to be legible, with a large x-height and distinct letterforms, by conforming to the DIN 1450 standard.In April 2018, the original logo was replaced with a stylized GO slanting right with trailing streamlines. However, the Gopher mascot remained the same."}
+	paramsName10 := []string{"key:Go was publicly announced in November 2009, and version 1.0 was released in March 2012. Go is widely used in production at Google and in many other organizations and open-source projects.Gopher mascot.In November 2016, the Go and Go Mono fonts were released by type designers Charles Bigelow and Kris Holmes specifically for use by the Go project. Go and Go Mono fonts are sans-serif and monospaced respectively. Both fonts adhere to WGL4 and were designed to be legible, with a large x-height and distinct letterforms, by conforming to the DIN 1450 standard.In April 2018, the original logo was replaced with a stylized GO slanting right with trailing streamlines. However, the Gopher mascot remained the same."}
 	params10, err := msgpack.Marshal(&paramsName10)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
