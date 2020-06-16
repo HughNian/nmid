@@ -52,7 +52,7 @@ make
 
 ## 使用
 
-```
+```cpp
 客户端代码
 
 package main
@@ -229,7 +229,7 @@ func main() {
 
 ```
 
-```
+```cpp
 服务端代码
 
 package main
@@ -251,7 +251,7 @@ func main() {
 
 ```
 
-```
+```cpp
 工作端代码
 
 package main
