@@ -8,6 +8,7 @@ import (
 	"log"
 	"fmt"
 	"os"
+	"io"
 )
 
 type Client struct {
@@ -94,8 +95,13 @@ Loop:
 				break
 			}
 
-			log.Println("client read error:"+err.Error())
+			//服务端断开
+			if err == io.EOF {
+				c.ErrHandler(err)
+			}
+
 			//断开重连
+			log.Println("client read error here:"+err.Error())
 			c.Close()
 			c.conn, err = net.Dial(c.net, c.addr)
 			if err != nil {
@@ -174,6 +180,7 @@ func (c *Client) ProcessResp() {
 			}
 		case <- timer:
 			log.Println("time out")
+			c.ErrHandler(RESTIMEOUT)
 			c.Close()
 			return
 	}

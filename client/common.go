@@ -1,6 +1,9 @@
 package client
 
-import "time"
+import (
+	"time"
+	"errors"
+)
 
 const (
 	MIN_DATA_SIZE    = 12
@@ -46,3 +49,5 @@ type RetStruct struct {
 	Msg  string
 	Data []byte
 }
+
+var RESTIMEOUT = errors.New("RESTIMEOUT")
