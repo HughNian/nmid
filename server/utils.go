@@ -8,7 +8,30 @@ import (
 	"io"
 	"encoding/hex"
 	"github.com/vmihailenco/msgpack"
+	"io/ioutil"
+	"log"
+	"gopkg.in/yaml.v2"
 )
+
+type ServerConfig struct {
+	NETWORK string `yaml:"NETWORK"`
+	HOST    string `yaml:"HOST"`
+	PORT    string `yaml:"PORT"`
+}
+
+func (c *ServerConfig) GetConfig() *ServerConfig {
+	yamlFile, err := ioutil.ReadFile("config/server.yaml") //这个路径相对于main函数文件的路径
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	return c
+}
 
 func GetId() string {
 	value := int64(time.Now().Nanosecond()) << 32

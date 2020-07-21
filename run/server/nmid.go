@@ -9,9 +9,14 @@ import (
 	ser "nmid-go/server"
 )
 
+var (
+	confstruct ser.ServerConfig
+	conf = confstruct.GetConfig()
+)
+
 func main() {
 	var server *ser.Server
-	server = ser.NewServer()
+	server = ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
 
 	if nil == server {
 		return

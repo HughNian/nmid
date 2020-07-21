@@ -13,11 +13,11 @@ type Server struct {
 	Funcs  *FuncMap
 }
 
-func NewServer() (ser *Server) {
+func NewServer(net string, host string, port string) (ser *Server) {
 	ser = &Server {
-		Host  : HOST,
-		Port  : PORT,
-		Net   : NETWORK,
+		Host  : host,
+		Port  : port,
+		Net   : net,
 		Cpool : NewConnectPool(),
 		Funcs : NewFuncMap(),
 	}

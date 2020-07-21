@@ -1,9 +1,6 @@
 package server
 
 const (
-	NETWORK       = "tcp"
-	HOST          = "192.168.1.176"
-	PORT          = "6808"
 	MAX_POOL_SIZE = 128
 	QUEUE_SIZE    = 64
 	BUFFER_SIZE   = 512
