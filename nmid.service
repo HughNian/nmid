@@ -3,7 +3,7 @@ Description=nmid
 
 [Service]
 Type=simple
-WoringDirectory=/home/niansong/Go/src/nmid-go/run/server
+WorkingDirectory=/home/niansong/Go/src/nmid-go/run/server
 ExecStart=/home/niansong/Go/src/nmid-go/run/server/nmid
 Restart=always
 
