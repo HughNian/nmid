@@ -181,7 +181,7 @@ func (c *Client) ProcessResp() {
 		case <- timer:
 			log.Println("time out")
 			c.ErrHandler(RESTIMEOUT)
-			c.Close()
+			//c.Close()
 			return
 	}
 }
