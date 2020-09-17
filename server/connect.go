@@ -9,12 +9,15 @@ import (
 	"encoding/binary"
 	"io"
 	"fmt"
+	"strings"
 )
 
 type Connect struct {
 	sync.Mutex
 
 	Id        string
+	Addr      string
+	Ip        string
 	Ser       *Server
 	Conn      net.Conn
 	rw        *bufio.ReadWriter
@@ -44,6 +47,18 @@ func NewConnectPool() *ConnectPool {
 }
 
 func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
+	addr := conn.RemoteAddr().String()
+	addrArr := strings.Split(addr, ":")
+	ip := ""
+	if len(addrArr) > 0 {
+		ip = addrArr[0]
+
+		if !AddrAllow(ip) {
+			conn.Close()
+			return nil
+		}
+	}
+
 	if pool.FreeNum > 0 {
 		fc := pool.Free[0]
 		if fc == nil {
@@ -62,6 +77,8 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	}
 
 	c.Id   = GetId()
+	c.Addr = addr
+	c.Ip   = ip
 	c.Ser  = ser
 	c.Conn = conn
 	c.rw   = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
@@ -102,6 +119,7 @@ func (pool *ConnectPool) DelConnect(id string) {
 	for _, c := range pool.Pool {
 		if c != nil && c.Id == id {
 			fc = c
+			break
 		} else {
 			fc = nil
 		}
@@ -128,6 +146,7 @@ func (c *Connect) CloseConnect() {
 	defer c.Unlock()
 
 	if c.Conn != nil {
+		fmt.Println("here hahaha")
 		c.Conn.Close()
 		c.Conn = nil
 		c.RunWorker = nil
@@ -222,7 +241,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	tmp := GetBuffer(size)
 
 	if n, err = c.rw.Read(tmp); err != nil {
-		log.Println("server read error", err)
+		log.Println("server read error", c.Ip, err)
 		return []byte(``), err
 	}
 
@@ -291,9 +310,11 @@ func (c *Connect) DoIO() {
 					break
 				}
 			} else if err == io.EOF {
+				fmt.Println("read eof here")
 				if c.ConnType == CONN_TYPE_WORKER {
 					c.Ser.Funcs.DelWorker(c.Id)
 				}
+				fmt.Println("client close here")
 				c.Ser.Cpool.DelConnect(c.Id)
 				break
 			}
