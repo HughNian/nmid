@@ -146,7 +146,6 @@ func (c *Connect) CloseConnect() {
 	defer c.Unlock()
 
 	if c.Conn != nil {
-		fmt.Println("here hahaha")
 		c.Conn.Close()
 		c.Conn = nil
 		c.RunWorker = nil
