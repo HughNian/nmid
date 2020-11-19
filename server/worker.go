@@ -134,7 +134,7 @@ func (w *SWorker) doWork() {
 func (w *SWorker) returnData() {
 	if w.JobNum > 0 {
 		job := w.DingJobs.PopList()
-		if job.WorkerId == w.WorkerId && job.status == JOB_STATUS_DOING {
+		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_DOING {
 			//解包获取数据内容
 			w.Req.ReqDecodePack()
 			//任务完成判断
