@@ -15,7 +15,7 @@ func GetStrParamsArr(params []byte) []string {
 
 	err := msgpack.Unmarshal(params, &strParamsArr)
 	if err != nil {
-		log.Fatalln("msgpack unmarshal error:", err)
+		log.Println("msgpack unmarshal error:", err)
 		return nil
 	}
 
