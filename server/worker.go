@@ -2,7 +2,6 @@ package server
 
 import (
 	"sync"
-	"fmt"
 )
 
 type SWorker struct {
@@ -14,6 +13,7 @@ type SWorker struct {
 	JobNum   int
 	Jobs     *JobList
 	DingJobs *JobList
+	DoneJobs *JobList
 
 	Req      *Request
 	Res      *Response
@@ -33,6 +33,7 @@ func NewSWorker(conn *Connect) *SWorker {
 		JobNum   : 0,
 		Jobs     : NewJobList(),
 		DingJobs : NewJobList(),
+		DoneJobs : NewJobList(),
 		Req      : NewReq(),
 		Res      : NewRes(),
 		NoJobNums : 0,
@@ -76,7 +77,7 @@ func (w *SWorker) delFunction() {
 
 func (w *SWorker) delWorkerJob() {
 	if w.JobNum > 0 {
-		doneNum := w.Jobs.DelListStatsJob(JOB_STATUS_DONE)
+		doneNum := w.DoneJobs.DelListStatsJob(JOB_STATUS_DONE)
 		w.Lock()
 		w.JobNum -= doneNum
 		w.Unlock()
@@ -113,20 +114,21 @@ func (w *SWorker) doWork() {
 				w.Connect.Write(resPack)
 			}
 		}
-	} else {
+	} /*else {
 		w.Res.DataType = PDT_NO_JOB
 		w.Lock()
 		w.NoJobNums++
 		w.Unlock()
 		fmt.Println("######NoJobNums-", w.NoJobNums)
 
-		if w.NoJobNums == MAX_NOJOB_NUM {
+		if w.NoJobNums >= MAX_NOJOB_NUM {
 			w.Sleep = true
+			w.Res.DataType = PDT_TOSLEEP
 		}
-
+		fmt.Println("datatype:", w.Res.DataType)
 		resPack := w.Res.ResEncodePack()
 		w.Connect.Write(resPack)
-	}
+	}*/
 
 	return
 }
@@ -146,6 +148,7 @@ func (w *SWorker) returnData() {
 				job.Lock()
 				job.status = JOB_STATUS_DONE
 				job.Unlock()
+				w.DoneJobs.PushList(job)
 			} else {
 				return
 			}
@@ -198,9 +201,9 @@ func (w *SWorker) RunWorker() {
 		//worker grab job
 		case PDT_W_GRAB_JOB:
 		{
-			if !w.Sleep {
+			//if !w.Sleep {
 				go w.doWork()
-			}
+			//}
 		}
 		//worker return data
 		case PDT_W_RETURN_DATA:

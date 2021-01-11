@@ -29,6 +29,7 @@ const (
 	PDT_C_GET_DATA    = 17
 )
 
+//connect status
 const (
 	CONN_TYPE_INIT   = 0
 	CONN_TYPE_SERVER = 1

@@ -1,6 +1,9 @@
 package server
 
-import "sync"
+import (
+	"sync"
+	"math/rand"
+)
 
 type Func struct {
 	FuncName  string
@@ -110,7 +113,8 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 		var function *Func
 		function = item.(*Func)
 		if function.WorkerNum > 0 {
-			var best = function.Workers[0]
+			rkey := int(rand.Int()%function.WorkerNum)
+			var best = function.Workers[rkey]
 			for _, val := range function.Workers {
 				if val.JobNum < best.JobNum {
 					best = val

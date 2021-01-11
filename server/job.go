@@ -1,6 +1,8 @@
 package server
 
-import "sync"
+import (
+	"sync"
+)
 
 type Job struct {
 	sync.Mutex
@@ -172,8 +174,11 @@ func (jl *JobList) DelListStatsJob(status uint32) (delNum int) {
 		if job.status == status {
 			prevJob := job.Prev
 			nextJob := job.Next
-			prevJob.Next = nextJob
-			nextJob.Prev = prevJob
+			if jl.Size > 1 {
+				prevJob.Next = nextJob
+				nextJob.Prev = prevJob
+			}
+
 			delNum++
 		}
 		job = job.Next
