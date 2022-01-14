@@ -15,8 +15,8 @@ type SWorker struct {
 	DingJobs *JobList
 	DoneJobs *JobList
 
-	Req      *Request
-	Res      *Response
+	Req *Request
+	Res *Response
 
 	NoJobNums int
 	Sleep     bool
@@ -27,24 +27,21 @@ func NewSWorker(conn *Connect) *SWorker {
 		return nil
 	}
 
-	return &SWorker {
-		WorkerId : conn.Id,
-		Connect  : conn,
-		JobNum   : 0,
-		Jobs     : NewJobList(),
-		DingJobs : NewJobList(),
-		DoneJobs : NewJobList(),
-		Req      : NewReq(),
-		Res      : NewRes(),
-		NoJobNums : 0,
-		Sleep    : false,
+	return &SWorker{
+		WorkerId:  conn.Id,
+		Connect:   conn,
+		JobNum:    0,
+		Jobs:      NewJobList(),
+		DingJobs:  NewJobList(),
+		DoneJobs:  NewJobList(),
+		Req:       NewReq(),
+		Res:       NewRes(),
+		NoJobNums: 0,
+		Sleep:     false,
 	}
 }
 
 func (w *SWorker) addFunction() {
-	w.Lock()
-	defer w.Unlock()
-
 	if w.Req.DataLen > 0 {
 		functionName := w.Req.GetReqData()
 
@@ -56,14 +53,9 @@ func (w *SWorker) addFunction() {
 	w.Res.DataType = PDT_OK
 	resPack := w.Res.ResEncodePack()
 	w.Connect.Write(resPack)
-
-	return
 }
 
 func (w *SWorker) delFunction() {
-	w.Lock()
-	defer w.Unlock()
-
 	if w.Req.DataLen > 0 {
 		functionName := w.Req.GetReqData()
 
@@ -71,8 +63,6 @@ func (w *SWorker) delFunction() {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
 		}
 	}
-
-	return
 }
 
 func (w *SWorker) delWorkerJob() {
@@ -82,25 +72,21 @@ func (w *SWorker) delWorkerJob() {
 		w.JobNum -= doneNum
 		w.Unlock()
 	}
-
-	return
 }
 
 func (w *SWorker) doWork() {
 	if w.JobNum > 0 {
 		job := w.Jobs.PopList()
-		if job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
-			job.Lock()
+		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
 			job.status = JOB_STATUS_DOING
-			job.Unlock()
 			w.DingJobs.PushList(job)
 
 			functionName := job.FuncName
 			params := job.Params
 			paramsLen := uint32(len(params))
 			if functionName != `` && paramsLen != 0 {
-				w.Res.DataType  = PDT_S_GET_DATA
-				w.Res.Handle    = functionName
+				w.Res.DataType = PDT_S_GET_DATA
+				w.Res.Handle = functionName
 				w.Res.HandleLen = uint32(len(functionName))
 				if IsMulParams(params) {
 					w.Res.ParamsType = PARAMS_TYPE_MUL
@@ -111,7 +97,9 @@ func (w *SWorker) doWork() {
 				w.Res.Params = params //append(w.Res.Params, params...)
 
 				resPack := w.Res.ResEncodePack()
+				w.Connect.Lock()
 				w.Connect.Write(resPack)
+				w.Connect.Unlock()
 			}
 		}
 	} /*else {
@@ -129,8 +117,6 @@ func (w *SWorker) doWork() {
 		resPack := w.Res.ResEncodePack()
 		w.Connect.Write(resPack)
 	}*/
-
-	return
 }
 
 func (w *SWorker) returnData() {
@@ -141,13 +127,11 @@ func (w *SWorker) returnData() {
 			w.Req.ReqDecodePack()
 			//任务完成判断
 			if w.Res.HandleLen == w.Req.HandleLen &&
-			   w.Res.Handle    == w.Req.Handle    &&
-			   w.Res.ParamsLen == w.Req.ParamsLen &&
-			   string(w.Res.Params) == string(w.Req.Params) {
+				w.Res.Handle == w.Req.Handle &&
+				w.Res.ParamsLen == w.Req.ParamsLen &&
+				string(w.Res.Params) == string(w.Req.Params) {
 				job.RetData = append(job.RetData, w.Req.Ret...)
-				job.Lock()
 				job.status = JOB_STATUS_DONE
-				job.Unlock()
 				w.DoneJobs.PushList(job)
 			} else {
 				return
@@ -164,15 +148,15 @@ func (w *SWorker) returnData() {
 					w.Res.RetLen = w.Req.RetLen
 
 					resPack := w.Res.ResEncodePack()
+					client.Lock()
 					client.Write(resPack)
+					client.Unlock()
 				}
 			}
 		}
 
 		w.delWorkerJob()
 	}
-
-	return
 }
 
 func (w *SWorker) workerWakeup() {
@@ -184,33 +168,29 @@ func (w *SWorker) RunWorker() {
 	dataType := w.Req.GetReqDataType()
 
 	switch dataType {
-		//worker add function
-		case PDT_W_ADD_FUNC:
+	//worker add function
+	case PDT_W_ADD_FUNC:
 		{
 			w.addFunction()
 		}
-		//worker del function
-		case PDT_W_DEL_FUNC:
+	//worker del function
+	case PDT_W_DEL_FUNC:
 		{
 			w.delFunction()
 		}
-		case PDT_WAKEUP:
+	case PDT_WAKEUP:
 		{
 			w.workerWakeup()
 		}
-		//worker grab job
-		case PDT_W_GRAB_JOB:
+	//worker grab job
+	case PDT_W_GRAB_JOB:
 		{
-			//if !w.Sleep {
-				go w.doWork()
-			//}
+			go w.doWork()
 		}
-		//worker return data
-		case PDT_W_RETURN_DATA:
+	//worker return data
+	case PDT_W_RETURN_DATA:
 		{
-			//if !w.Sleep {
-				go w.returnData()
-			//}
+			go w.returnData()
 		}
 	}
 }

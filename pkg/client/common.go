@@ -1,16 +1,16 @@
 package client
 
 import (
-	"time"
 	"errors"
+	"time"
 )
 
 const (
 	MIN_DATA_SIZE    = 12
 	UINT32_SIZE      = 4
-	QUEUE_SIZE       = 64
+	QUEUE_SIZE       = 1
 	BUFFER_SIZE      = 512
-	DEFAULT_TIME_OUT = 5*time.Second
+	DEFAULT_TIME_OUT = 3 * time.Second
 
 	//package data type
 	PDT_OK            = 1
@@ -20,8 +20,8 @@ const (
 	PDT_NO_JOB        = 5
 	PDT_HAVE_JOB      = 6
 	PDT_TOSLEEP       = 7
-	PDT_WAKEUP		  = 8
-	PDT_WAKEUPED	  = 9
+	PDT_WAKEUP        = 8
+	PDT_WAKEUPED      = 9
 	PDT_S_GET_DATA    = 10
 	PDT_S_RETURN_DATA = 11
 	PDT_W_GRAB_JOB    = 12

@@ -1,25 +1,27 @@
 package server
 
 import (
-	"sync"
 	"math/rand"
+	"sync"
 )
 
 type Func struct {
-	FuncName  string
+	FuncName string
 
 	WorkerNum int
 	Workers   []*SWorker
 }
 
 type FuncMap struct {
-	FuncNum   int
-	Funcs     sync.Map
+	FuncNum int
+	Funcs   sync.Map
+
+	mutex sync.Mutex
 }
 
 func NewFuncMap() *FuncMap {
-	return &FuncMap {
-		FuncNum : 0,
+	return &FuncMap{
+		FuncNum: 0,
 	}
 }
 
@@ -36,17 +38,21 @@ func (fm *FuncMap) AddFunc(worker *SWorker, name string) bool {
 	if item, exist := fm.Funcs.Load(name); exist {
 		function = item.(*Func)
 	} else {
-		function = &Func {
-			FuncName  : name,
-			WorkerNum : 0,
-			Workers   : make([]*SWorker, 0),
+		function = &Func{
+			FuncName:  name,
+			WorkerNum: 0,
+			Workers:   make([]*SWorker, 0),
 		}
 
+		fm.mutex.Lock()
 		fm.FuncNum++
+		fm.mutex.Unlock()
 		fm.Funcs.Store(name, function)
 	}
 
+	fm.mutex.Lock()
 	function.WorkerNum++
+	fm.mutex.Unlock()
 	function.Workers = append(function.Workers, worker)
 
 	return true
@@ -54,8 +60,7 @@ func (fm *FuncMap) AddFunc(worker *SWorker, name string) bool {
 
 func (fm *FuncMap) GetFunc(name string) *Func {
 	if item, exist := fm.Funcs.Load(name); exist {
-		var function *Func
-		function = item.(*Func)
+		function := item.(*Func)
 		return function
 	}
 
@@ -65,7 +70,9 @@ func (fm *FuncMap) GetFunc(name string) *Func {
 func (fm *FuncMap) DelAllFunc(name string) bool {
 	if _, exist := fm.Funcs.Load(name); exist {
 		fm.Funcs.Delete(name)
+		fm.mutex.Lock()
 		fm.FuncNum--
+		fm.mutex.Unlock()
 		return true
 	}
 
@@ -94,7 +101,9 @@ func (fm *FuncMap) DelWorkerFunc(workerId, name string) bool {
 		if w.WorkerId == workerId {
 			worker = w
 			function.Workers = append(function.Workers[:k], function.Workers[k+1:]...)
+			fm.mutex.Lock()
 			function.WorkerNum--
+			fm.mutex.Unlock()
 			break
 		}
 	}
@@ -110,10 +119,9 @@ func (fm *FuncMap) DelWorkerFunc(workerId, name string) bool {
 
 func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 	if item, exist := fm.Funcs.Load(name); exist {
-		var function *Func
-		function = item.(*Func)
+		function := item.(*Func)
 		if function.WorkerNum > 0 {
-			rkey := int(rand.Int()%function.WorkerNum)
+			rkey := int(rand.Int() % function.WorkerNum)
 			var best = function.Workers[rkey]
 			for _, val := range function.Workers {
 				if val.JobNum < best.JobNum {
@@ -134,7 +142,7 @@ func (fm *FuncMap) DelWorker(workerId string) bool {
 		return true
 	}
 
-	fm.Funcs.Range(func (key, val interface{}) bool {
+	fm.Funcs.Range(func(key, val interface{}) bool {
 		function, ok := val.(*Func)
 		if !ok {
 			ret = false
@@ -144,7 +152,9 @@ func (fm *FuncMap) DelWorker(workerId string) bool {
 		for k, worker := range function.Workers {
 			if worker.WorkerId == workerId {
 				function.Workers = append(function.Workers[:k], function.Workers[k+1:]...)
+				fm.mutex.Lock()
 				function.WorkerNum--
+				fm.mutex.Unlock()
 				break
 			}
 		}

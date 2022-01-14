@@ -2,7 +2,6 @@ package server
 
 import (
 	"sync"
-	"fmt"
 )
 
 type SClient struct {
@@ -11,8 +10,8 @@ type SClient struct {
 	ClientId string
 	Connect  *Connect
 
-	Req      *Request
-	Res      *Response
+	Req *Request
+	Res *Response
 }
 
 func NewSClient(conn *Connect) *SClient {
@@ -20,21 +19,18 @@ func NewSClient(conn *Connect) *SClient {
 		return nil
 	}
 
-	return &SClient {
-		ClientId : conn.Id,
-		Connect  : conn,
-		Req      : NewReq(),
-		Res      : NewRes(),
+	return &SClient{
+		ClientId: conn.Id,
+		Connect:  conn,
+		Req:      NewReq(),
+		Res:      NewRes(),
 	}
 }
 
 func (c *SClient) doJob() {
-	c.Lock()
-	defer c.Unlock()
-
 	c.Req.ReqDecodePack()
 
-	fmt.Println("######Client Req-", c.Req.DataType)
+	// fmt.Println("######Client Req-", c.Req.DataType)
 
 	if c.Req.HandleLen == 0 || c.Req.Handle == `` {
 		c.Res.DataType = PDT_ERROR
@@ -64,7 +60,7 @@ func (c *SClient) doJob() {
 	job.WorkerId = worker.WorkerId
 	job.ClientId = c.ClientId
 	job.FuncName = c.Req.Handle
-	job.Params   = c.Req.Params
+	job.Params = c.Req.Params
 	if IsMulParams(job.Params) {
 		job.ParamsType = PARAMS_TYPE_MUL
 	} else {
@@ -77,16 +73,14 @@ func (c *SClient) doJob() {
 		worker.Unlock()
 	}
 
-	go worker.doWork()
-
-	return
+	worker.doWork()
 }
 
 func (c *SClient) RunClient() {
 	dataType := c.Req.GetReqDataType()
 
 	switch dataType {
-		case PDT_C_DO_JOB:
+	case PDT_C_DO_JOB:
 		{
 			go c.doJob()
 		}

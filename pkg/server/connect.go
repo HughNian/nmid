@@ -71,7 +71,9 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		}
 		c = fc
 		pool.Free = pool.Free[1:] //剔除第一个元素
+		pool.Lock()
 		pool.FreeNum--
+		pool.Unlock()
 	} else {
 		c = new(Connect)
 	}
@@ -92,7 +94,9 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	} else {
 		pool.Pool = append(pool.Pool, c)
 	}
+	pool.Lock()
 	pool.TotalNum++
+	pool.Unlock()
 
 	return c
 }
@@ -142,9 +146,6 @@ func (pool *ConnectPool) DelConnect(id string) {
 }
 
 func (c *Connect) CloseConnect() {
-	c.Lock()
-	defer c.Unlock()
-
 	if c.Conn != nil {
 		c.Conn.Close()
 		c.Conn = nil
@@ -172,10 +173,10 @@ func (c *Connect) getSCClient() *SClient {
 func (c *Connect) Write(resPack []byte) {
 	var n int
 	var err error
-	fmt.Println("#######ConnType-", c.ConnType)
+	// fmt.Println("#######ConnType-", c.ConnType)
 	if c.ConnType == CONN_TYPE_WORKER {
-		dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
-		fmt.Println("######Worker write dataType-", dataType)
+		// dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
+		// fmt.Println("######Worker write dataType-", dataType)
 
 		/*
 			n, err = c.Conn.Write(resPack)
@@ -187,6 +188,12 @@ func (c *Connect) Write(resPack []byte) {
 		*/
 
 		worker := c.RunWorker
+		// c.Lock()
+		// _, err := worker.Connect.rw.Write(resPack)
+		// if err != nil {
+		// 	fmt.Println(`err`, err)
+		// 	return
+		// }
 		for i := 0; i < len(resPack); i += n {
 			//n, err = worker.Connect.Conn.Write(resPack[i:])
 			n, err = worker.Connect.rw.Write(resPack[i:])
@@ -195,13 +202,13 @@ func (c *Connect) Write(resPack []byte) {
 				return
 			}
 		}
-
 		worker.Connect.rw.Flush()
+		// c.Unlock()
 	} else if c.ConnType == CONN_TYPE_CLIENT {
-		connType := uint32(binary.BigEndian.Uint32(resPack[:4]))
-		fmt.Println("######Client write connType-", connType)
-		dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
-		fmt.Println("######Client write dataType-", dataType)
+		// connType := uint32(binary.BigEndian.Uint32(resPack[:4]))
+		// fmt.Println("######Client write connType-", connType)
+		// dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
+		// fmt.Println("######Client write dataType-", dataType)
 
 		if len(resPack) == 0 {
 			log.Println("resPack nil")
@@ -218,17 +225,18 @@ func (c *Connect) Write(resPack []byte) {
 			//c.rw.Flush()
 		*/
 
-		client := c.RunClient
-		fmt.Println("######client-", client)
-		fmt.Println("######c-", c)
+		// client := c.RunClient
+		// fmt.Println("######client-", client)
+		// fmt.Println("######c-", c)
+		// c.Lock()
 		for i := 0; i < len(resPack); i += n {
 			n, err = c.rw.Write(resPack[i:])
 			if err != nil {
 				return
 			}
 		}
-
 		c.rw.Flush()
+		// c.Unlock()
 	}
 }
 
@@ -287,7 +295,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 		buf.Write(tmpcontent[:n])
 	}
 
-	fmt.Println("######server read data", buf.Bytes())
+	// fmt.Println("######server read data", buf.Bytes())
 
 	return buf.Bytes(), err
 }

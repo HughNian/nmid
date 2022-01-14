@@ -15,7 +15,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-const SERVERHOST = "172.19.159.122"
+const SERVERHOST = "127.0.0.1"
 const SERVERPORT = "6808"
 
 //单个入参

@@ -2,7 +2,7 @@ package server
 
 const (
 	MAX_POOL_SIZE = 128
-	QUEUE_SIZE    = 64
+	QUEUE_SIZE    = 1
 	BUFFER_SIZE   = 512
 	MIN_DATA_SIZE = 12
 	UINT32_SIZE   = 4
@@ -17,8 +17,8 @@ const (
 	PDT_NO_JOB        = 5
 	PDT_HAVE_JOB      = 6
 	PDT_TOSLEEP       = 7
-	PDT_WAKEUP		  = 8
-	PDT_WAKEUPED	  = 9
+	PDT_WAKEUP        = 8
+	PDT_WAKEUPED      = 9
 	PDT_S_GET_DATA    = 10
 	PDT_S_RETURN_DATA = 11
 	PDT_W_GRAB_JOB    = 12
@@ -41,4 +41,3 @@ const (
 	JOB_STATUS_DOING = 7
 	JOB_STATUS_DONE  = 8
 )
-

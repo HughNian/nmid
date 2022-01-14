@@ -1,11 +1,11 @@
 package worker
 
 import (
-	"sync"
-	"fmt"
 	"errors"
-	"time"
+	"fmt"
 	"log"
+	"sync"
+	"time"
 )
 
 type Worker struct {
@@ -16,18 +16,18 @@ type Worker struct {
 	FuncsNum int
 	Resps    chan *Response
 
-	ready    bool
-	running  bool
+	ready   bool
+	running bool
 }
 
 func NewWorker() *Worker {
-	return &Worker {
-		Agents : make([]*Agent, 0),
-		Funcs  : make(map[string]*Function),
-		FuncsNum : 0,
-		Resps  : make(chan *Response, QUEUE_SIZE),
-		ready  : false,
-		running: false,
+	return &Worker{
+		Agents:   make([]*Agent, 0),
+		Funcs:    make(map[string]*Function),
+		FuncsNum: 0,
+		Resps:    make(chan *Response, QUEUE_SIZE),
+		ready:    false,
+		running:  false,
 	}
 }
 
@@ -45,14 +45,14 @@ func (w *Worker) AddServer(net, addr string) (err error) {
 
 func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
 	w.Lock()
-	defer w.Unlock()
-
 	if _, ok := w.Funcs[funcName]; ok {
 		return fmt.Errorf("function already exist")
 	}
 
 	w.Funcs[funcName] = NewFunction(jobFunc, funcName)
 	w.FuncsNum++
+	w.Unlock()
+
 	if w.running {
 		go w.FuncBroadcast(funcName, PDT_W_ADD_FUNC)
 	}
@@ -62,14 +62,14 @@ func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
 
 func (w *Worker) DelFunction(funcName string) (err error) {
 	w.Lock()
-	defer w.Unlock()
-
 	if _, ok := w.Funcs[funcName]; !ok {
 		return fmt.Errorf("function not exist")
 	}
 
 	delete(w.Funcs, funcName)
 	w.FuncsNum--
+	w.Unlock()
+
 	if w.running {
 		go w.FuncBroadcast(funcName, PDT_W_DEL_FUNC)
 	}
@@ -78,15 +78,15 @@ func (w *Worker) DelFunction(funcName string) (err error) {
 }
 
 func (w *Worker) GetFunction(funcName string) (function *Function, err error) {
-	w.Lock()
-	defer w.Unlock()
-
-	if w.FuncsNum == 0 {
+	if len(w.Funcs) == 0 || w.FuncsNum == 0 {
 		return nil, fmt.Errorf("worker have no funcs")
 	}
 
+	w.Lock()
 	f, ok := w.Funcs[funcName]
-	if !ok {
+	w.Unlock()
+
+	if f == nil || !ok {
 		return nil, fmt.Errorf("not found")
 	}
 
@@ -120,7 +120,9 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 				resp.Agent.Req.Params = resp.Params
 
 				resp.Agent.Req.RetPack(ret)
+				resp.Agent.Lock()
 				resp.Agent.Write()
+				resp.Agent.Unlock()
 			}
 		}
 
@@ -160,7 +162,10 @@ func (w *Worker) WorkerReady() (err error) {
 	for fn := range w.Funcs {
 		w.FuncBroadcast(fn, PDT_W_ADD_FUNC)
 	}
+
+	w.Lock()
 	w.ready = true
+	w.Unlock()
 
 	return nil
 }
@@ -178,46 +183,96 @@ func (w *Worker) WorkerDo() {
 	w.Unlock()
 
 	for _, a := range w.Agents {
-		a.Grab()
+		go a.Grab()
 	}
 
-	n := 1
-	for resp := range w.Resps {
-		switch resp.DataType {
-		case PDT_TOSLEEP:
-			time.Sleep(time.Duration(2)*time.Second)
-			go resp.Agent.Wakeup()
+	var timer = time.After(time.Second * 3)
+	for {
+		var responded bool
+		select {
+		case resp := <-w.Resps:
+			{
+				switch resp.DataType {
+				case PDT_TOSLEEP:
+					time.Sleep(time.Duration(2) * time.Second)
+					go resp.Agent.Wakeup()
 
-			//fallthrough
-		case PDT_S_GET_DATA:
-			fmt.Println("######server get data")
-			fmt.Println("######resps num n:", n)
-			go func() {
-				if err := w.DoFunction(resp); err != nil {
-					log.Println(err)
+					//fallthrough
+				case PDT_S_GET_DATA:
+					go func() {
+						if err := w.DoFunction(resp); err != nil {
+							log.Println(err)
+						}
+					}()
+
+					//fallthrough
+				case PDT_NO_JOB:
+					go resp.Agent.Grab()
+
+				case PDT_WAKEUPED:
+				default:
+					go resp.Agent.Grab()
 				}
-			}()
 
-			//fallthrough
-		case PDT_NO_JOB:
-			fmt.Println("######no job Grab")
-			fmt.Println("######resps num n:", n)
-			go resp.Agent.Grab()
+				responded = true
+			}
+		case <-timer:
+			{
+				if responded {
+					resp := <-w.Resps
+					switch resp.DataType {
+					case PDT_TOSLEEP:
+						time.Sleep(time.Duration(2) * time.Second)
+						go resp.Agent.Wakeup()
 
-		case PDT_WAKEUPED:
-		default:
-			fmt.Println("######default Grab")
-			fmt.Println("######resps num n:", n)
-			go resp.Agent.Grab()
+						//fallthrough
+					case PDT_S_GET_DATA:
+						go func() {
+							if err := w.DoFunction(resp); err != nil {
+								log.Println(err)
+							}
+						}()
+
+						//fallthrough
+					case PDT_NO_JOB:
+						go resp.Agent.Grab()
+
+					case PDT_WAKEUPED:
+					default:
+						go resp.Agent.Grab()
+					}
+				}
+			}
 		}
-
-		n++
 	}
 
+	// for resp := range w.Resps {
+	// 	switch resp.DataType {
+	// 	case PDT_TOSLEEP:
+	// 		time.Sleep(time.Duration(2) * time.Second)
+	// 		go resp.Agent.Wakeup()
+
+	// 		//fallthrough
+	// 	case PDT_S_GET_DATA:
+	// 		go func() {
+	// 			if err := w.DoFunction(resp); err != nil {
+	// 				log.Println(err)
+	// 			}
+	// 		}()
+
+	// 		//fallthrough
+	// 	case PDT_NO_JOB:
+	// 		go resp.Agent.Grab()
+
+	// 	case PDT_WAKEUPED:
+	// 	default:
+	// 		go resp.Agent.Grab()
+	// 	}
+	// }
 }
 
 func (w *Worker) WorkerClose() {
-	if w.running == true {
+	if w.running {
 		for _, a := range w.Agents {
 			a.Close()
 		}

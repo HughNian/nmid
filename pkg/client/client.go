@@ -1,40 +1,39 @@
 package client
 
 import (
-	"sync"
-	"net"
-	"time"
 	"bufio"
-	"log"
 	"fmt"
-	"os"
 	"io"
+	"log"
+	"net"
+	"sync"
+	"time"
 )
 
 type Client struct {
 	sync.Mutex
 
-	net,addr     string
-	conn         net.Conn
-	rw           *bufio.ReadWriter
+	net, addr string
+	conn      net.Conn
+	rw        *bufio.ReadWriter
 
-	Req          *Request
-	ResQueue     chan *Response
+	Req      *Request
+	ResQueue chan *Response
 
-	Timeout      time.Duration
+	Timeout time.Duration
 
 	ErrHandler   ErrHandler
 	RespHandlers *RespHandlerMap
 }
 
 func NewClient(network, addr string) (client *Client, err error) {
-	client = &Client {
-		net  : network,
-		addr : addr,
-		Req  : nil,
-		ResQueue : make(chan *Response, QUEUE_SIZE),
-		Timeout  : DEFAULT_TIME_OUT,
-		RespHandlers : NewResHandlerMap(),
+	client = &Client{
+		net:          network,
+		addr:         addr,
+		Req:          nil,
+		ResQueue:     make(chan *Response, QUEUE_SIZE),
+		Timeout:      DEFAULT_TIME_OUT,
+		RespHandlers: NewResHandlerMap(),
 	}
 	client.conn, err = net.Dial(client.net, client.addr)
 	if err != nil {
@@ -101,7 +100,7 @@ Loop:
 			}
 
 			//断开重连
-			log.Println("client read error here:"+err.Error())
+			log.Println("client read error here:" + err.Error())
 			c.Close()
 			c.conn, err = net.Dial(c.net, c.addr)
 			if err != nil {
@@ -166,23 +165,24 @@ func (c *Client) HandlerResp(resp *Response) {
 func (c *Client) ProcessResp() {
 	var timer = time.After(c.Timeout)
 	select {
-		case res := <- c.ResQueue:
-			switch res.DataType {
-				case PDT_ERROR:
-					c.ErrHandler(res.GetResError())
-					return
-				case PDT_CANT_DO:
-					c.ErrHandler(res.GetResError())
-					return
-				case PDT_S_RETURN_DATA:
-					c.HandlerResp(res)
-					return
-			}
-		case <- timer:
-			log.Println("time out")
-			c.ErrHandler(RESTIMEOUT)
-			//c.Close()
+	case res := <-c.ResQueue:
+		switch res.DataType {
+		case PDT_ERROR:
+			c.ErrHandler(res.GetResError())
 			return
+		case PDT_CANT_DO:
+			c.ErrHandler(res.GetResError())
+			return
+		case PDT_S_RETURN_DATA:
+			c.HandlerResp(res)
+			return
+		}
+	case <-timer:
+
+		log.Println("time out")
+		c.ErrHandler(RESTIMEOUT)
+		//c.Close()
+		return
 	}
 }
 
@@ -202,7 +202,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 		return err
 	}
 
-	c.ProcessResp()
+	go c.ProcessResp()
 
 	return nil
 }
@@ -214,5 +214,4 @@ func (c *Client) Close() {
 	}
 
 	close(c.ResQueue)
-	os.Exit(1)
 }

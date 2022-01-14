@@ -7,12 +7,12 @@ import (
 type Job struct {
 	sync.Mutex
 
-	JobId      string //funcName + Params + time
-	ClientId   string
-	WorkerId   string
+	JobId    string //funcName + Params + time
+	ClientId string
+	WorkerId string
 
-	status     uint32
-	weight     int
+	status uint32
+	// weight int
 
 	FuncName   string
 	ParamsType uint32
@@ -31,23 +31,23 @@ type JobList struct {
 }
 
 func NewJob(Handle, Params string) (j *Job) {
-	j = new (Job)
+	j = new(Job)
 
 	j.JobId = GetJobId(Handle, Params)
 	j.ClientId = ``
 	j.WorkerId = ``
-	j.status   = JOB_STATUS_INIT
+	j.status = JOB_STATUS_INIT
 	j.FuncName = ``
-	j.Params   = make([]byte, 0)
-	j.RetData  = make([]byte, 0)
-	j.Prev     = nil
-	j.Next     = nil
+	j.Params = make([]byte, 0)
+	j.RetData = make([]byte, 0)
+	j.Prev = nil
+	j.Next = nil
 
 	return j
 }
 
 func NewJobList() (jl *JobList) {
-	jl = new (JobList)
+	jl = new(JobList)
 
 	jl.Head = nil
 	jl.Size = 0
@@ -70,9 +70,6 @@ func (j *Job) SetJobWorker(id string) {
 }
 
 func (jl *JobList) PushList(job *Job) bool {
-	jl.Lock()
-	defer jl.Unlock()
-
 	if job == nil {
 		return false
 	}
@@ -99,15 +96,14 @@ func (jl *JobList) PushList(job *Job) bool {
 		tmpNext.Next = job
 	}
 
+	jl.Lock()
 	jl.Size++
+	jl.Unlock()
 
 	return true
 }
 
 func (jl *JobList) PopList() (job *Job) {
-	jl.Lock()
-	defer jl.Unlock()
-
 	if jl.Size == 0 || jl.Head == nil {
 		return nil
 	}
@@ -124,23 +120,25 @@ func (jl *JobList) PopList() (job *Job) {
 	}
 
 	job.Prev, job.Next = nil, nil
+
+	jl.Lock()
 	jl.Size--
+	jl.Unlock()
 
 	return
 }
 
 func (jl *JobList) DeListJob(jobId string) bool {
-	jl.Lock()
-	defer jl.Unlock()
-
 	if jl.Size == 0 || jl.Head == nil {
 		return false
 	}
 
-	var i uint32
-	i = 0
+	var i uint32 = 0
 	job := jl.Head
 	for {
+		if job == nil {
+			break
+		}
 		if jl.Size < i {
 			break
 		}
@@ -152,64 +150,77 @@ func (jl *JobList) DeListJob(jobId string) bool {
 			break
 		}
 		job = job.Next
+
+		jl.Lock()
 		i++
+		jl.Unlock()
 	}
 
 	return true
 }
 
 func (jl *JobList) DelListStatsJob(status uint32) (delNum int) {
-	jl.Lock()
-	defer jl.Unlock()
-
 	if jl.Size == 0 || jl.Head == nil {
 		return 0
 	}
 
-	var i uint32
-	i = 0
+	var i uint32 = 0
 	delNum = 0
 	job := jl.Head
-	for ; i < jl.Size; i ++ {
-		if job.status == status {
+	for ; i < jl.Size; i++ {
+		if job == nil {
+			break
+		}
+		if job != nil && job.status == status {
 			prevJob := job.Prev
 			nextJob := job.Next
 			if jl.Size > 1 {
-				prevJob.Next = nextJob
-				nextJob.Prev = prevJob
+				if prevJob != nil {
+					prevJob.Next = nextJob
+				}
+				if nextJob != nil {
+					nextJob.Prev = prevJob
+				}
 			}
 
+			jl.Lock()
 			delNum++
+			jl.Unlock()
 		}
 		job = job.Next
 	}
+
+	jl.Lock()
 	jl.Size -= uint32(delNum)
+	jl.Unlock()
 
 	return delNum
 }
 
 func (jl *JobList) GetListJob(jobId string) (job *Job) {
-	jl.Lock()
-	defer jl.Unlock()
-
 	if jl.Size == 0 || jl.Head == nil {
 		return nil
 	}
 
-	var i uint32
-	i = 0
+	var i uint32 = 0
 	isGet := 0
 	job = jl.Head
 	for {
+		if job == nil {
+			break
+		}
 		if jl.Size < i {
 			break
 		}
-		if job.JobId == jobId {
+		if job != nil && job.JobId == jobId {
 			isGet = 1
 			break
 		}
 		job = job.Next
+
+		jl.Lock()
 		i++
+		jl.Unlock()
 	}
 
 	if isGet == 1 {

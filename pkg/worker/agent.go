@@ -1,42 +1,38 @@
 package worker
 
 import (
-	"net"
 	"bufio"
-	"sync"
 	"bytes"
 	"encoding/binary"
 	"io"
-	"fmt"
 	"log"
+	"net"
+	"sync"
 )
 
 type Agent struct {
-	sync.Mutex
+	sync.RWMutex
 
 	net, addr string
 	conn      net.Conn
 	rw        *bufio.ReadWriter
 
-	Worker    *Worker
-	Req       *Request
-	Res       *Response
+	Worker *Worker
+	Req    *Request
+	Res    *Response
 }
 
 func NewAgent(net, adrr string, w *Worker) *Agent {
-	return &Agent {
-		net  : net,
-		addr : adrr,
-		Worker : w,
-		Req  : NewReq(),
-		Res  : NewRes(),
+	return &Agent{
+		net:    net,
+		addr:   adrr,
+		Worker: w,
+		Req:    NewReq(),
+		Res:    NewRes(),
 	}
 }
 
 func (a *Agent) Connect() (err error) {
-	a.Lock()
-	defer a.Unlock()
-
 	a.conn, err = net.Dial(a.net, a.addr)
 	//a.conn, err = net.DialTimeout(a.net, a.addr, 2 * time.Second)
 	if err != nil {
@@ -51,9 +47,6 @@ func (a *Agent) Connect() (err error) {
 }
 
 func (a *Agent) ReConnect() error {
-	a.Lock()
-	defer a.Unlock()
-
 	conn, err := net.Dial(a.net, a.addr)
 	if err != nil {
 		return err
@@ -76,7 +69,7 @@ func (a *Agent) Read() (data []byte, err error) {
 	dataLen := int(binary.BigEndian.Uint32(temp[8:MIN_DATA_SIZE]))
 	buf.Write(temp[:n])
 
-	for buf.Len() < MIN_DATA_SIZE + dataLen {
+	for buf.Len() < MIN_DATA_SIZE+dataLen {
 		tmpcontent := GetBuffer(dataLen)
 		if n, err = a.rw.Read(tmpcontent); err != nil {
 			return buf.Bytes(), err
@@ -92,11 +85,10 @@ func (a *Agent) Write() (err error) {
 	var n int
 	buf := a.Req.EncodePack()
 
-	connType := uint32(binary.BigEndian.Uint32(buf[:4]))
-	fmt.Println("######worker agent write connType-", connType)
-	dataType := uint32(binary.BigEndian.Uint32(buf[4:8]))
-	fmt.Println("######worker agent write dataType-", dataType)
-
+	// connType := uint32(binary.BigEndian.Uint32(buf[:4]))
+	// fmt.Println("######worker agent write connType-", connType)
+	// dataType := uint32(binary.BigEndian.Uint32(buf[4:8]))
+	// fmt.Println("######worker agent write dataType-", dataType)
 	for i := 0; i < len(buf); i += n {
 		if n, err = a.rw.Write(buf); err != nil {
 			return err
@@ -138,9 +130,6 @@ func (a *Agent) Work() {
 			leftData = data
 			continue
 		} else {
-			fmt.Println("######worker agent read DataType-", resp.DataType)
-			fmt.Println("######worker agent read StrParams-", resp.StrParams)
-
 			leftData = nil
 			resp.Agent = a
 			a.Worker.Resps <- resp
@@ -150,18 +139,16 @@ func (a *Agent) Work() {
 
 func (a *Agent) Grab() {
 	a.Lock()
-	defer a.Unlock()
-
 	a.Req.GrabDataPack()
 	a.Write()
+	a.Unlock()
 }
 
 func (a *Agent) Wakeup() {
 	a.Lock()
-	defer a.Unlock()
-
 	a.Req.WakeupPack()
 	a.Write()
+	a.Unlock()
 }
 
 func (a *Agent) Close() {

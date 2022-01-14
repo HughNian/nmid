@@ -1,25 +1,25 @@
 package server
 
 import (
-	"net"
 	"log"
+	"net"
 )
 
 type Server struct {
-	Host   string
-	Port   string
-	Net    string
-	Cpool  *ConnectPool
-	Funcs  *FuncMap
+	Host  string
+	Port  string
+	Net   string
+	Cpool *ConnectPool
+	Funcs *FuncMap
 }
 
 func NewServer(net string, host string, port string) (ser *Server) {
-	ser = &Server {
-		Host  : host,
-		Port  : port,
-		Net   : net,
-		Cpool : NewConnectPool(),
-		Funcs : NewFuncMap(),
+	ser = &Server{
+		Host:  host,
+		Port:  port,
+		Net:   net,
+		Cpool: NewConnectPool(),
+		Funcs: NewFuncMap(),
 	}
 	return
 }

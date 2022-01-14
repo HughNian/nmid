@@ -14,7 +14,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-const SERVERHOST = "172.19.159.122"
+const SERVERHOST = "127.0.0.1"
 const SERVERPORT = "6808"
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	defer client.Close()
+	// defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {

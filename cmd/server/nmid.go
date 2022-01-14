@@ -6,7 +6,11 @@
 package main
 
 import (
+	"context"
 	ser "nmid-v2/pkg/server"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -15,12 +19,19 @@ var (
 )
 
 func main() {
-	var server *ser.Server
-	server = ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
-
+	server := ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
 	if nil == server {
 		return
 	}
 
-	server.ServerRun()
+	_, cancel := context.WithCancel(context.Background())
+
+	go server.ServerRun()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	cancel()
+	os.Exit(0)
 }
