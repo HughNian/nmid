@@ -11,9 +11,9 @@ type SWorker struct {
 	Connect  *Connect
 
 	JobNum   int
-	Jobs     *JobList
-	DingJobs *JobList
-	DoneJobs *JobList
+	Jobs     *JobDataList
+	DingJobs *JobDataList
+	DoneJobs *JobDataList
 
 	Req *Request
 	Res *Response
@@ -31,9 +31,9 @@ func NewSWorker(conn *Connect) *SWorker {
 		WorkerId:  conn.Id,
 		Connect:   conn,
 		JobNum:    0,
-		Jobs:      NewJobList(),
-		DingJobs:  NewJobList(),
-		DoneJobs:  NewJobList(),
+		Jobs:      NewJobDataList(),
+		DingJobs:  NewJobDataList(),
+		DoneJobs:  NewJobDataList(),
 		Req:       NewReq(),
 		Res:       NewRes(),
 		NoJobNums: 0,
@@ -67,7 +67,7 @@ func (w *SWorker) delFunction() {
 
 func (w *SWorker) delWorkerJob() {
 	if w.JobNum > 0 {
-		doneNum := w.DoneJobs.DelListStatsJob(JOB_STATUS_DONE)
+		doneNum := w.DoneJobs.DelJobDataStats(JOB_STATUS_DONE)
 		w.Lock()
 		w.JobNum -= doneNum
 		w.Unlock()
@@ -76,10 +76,10 @@ func (w *SWorker) delWorkerJob() {
 
 func (w *SWorker) doWork() {
 	if w.JobNum > 0 {
-		job := w.Jobs.PopList()
+		job := w.Jobs.PopJobData()
 		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
 			job.status = JOB_STATUS_DOING
-			w.DingJobs.PushList(job)
+			w.DingJobs.PushJobData(job)
 
 			functionName := job.FuncName
 			params := job.Params
@@ -121,7 +121,7 @@ func (w *SWorker) doWork() {
 
 func (w *SWorker) returnData() {
 	if w.JobNum > 0 {
-		job := w.DingJobs.PopList()
+		job := w.DingJobs.PopJobData()
 		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_DOING {
 			//解包获取数据内容
 			w.Req.ReqDecodePack()
@@ -132,7 +132,7 @@ func (w *SWorker) returnData() {
 				string(w.Res.Params) == string(w.Req.Params) {
 				job.RetData = append(job.RetData, w.Req.Ret...)
 				job.status = JOB_STATUS_DONE
-				w.DoneJobs.PushList(job)
+				w.DoneJobs.PushJobData(job)
 			} else {
 				return
 			}

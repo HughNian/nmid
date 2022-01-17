@@ -115,7 +115,6 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 		end = start + int(res.HandleLen)
 		copy(content[start:end], []byte(res.Handle))
 		start = end
-		end = start + int(res.ParamsLen) //contentLen
 		copy(content[start:], res.Params)
 	} else if res.DataType == PDT_S_RETURN_DATA {
 		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.RetLen)
@@ -154,7 +153,6 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 		end = start + int(res.ParamsLen)
 		copy(content[start:end], res.Params)
 		start = end
-		end = start + int(res.RetLen) //contentLen
 		copy(content[start:], res.Ret)
 	} else if res.DataType == PDT_NO_JOB || res.DataType == PDT_OK || res.DataType == PDT_ERROR || res.DataType == PDT_CANT_DO {
 		content = []byte(``)
@@ -198,7 +196,6 @@ func (req *Request) ReqDecodePack() {
 			retLen = int(req.RetLen)
 			ret = GetBuffer(retLen)
 			start = end
-			end = int(req.RetLen) //start + retLen
 			copy(ret, req.Data[start:])
 			req.Ret = ret //append(req.Ret, ret...)
 		} else if req.DataType == PDT_C_DO_JOB {
@@ -220,7 +217,6 @@ func (req *Request) ReqDecodePack() {
 			paramsLen = int(req.ParamsLen)
 			params = GetBuffer(paramsLen)
 			start = end
-			end = int(req.RetLen) //start + paramsLen
 			copy(params, req.Data[start:])
 			req.Params = params //append(req.Params, params...)
 		}

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	cli "nmid-v2/pkg/client"
 
@@ -14,27 +15,25 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
+var once sync.Once
 var client *cli.Client
 var err error
 
-// func init() {
-// 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-// 	client, err = cli.NewClient("tcp", serverAddr)
-// 	if nil == client || err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	// defer client.Close()
-// }
+func getClient() *cli.Client {
+	once.Do(func() {
+		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+		client, err = cli.NewClient("tcp", serverAddr)
+		if nil == client || err != nil {
+			log.Println(err)
+		}
+		// defer client.Close()
+	})
+
+	return client
+}
 
 func Test(ctx *fasthttp.RequestCtx) {
-	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr)
-	if nil == client || err != nil {
-		log.Println(err)
-		return
-	}
-	// defer client.Close()
+	client := getClient()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {

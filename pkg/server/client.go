@@ -56,7 +56,7 @@ func (c *SClient) doJob() {
 		return
 	}
 
-	job := NewJob(c.Req.Handle, string(c.Req.Params))
+	job := NewJobData(c.Req.Handle, string(c.Req.Params))
 	job.WorkerId = worker.WorkerId
 	job.ClientId = c.ClientId
 	job.FuncName = c.Req.Handle
@@ -67,7 +67,7 @@ func (c *SClient) doJob() {
 		job.ParamsType = PARAMS_TYPE_ONE
 	}
 
-	if ok := worker.Jobs.PushList(job); ok {
+	if ok := worker.Jobs.PushJobData(job); ok {
 		worker.Lock()
 		worker.JobNum++
 		worker.Unlock()

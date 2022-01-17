@@ -202,7 +202,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 		return err
 	}
 
-	go c.ProcessResp()
+	c.ProcessResp()
 
 	return nil
 }
