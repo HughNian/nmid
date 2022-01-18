@@ -25,9 +25,7 @@ func NewServer(net string, host string, port string) (ser *Server) {
 }
 
 func (ser *Server) ServerRun() {
-	var address string
-
-	address = ser.Host + ":" + ser.Port
+	var address string = ser.Host + ":" + ser.Port
 	listen, err := net.Listen(ser.Net, address)
 	if err != nil {
 		log.Fatalln(err)
