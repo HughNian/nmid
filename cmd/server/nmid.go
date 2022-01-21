@@ -7,6 +7,9 @@ package main
 
 import (
 	"context"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	ser "nmid-v2/pkg/server"
 	"os"
 	"os/signal"
@@ -19,6 +22,10 @@ var (
 )
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+	}()
+
 	server := ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
 	if nil == server {
 		return

@@ -173,62 +173,21 @@ func (c *Connect) getSCClient() *SClient {
 func (c *Connect) Write(resPack []byte) {
 	var n int
 	var err error
-	// fmt.Println("#######ConnType-", c.ConnType)
 	if c.ConnType == CONN_TYPE_WORKER {
-		// dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
-		// fmt.Println("######Worker write dataType-", dataType)
-
-		/*
-			n, err = c.Conn.Write(resPack)
-			fmt.Println("######Worker write n-", n)
-			if err != nil {
-				return
-			}
-			c.rw.Flush()
-		*/
-
 		worker := c.RunWorker
-		// c.Lock()
-		// _, err := worker.Connect.rw.Write(resPack)
-		// if err != nil {
-		// 	fmt.Println(`err`, err)
-		// 	return
-		// }
 		for i := 0; i < len(resPack); i += n {
-			//n, err = worker.Connect.Conn.Write(resPack[i:])
 			n, err = worker.Connect.rw.Write(resPack[i:])
-			//n, err = c.rw.Write(resPack[i:])
 			if err != nil {
 				return
 			}
 		}
 		worker.Connect.rw.Flush()
-		// c.Unlock()
 	} else if c.ConnType == CONN_TYPE_CLIENT {
-		// connType := uint32(binary.BigEndian.Uint32(resPack[:4]))
-		// fmt.Println("######Client write connType-", connType)
-		// dataType := uint32(binary.BigEndian.Uint32(resPack[4:8]))
-		// fmt.Println("######Client write dataType-", dataType)
-
 		if len(resPack) == 0 {
 			log.Println("resPack nil")
 			return
 		}
 
-		/*
-			//n, err = c.rw.Write(resPack)
-			n, err = c.Conn.Write(resPack)
-			fmt.Println("######Client write n-", n)
-			if err != nil {
-				return
-			}
-			//c.rw.Flush()
-		*/
-
-		// client := c.RunClient
-		// fmt.Println("######client-", client)
-		// fmt.Println("######c-", c)
-		// c.Lock()
 		for i := 0; i < len(resPack); i += n {
 			n, err = c.rw.Write(resPack[i:])
 			if err != nil {
@@ -236,7 +195,6 @@ func (c *Connect) Write(resPack []byte) {
 			}
 		}
 		c.rw.Flush()
-		// c.Unlock()
 	}
 }
 
@@ -259,19 +217,14 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 		dataLen = int(binary.BigEndian.Uint32(tmp[8:MIN_DATA_SIZE]))
 
 		if connType != CONN_TYPE_WORKER && connType != CONN_TYPE_CLIENT {
-			//log.Println("connect type error")
 			return []byte(``), nil
 		}
 		c.ConnType = connType
 		if c.ConnType == CONN_TYPE_WORKER {
-			//fmt.Println("###### Worker read")
-
 			worker := c.getSWClinet()
 			worker.Req.DataType = dataType
 			worker.Req.DataLen = uint32(dataLen)
 		} else if c.ConnType == CONN_TYPE_CLIENT {
-			//fmt.Println("###### Client read")
-
 			client := c.getSCClient()
 			client.Req.DataType = dataType
 			client.Req.DataLen = uint32(dataLen)
@@ -294,8 +247,6 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 
 		buf.Write(tmpcontent[:n])
 	}
-
-	// fmt.Println("######server read data", buf.Bytes())
 
 	return buf.Bytes(), err
 }

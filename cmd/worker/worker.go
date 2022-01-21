@@ -8,6 +8,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	wor "nmid-v2/pkg/worker"
 	"strconv"
 	"strings"
@@ -89,6 +91,10 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
+	}()
+
 	var worker *wor.Worker
 	var err error
 

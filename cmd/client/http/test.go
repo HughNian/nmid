@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"sync"
 
+	_ "net/http/pprof"
 	cli "nmid-v2/pkg/client"
 
 	"github.com/buaazp/fasthttprouter"
@@ -83,6 +85,10 @@ func Test(ctx *fasthttp.RequestCtx) {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	}()
+
 	router := fasthttprouter.New()
 	router.GET("/test", Test)
 	err := fasthttp.ListenAndServe(":5981", router.Handler)
