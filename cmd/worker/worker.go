@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -91,9 +92,16 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 }
 
 func main() {
+	//pprof
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
 	}()
+
+	//pyroscope
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.worker",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
 
 	var worker *wor.Worker
 	var err error

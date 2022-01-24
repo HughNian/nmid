@@ -10,6 +10,7 @@ import (
 	cli "nmid-v2/pkg/client"
 
 	"github.com/buaazp/fasthttprouter"
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/valyala/fasthttp"
 	"github.com/vmihailenco/msgpack"
 )
@@ -85,9 +86,16 @@ func Test(ctx *fasthttp.RequestCtx) {
 }
 
 func main() {
+	//pprof
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
 	}()
+
+	//pyroscope
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.httpclient",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
 
 	router := fasthttprouter.New()
 	router.GET("/test", Test)

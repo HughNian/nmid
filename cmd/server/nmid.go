@@ -14,6 +14,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 
 var (
@@ -22,9 +24,16 @@ var (
 )
 
 func main() {
+	//pprof
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
 	}()
+
+	//pyroscope
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.server",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
 
 	server := ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
 	if nil == server {
