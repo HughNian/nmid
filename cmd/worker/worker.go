@@ -97,7 +97,7 @@ func main() {
 		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
 	}()
 
-	//pyroscope
+	//pyroscope, this is pyroscope push mode. also use pull mode better
 	profiler.Start(profiler.Config{
 		ApplicationName: "nmid.worker",
 		ServerAddress:   "http://127.0.0.1:4040",
