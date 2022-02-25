@@ -79,7 +79,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 	}
-	err = client.Do("ToUpper", params1, respHandler)
+	err = client.Do("ToUpper2", params1, respHandler)
 	if nil != err {
 		fmt.Println(`--do err--`, err)
 	}

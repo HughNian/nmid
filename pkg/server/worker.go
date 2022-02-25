@@ -164,6 +164,7 @@ func (w *SWorker) workerWakeup() {
 	w.NoJobNums = 0
 }
 
+//runworker 此处做熔断操作
 func (w *SWorker) RunWorker() {
 	dataType := w.Req.GetReqDataType()
 

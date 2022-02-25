@@ -112,8 +112,9 @@ func codelLimiter() bool {
 	return true
 }
 
+//runclient 此处做限流操作
 func (c *SClient) RunClient() {
-	if !codelLimiter() {
+	if !codelLimiter() { //codel限流
 		c.doLimit()
 	} else {
 		dataType := c.Req.GetReqDataType()
