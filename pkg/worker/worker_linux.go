@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 package worker
 
 import (
@@ -6,6 +9,9 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"github.com/go-kratos/aegis/ratelimit"
+	"github.com/go-kratos/aegis/ratelimit/bbr"
 )
 
 type Worker struct {
@@ -18,6 +24,7 @@ type Worker struct {
 
 	ready   bool
 	running bool
+	limiter ratelimit.Limiter
 }
 
 func NewWorker() *Worker {
@@ -28,6 +35,7 @@ func NewWorker() *Worker {
 		Resps:    make(chan *Response, QUEUE_SIZE),
 		ready:    false,
 		running:  false,
+		limiter:  bbr.NewLimiter(),
 	}
 }
 
@@ -186,25 +194,34 @@ func (w *Worker) WorkerDo() {
 	}
 
 	for resp := range w.Resps {
-		switch resp.DataType {
-		case PDT_TOSLEEP:
-			time.Sleep(time.Duration(2) * time.Second)
-			go resp.Agent.Wakeup()
+		done, e := w.limiter.Allow()
+		if e != nil {
+			// rejected ratelimit
+			go resp.Agent.LimitExceed()
+		} else {
+			// allow ratelimit
+			switch resp.DataType {
+			case PDT_TOSLEEP:
+				time.Sleep(time.Duration(2) * time.Second)
+				go resp.Agent.Wakeup()
 
-			//fallthrough
-		case PDT_S_GET_DATA:
-			go func() {
-				if err := w.DoFunction(resp); err != nil {
-					log.Println(err)
-				}
-			}()
-			//fallthrough
-		case PDT_NO_JOB:
-			go resp.Agent.Grab()
+				//fallthrough
+			case PDT_S_GET_DATA:
+				go func() {
+					if err := w.DoFunction(resp); err != nil {
+						log.Println(err)
+					}
+				}()
+				//fallthrough
+			case PDT_NO_JOB:
+				go resp.Agent.Grab()
 
-		case PDT_WAKEUPED:
-		default:
-			go resp.Agent.Grab()
+			case PDT_WAKEUPED:
+			default:
+				go resp.Agent.Grab()
+			}
+
+			done(ratelimit.DoneInfo{Err: nil})
 		}
 	}
 }

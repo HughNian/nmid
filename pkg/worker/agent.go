@@ -151,6 +151,13 @@ func (a *Agent) Wakeup() {
 	a.Unlock()
 }
 
+func (a *Agent) LimitExceed() {
+	a.Lock()
+	a.Req.LimitExceedPack()
+	a.Write()
+	a.Unlock()
+}
+
 func (a *Agent) Close() {
 	if a.conn != nil {
 		a.conn.Close()

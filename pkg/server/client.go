@@ -1,7 +1,11 @@
 package server
 
 import (
+	"context"
 	"sync"
+	"time"
+
+	"github.com/joshbohde/codel"
 )
 
 type SClient struct {
@@ -76,13 +80,49 @@ func (c *SClient) doJob() {
 	worker.doWork()
 }
 
-func (c *SClient) RunClient() {
-	dataType := c.Req.GetReqDataType()
+func (c *SClient) doLimit() {
+	c.Res.DataType = PDT_RATELIMIT
+	resPack := c.Res.ResEncodePack()
+	c.Connect.Write(resPack)
+}
 
-	switch dataType {
-	case PDT_C_DO_JOB:
-		{
-			go c.doJob()
+//codel限流
+func codelLimiter() bool {
+	c := codel.New(codel.Options{
+		// The maximum number of pending acquires
+		MaxPending: 100,
+		// The maximum number of concurrent acquires
+		MaxOutstanding: 10,
+		// The target latency to wait for an acquire.
+		// Acquires that take longer than this can fail.
+		TargetLatency: 5 * time.Millisecond,
+	})
+
+	// Attempt to acquire the lock.
+	err := c.Acquire(context.Background())
+
+	// if err is not nil, acquisition failed.
+	if err != nil {
+		return false
+	}
+
+	// If acquisition succeeded, we need to release it.
+	defer c.Release()
+
+	return true
+}
+
+func (c *SClient) RunClient() {
+	if !codelLimiter() {
+		c.doLimit()
+	} else {
+		dataType := c.Req.GetReqDataType()
+
+		switch dataType {
+		case PDT_C_DO_JOB:
+			{
+				go c.doJob()
+			}
 		}
 	}
 }

@@ -173,6 +173,9 @@ func (c *Client) ProcessResp() {
 		case PDT_CANT_DO:
 			c.ErrHandler(res.GetResError())
 			return
+		case PDT_RATELIMIT:
+			c.ErrHandler(res.GetResError())
+			return
 		case PDT_S_RETURN_DATA:
 			c.HandlerResp(res)
 			return

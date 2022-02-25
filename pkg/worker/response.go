@@ -1,14 +1,14 @@
 package worker
 
 import (
-	"fmt"
 	"encoding/binary"
+	"fmt"
 )
 
 type Response struct {
-	DataType   uint32
-	Data       []byte
-	DataLen    uint32
+	DataType uint32
+	Data     []byte
+	DataLen  uint32
 
 	Handle     string
 	HandleLen  uint32
@@ -20,22 +20,22 @@ type Response struct {
 	Ret        []byte
 	RetLen     uint32
 
-	Agent      *Agent
+	Agent *Agent
 }
 
 func NewRes() (res *Response) {
-	res = &Response {
-		Data      : make([]byte, 0),
-		DataLen   : 0,
-		Handle    : ``,
-		HandleLen : 0,
+	res = &Response{
+		Data:       make([]byte, 0),
+		DataLen:    0,
+		Handle:     ``,
+		HandleLen:  0,
 		ParamsType: PARAMS_TYPE_ONE, //4-one param, 5-multiple params, default 4
-		ParamsNum : 0, //参数个数，一般单个参数只有一个参数，多个参数有相应数量的参数
-		ParamsLen : 0,
-		Params    : make([]byte, 0),
-		StrParams : make([]string, 0),
-		Ret       : make([]byte, 0),
-		RetLen    : 0,
+		ParamsNum:  0,               //参数个数，一般单个参数只有一个参数，多个参数有相应数量的参数
+		ParamsLen:  0,
+		Params:     make([]byte, 0),
+		StrParams:  make([]string, 0),
+		Ret:        make([]byte, 0),
+		RetLen:     0,
 	}
 	return
 }
@@ -44,24 +44,24 @@ func NewRes() (res *Response) {
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
 	if resLen < MIN_DATA_SIZE {
-		err = fmt.Errorf("Invalid data: %v", data)
+		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
 	cl := int(binary.BigEndian.Uint32(data[8:MIN_DATA_SIZE]))
-	if resLen < MIN_DATA_SIZE + cl {
-		err = fmt.Errorf("Invalid data: %v", data)
+	if resLen < MIN_DATA_SIZE+cl {
+		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
-	content := data[MIN_DATA_SIZE:MIN_DATA_SIZE+cl]
+	content := data[MIN_DATA_SIZE : MIN_DATA_SIZE+cl]
 	if len(content) != cl {
-		err = fmt.Errorf("Invalid data: %v", data)
+		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
 
 	resp = NewRes()
 	resp.DataType = binary.BigEndian.Uint32(data[4:8])
-	resp.DataLen  = uint32(cl)
-	resp.Data     = content
+	resp.DataLen = uint32(cl)
+	resp.Data = content
 
 	if resp.DataType == PDT_S_GET_DATA {
 		//旧的解包协议
@@ -80,16 +80,16 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 
 		//新的解包协议
 		start := MIN_DATA_SIZE
-		end   := MIN_DATA_SIZE + UINT32_SIZE
+		end := MIN_DATA_SIZE + UINT32_SIZE
 		resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end   = start + UINT32_SIZE
+		end = start + UINT32_SIZE
 		resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end   = start + int(resp.HandleLen)
+		end = start + int(resp.HandleLen)
 		resp.Handle = string(data[start:end])
 		start = end
-		end   = start + int(resp.ParamsLen)
+		end = start + int(resp.ParamsLen)
 		resp.ParseParams(data[start:end])
 	}
 
@@ -110,8 +110,6 @@ func (resp *Response) ParseParams(params []byte) {
 			resp.ParamsType = PARAMS_TYPE_MUL
 		}
 	}
-
-	return
 }
 
 func (resp *Response) GetParams() []byte {

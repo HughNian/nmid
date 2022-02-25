@@ -67,6 +67,13 @@ func (req *Request) WakeupPack() {
 	req.Data = []byte(``)
 }
 
+//打包内容-限流
+func (req *Request) LimitExceedPack() {
+	req.DataType = PDT_RATELIMIT
+	req.DataLen = 0
+	req.Data = []byte(``)
+}
+
 //打包内容-返回结果
 func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	req.Ret = ret
