@@ -2,6 +2,9 @@ package server
 
 import (
 	"sync"
+
+	"github.com/joshbohde/codel"
+	"github.com/juju/ratelimit"
 )
 
 type SWorker struct {
@@ -20,6 +23,9 @@ type SWorker struct {
 
 	NoJobNums int
 	Sleep     bool
+
+	CodelLimiter  *codel.Lock
+	BucketLimiter *ratelimit.Bucket
 }
 
 func NewSWorker(conn *Connect) *SWorker {
@@ -28,16 +34,18 @@ func NewSWorker(conn *Connect) *SWorker {
 	}
 
 	return &SWorker{
-		WorkerId:  conn.Id,
-		Connect:   conn,
-		JobNum:    0,
-		Jobs:      NewJobDataList(),
-		DingJobs:  NewJobDataList(),
-		DoneJobs:  NewJobDataList(),
-		Req:       NewReq(),
-		Res:       NewRes(),
-		NoJobNums: 0,
-		Sleep:     false,
+		WorkerId:      conn.Id,
+		Connect:       conn,
+		JobNum:        0,
+		Jobs:          NewJobDataList(),
+		DingJobs:      NewJobDataList(),
+		DoneJobs:      NewJobDataList(),
+		Req:           NewReq(),
+		Res:           NewRes(),
+		NoJobNums:     0,
+		Sleep:         false,
+		CodelLimiter:  NewCodelLimiter(),
+		BucketLimiter: NewBucketLimiter(),
 	}
 }
 
@@ -164,34 +172,44 @@ func (w *SWorker) workerWakeup() {
 	w.NoJobNums = 0
 }
 
+func (w *SWorker) doLimit() {
+	w.Res.DataType = PDT_RATELIMIT
+	resPack := w.Res.ResEncodePack()
+	w.Connect.Write(resPack)
+}
+
 //runworker 此处做熔断操作
 func (w *SWorker) RunWorker() {
-	dataType := w.Req.GetReqDataType()
+	if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
+		w.doLimit()
+	} else {
+		dataType := w.Req.GetReqDataType()
 
-	switch dataType {
-	//worker add function
-	case PDT_W_ADD_FUNC:
-		{
-			w.addFunction()
-		}
-	//worker del function
-	case PDT_W_DEL_FUNC:
-		{
-			w.delFunction()
-		}
-	case PDT_WAKEUP:
-		{
-			w.workerWakeup()
-		}
-	//worker grab job
-	case PDT_W_GRAB_JOB:
-		{
-			go w.doWork()
-		}
-	//worker return data
-	case PDT_W_RETURN_DATA:
-		{
-			go w.returnData()
+		switch dataType {
+		//worker add function
+		case PDT_W_ADD_FUNC:
+			{
+				w.addFunction()
+			}
+		//worker del function
+		case PDT_W_DEL_FUNC:
+			{
+				w.delFunction()
+			}
+		case PDT_WAKEUP:
+			{
+				w.workerWakeup()
+			}
+		//worker grab job
+		case PDT_W_GRAB_JOB:
+			{
+				go w.doWork()
+			}
+		//worker return data
+		case PDT_W_RETURN_DATA:
+			{
+				go w.returnData()
+			}
 		}
 	}
 }

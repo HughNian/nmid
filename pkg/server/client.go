@@ -1,11 +1,10 @@
 package server
 
 import (
-	"context"
 	"sync"
-	"time"
 
 	"github.com/joshbohde/codel"
+	"github.com/juju/ratelimit"
 )
 
 type SClient struct {
@@ -16,6 +15,9 @@ type SClient struct {
 
 	Req *Request
 	Res *Response
+
+	CodelLimiter  *codel.Lock
+	BucketLimiter *ratelimit.Bucket
 }
 
 func NewSClient(conn *Connect) *SClient {
@@ -24,10 +26,12 @@ func NewSClient(conn *Connect) *SClient {
 	}
 
 	return &SClient{
-		ClientId: conn.Id,
-		Connect:  conn,
-		Req:      NewReq(),
-		Res:      NewRes(),
+		ClientId:      conn.Id,
+		Connect:       conn,
+		Req:           NewReq(),
+		Res:           NewRes(),
+		CodelLimiter:  NewCodelLimiter(),
+		BucketLimiter: NewBucketLimiter(),
 	}
 }
 
@@ -86,35 +90,9 @@ func (c *SClient) doLimit() {
 	c.Connect.Write(resPack)
 }
 
-//codel限流
-func codelLimiter() bool {
-	c := codel.New(codel.Options{
-		// The maximum number of pending acquires
-		MaxPending: 100,
-		// The maximum number of concurrent acquires
-		MaxOutstanding: 10,
-		// The target latency to wait for an acquire.
-		// Acquires that take longer than this can fail.
-		TargetLatency: 5 * time.Millisecond,
-	})
-
-	// Attempt to acquire the lock.
-	err := c.Acquire(context.Background())
-
-	// if err is not nil, acquisition failed.
-	if err != nil {
-		return false
-	}
-
-	// If acquisition succeeded, we need to release it.
-	defer c.Release()
-
-	return true
-}
-
 //runclient 此处做限流操作
 func (c *SClient) RunClient() {
-	if !codelLimiter() { //codel限流
+	if !DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
 		c.doLimit()
 	} else {
 		dataType := c.Req.GetReqDataType()

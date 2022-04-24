@@ -1,5 +1,7 @@
 package server
 
+import "time"
+
 const (
 	MAX_POOL_SIZE = 128
 	QUEUE_SIZE    = 1
@@ -28,6 +30,7 @@ const (
 	PDT_C_DO_JOB      = 16
 	PDT_C_GET_DATA    = 17
 	PDT_RATELIMIT     = 18
+	PDT_BREAKER       = 19
 )
 
 //connect status
@@ -41,4 +44,13 @@ const (
 	JOB_STATUS_INIT  = 6
 	JOB_STATUS_DOING = 7
 	JOB_STATUS_DONE  = 8
+)
+
+//ratelimit
+const (
+	MAXPENDING     = 100
+	MAXOUTSTANDING = 10
+	TARGETLATENCY  = 5 * time.Millisecond
+	FILLINTERVAL   = 1 * time.Second
+	CAPACITY       = 100
 )

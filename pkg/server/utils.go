@@ -15,9 +15,22 @@ import (
 )
 
 type ServerConfig struct {
-	NETWORK string `yaml:"NETWORK"`
-	HOST    string `yaml:"HOST"`
-	PORT    string `yaml:"PORT"`
+	NETWORK string  `yaml:"NETWORK"`
+	HOST    string  `yaml:"HOST"`
+	PORT    string  `yaml:"PORT"`
+	BREAKER Breaker `yaml:"BREAKER"`
+}
+
+type Breaker struct {
+	SerialErrorNumbers uint32 `yaml:"SERIAL_ERROR_NUMBERS"`
+	ErrorPercent       uint8  `yaml:"ERROR_PERCENT"`
+	MaxRequest         uint32 `yaml:"MAX_REQUEST"`
+	Interval           uint32 `yaml:"INTERVAL"`
+	Timeout            uint32 `yaml:"TIMEOUT"`
+	RuleType           uint8  `yaml:"RULE_TYPE"`
+	Btype              int8   `yaml:"BTYPE"` // 熔断粒度path单个实例下接口级别，host单个实例级别，默认接口级别
+	RequestTimeout     uint32 `yaml:"REQUEST_TIMEOUT"`
+	Cycle              uint32 `yaml:"CYCLE"`
 }
 
 func (c *ServerConfig) GetConfig() *ServerConfig {
