@@ -49,7 +49,7 @@ func (resp *Response) GetResError() (err error) {
 	} else if resp.DataType == PDT_CANT_DO {
 		return fmt.Errorf("have no job do")
 	} else if resp.DataType == PDT_RATELIMIT {
-		return fmt.Errorf("have ratelimit") //codel限流
+		return fmt.Errorf("have ratelimit") //限流
 	}
 
 	return nil
