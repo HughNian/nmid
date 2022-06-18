@@ -4,11 +4,15 @@
 - 对代码中高并发场景进行优化，该用锁的地方加上 √
 - 增加限流操作，client,worker两处限流，codel和令牌桶限流 √
 
-### 增加注册中心
-- 现有的worker注册方式保持，即直接注册到nmid中。
-- 增加注册中心服务，worker注册到注册中心服务，nmid从注册中心拉取worker。
-- worker的标识增加，包含serviceid,servicename,funcname
+### v2.0.1需求 
+- 增加注册中心
+- worker增加心跳机制
+- 创建worker时可以设置worker_label，相同worker_label的worker为同一组
+- worker的标识增加，包含worker_label，serviceid，servicename，funcname。worker可以抽象为service
+- worker与client通过ipfs协议存在调用关系
+- 同一组worker连接同一个nmid服务
+- worker连接nmid服务时，同时注册到注册中心服务，由pkg中worker操作
+- client在请求前需要初始化挂载相应worker服务，注册关系到注册中心
+- client请求时校验client与worker的调用关系，然后从注册中心拉取worker清单，由pkg中client操作
 
-### 增加worker_key概念
-- 创建worker时可以生产worker_key也可以设置worker_key，使一组worker属于同一个worker_key下，这样对同worker_key下的worker组进行节点集群的处理，主要的有可以根据raft共识算法，选举产生leader worker,代表这worker组对外提供服务。
-- 使用raft共识算法，但目前只用到选举产生leader的逻辑，暂无同步快照逻辑。
+ps: client与worker的关系在nmid的微服务中是相互的，因为client有可能也是worker服务，同样worker可能也是某个其他worker的消费者client。

@@ -27,7 +27,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	// defer client.Close()
+	defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {
@@ -76,7 +76,7 @@ func main() {
 
 	cellphone := "13913873440"
 	obdnum := "531907250005"
-	carnum := "苏A9P7Y2"
+	carnum := "浙A9P733"
 	paramsPhone := []string{"phone:" + cellphone, "odbnum:" + obdnum, "carnum:" + carnum}
 	phone, err := msgpack.Marshal(&paramsPhone)
 	if err != nil {

@@ -22,6 +22,7 @@ var once sync.Once
 var client *cli.Client
 var err error
 
+//单实列连接，适合长连接
 func getClient() *cli.Client {
 	once.Do(func() {
 		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
@@ -29,8 +30,18 @@ func getClient() *cli.Client {
 		if nil == client || err != nil {
 			log.Println(err)
 		}
-		// defer client.Close()
 	})
+
+	return client
+}
+
+//短连接，需要最后close client
+func getClientV2() *cli.Client {
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	client, err = cli.NewClient("tcp", serverAddr)
+	if nil == client || err != nil {
+		log.Println(err)
+	}
 
 	return client
 }
@@ -83,6 +94,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 	if nil != err {
 		fmt.Println(`--do err--`, err)
 	}
+
+	//client.Close()
 }
 
 func main() {
