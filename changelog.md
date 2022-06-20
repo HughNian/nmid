@@ -4,7 +4,7 @@
 - 对代码中高并发场景进行优化，该用锁的地方加上 √
 - 增加限流操作，client,worker两处限流，codel和令牌桶限流 √
 
-### v2.0.1需求 
+### v2.0.1+建设
 - 增加注册中心
 - worker增加心跳机制
 - 创建worker时可以设置worker_label，相同worker_label的worker为同一组
