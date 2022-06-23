@@ -18,8 +18,8 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-const SERVERHOST = "127.0.0.1"
-const SERVERPORT = "6808"
+const NMIDSERVERHOST = "127.0.0.1"
+const NMIDSERVERPORT = "6808"
 
 //单个入参
 func ToUpper(job wor.Job) ([]byte, error) {
@@ -106,7 +106,7 @@ func main() {
 	var worker *wor.Worker
 	var err error
 
-	serverAddr := SERVERHOST + ":" + SERVERPORT
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {

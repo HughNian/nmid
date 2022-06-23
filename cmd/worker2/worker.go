@@ -15,8 +15,8 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-const SERVERHOST = "127.0.0.1"
-const SERVERPORT = "6808"
+const NMIDSERVERHOST = "127.0.0.1"
+const NMIDSERVERPORT = "6808"
 
 var once sync.Once
 var client *cli.Client
@@ -24,7 +24,7 @@ var err error
 
 func getClient() *cli.Client {
 	once.Do(func() {
-		serverAddr := SERVERHOST + ":" + SERVERPORT
+		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 		client, err = cli.NewClient("tcp", serverAddr)
 		if nil == client || err != nil {
 			log.Println(err)
@@ -110,7 +110,7 @@ func main() {
 	var worker *wor.Worker
 	var err error
 
-	serverAddr := SERVERHOST + ":" + SERVERPORT
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
