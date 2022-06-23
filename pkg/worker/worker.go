@@ -117,9 +117,11 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 				resp.Agent.Req.Handle = resp.Handle
 				resp.Agent.Req.ParamsLen = resp.ParamsLen
 				resp.Agent.Req.Params = resp.Params
+				resp.Agent.Req.JobIdLen = resp.JobIdLen
+				resp.Agent.Req.JobId = resp.JobId
 
-				resp.Agent.Req.RetPack(ret)
 				resp.Agent.Lock()
+				resp.Agent.Req.RetPack(ret)
 				resp.Agent.Write()
 				resp.Agent.Unlock()
 			}
@@ -186,6 +188,8 @@ func (w *Worker) WorkerDo() {
 	}
 
 	for resp := range w.Resps {
+		fmt.Println(`work data type`, resp.DataType)
+		fmt.Println(`jobid`, resp.JobId)
 		switch resp.DataType {
 		case PDT_TOSLEEP:
 			time.Sleep(time.Duration(2) * time.Second)
@@ -193,11 +197,9 @@ func (w *Worker) WorkerDo() {
 
 			//fallthrough
 		case PDT_S_GET_DATA:
-			go func() {
-				if err := w.DoFunction(resp); err != nil {
-					log.Println(err)
-				}
-			}()
+			if err := w.DoFunction(resp); err != nil {
+				log.Println(err)
+			}
 			//fallthrough
 		case PDT_NO_JOB:
 			go resp.Agent.Grab()

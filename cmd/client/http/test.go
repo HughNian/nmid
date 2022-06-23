@@ -47,7 +47,9 @@ func getClientV2() *cli.Client {
 }
 
 func Test(ctx *fasthttp.RequestCtx) {
-	client := getClient()
+	//client := getClient()
+	client := getClientV2()
+	defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {
@@ -94,8 +96,6 @@ func Test(ctx *fasthttp.RequestCtx) {
 	if nil != err {
 		fmt.Println(`--do err--`, err)
 	}
-
-	//client.Close()
 }
 
 func main() {

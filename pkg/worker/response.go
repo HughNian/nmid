@@ -17,6 +17,8 @@ type Response struct {
 	ParamsLen  uint32
 	Params     []byte
 	StrParams  []string
+	JobId      string
+	JobIdLen   uint32
 	Ret        []byte
 	RetLen     uint32
 
@@ -86,11 +88,17 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 		end = start + UINT32_SIZE
 		resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
+		end = start + UINT32_SIZE
+		resp.JobIdLen = binary.BigEndian.Uint32(data[start:end])
+		start = end
 		end = start + int(resp.HandleLen)
 		resp.Handle = string(data[start:end])
 		start = end
 		end = start + int(resp.ParamsLen)
 		resp.ParseParams(data[start:end])
+		start = end
+		end = start + int(resp.JobIdLen)
+		resp.JobId = string(data[start:end])
 	}
 
 	return

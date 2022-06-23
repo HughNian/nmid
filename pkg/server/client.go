@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/joshbohde/codel"
@@ -65,8 +66,10 @@ func (c *SClient) doJob() {
 	}
 
 	job := NewJobData(c.Req.Handle, string(c.Req.Params))
+	job.Lock()
 	job.WorkerId = worker.WorkerId
 	job.ClientId = c.ClientId
+	job.Unlock()
 	job.FuncName = c.Req.Handle
 	job.Params = c.Req.Params
 	if IsMulParams(job.Params) {
@@ -81,7 +84,10 @@ func (c *SClient) doJob() {
 		worker.Unlock()
 	}
 
-	worker.doWork()
+	fmt.Println(`do worker client id`, c.ClientId)
+	fmt.Println(`do worker job id`, job.JobId)
+
+	worker.doWork(job)
 }
 
 func (c *SClient) doLimit() {
@@ -100,7 +106,7 @@ func (c *SClient) RunClient() {
 		switch dataType {
 		case PDT_C_DO_JOB:
 			{
-				go c.doJob()
+				c.doJob()
 			}
 		}
 	}

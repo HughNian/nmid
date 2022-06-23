@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/joshbohde/codel"
@@ -38,8 +39,6 @@ func NewSWorker(conn *Connect) *SWorker {
 		Connect:       conn,
 		JobNum:        0,
 		Jobs:          NewJobDataList(),
-		DingJobs:      NewJobDataList(),
-		DoneJobs:      NewJobDataList(),
 		Req:           NewReq(),
 		Res:           NewRes(),
 		NoJobNums:     0,
@@ -73,21 +72,30 @@ func (w *SWorker) delFunction() {
 	}
 }
 
-func (w *SWorker) delWorkerJob() {
+func (w *SWorker) delWorkerJob(status uint32) {
 	if w.JobNum > 0 {
-		doneNum := w.DoneJobs.DelJobDataStats(JOB_STATUS_DONE)
+		w.Jobs.DelJobDataStats(status)
 		w.Lock()
-		w.JobNum -= doneNum
+		w.JobNum--
 		w.Unlock()
 	}
 }
 
-func (w *SWorker) doWork() {
+func (w *SWorker) delWorkerJobV2(jobId string) {
 	if w.JobNum > 0 {
-		job := w.Jobs.PopJobData()
+		w.Jobs.DelJobData(jobId)
+		w.Lock()
+		w.JobNum--
+		w.Unlock()
+	}
+}
+
+func (w *SWorker) doWork(job *JobData) {
+	fmt.Println(`server do work`)
+	fmt.Println(`server do work job id`, job.JobId)
+	if w.JobNum > 0 {
 		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
 			job.status = JOB_STATUS_DOING
-			w.DingJobs.PushJobData(job)
 
 			functionName := job.FuncName
 			params := job.Params
@@ -103,6 +111,8 @@ func (w *SWorker) doWork() {
 				}
 				w.Res.ParamsLen = paramsLen
 				w.Res.Params = params //append(w.Res.Params, params...)
+				w.Res.JobId = job.JobId
+				w.Res.JobIdLen = uint32(len(job.JobId))
 
 				resPack := w.Res.ResEncodePack()
 				w.Connect.Lock()
@@ -110,29 +120,15 @@ func (w *SWorker) doWork() {
 				w.Connect.Unlock()
 			}
 		}
-	} /*else {
-		w.Res.DataType = PDT_NO_JOB
-		w.Lock()
-		w.NoJobNums++
-		w.Unlock()
-		fmt.Println("######NoJobNums-", w.NoJobNums)
-
-		if w.NoJobNums >= MAX_NOJOB_NUM {
-			w.Sleep = true
-			w.Res.DataType = PDT_TOSLEEP
-		}
-		fmt.Println("datatype:", w.Res.DataType)
-		resPack := w.Res.ResEncodePack()
-		w.Connect.Write(resPack)
-	}*/
+	}
 }
 
 func (w *SWorker) returnData() {
 	if w.JobNum > 0 {
-		job := w.DingJobs.PopJobData()
+		//解包获取数据内容
+		w.Req.ReqDecodePack()
+		job := w.Jobs.GetJobData(w.Req.JobId)
 		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_DOING {
-			//解包获取数据内容
-			w.Req.ReqDecodePack()
 			//任务完成判断
 			if w.Res.HandleLen == w.Req.HandleLen &&
 				w.Res.Handle == w.Req.Handle &&
@@ -140,7 +136,6 @@ func (w *SWorker) returnData() {
 				string(w.Res.Params) == string(w.Req.Params) {
 				job.RetData = append(job.RetData, w.Req.Ret...)
 				job.status = JOB_STATUS_DONE
-				w.DoneJobs.PushJobData(job)
 			} else {
 				return
 			}
@@ -151,19 +146,24 @@ func (w *SWorker) returnData() {
 			paramsLen := len(params)
 			if clientId != `` && functionName != `` && paramsLen != 0 {
 				if client := w.Connect.Ser.Cpool.GetConnect(clientId); client != nil {
+					fmt.Println(`server returndata job num`, w.JobNum)
+					fmt.Println(`returndata client id`, clientId)
+					fmt.Println(`server returndata getjob job id`, job.JobId)
 					w.Res.DataType = PDT_S_RETURN_DATA
 					w.Res.Ret = job.RetData
 					w.Res.RetLen = w.Req.RetLen
 
-					resPack := w.Res.ResEncodePack()
-					client.Lock()
-					client.Write(resPack)
-					client.Unlock()
+					if client.ConnType == CONN_TYPE_CLIENT {
+						client.Lock()
+						resPack := w.Res.ResEncodePack()
+						client.Write(resPack)
+						client.Unlock()
+					}
 				}
 			}
 		}
 
-		w.delWorkerJob()
+		w.delWorkerJobV2(w.Req.JobId)
 	}
 }
 
@@ -180,36 +180,36 @@ func (w *SWorker) doLimit() {
 
 //runworker 此处做熔断操作
 func (w *SWorker) RunWorker() {
-	if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
-		w.doLimit()
-	} else {
-		dataType := w.Req.GetReqDataType()
+	//if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
+	//	w.doLimit()
+	//} else {
+	dataType := w.Req.GetReqDataType()
 
-		switch dataType {
-		//worker add function
-		case PDT_W_ADD_FUNC:
-			{
-				w.addFunction()
-			}
-		//worker del function
-		case PDT_W_DEL_FUNC:
-			{
-				w.delFunction()
-			}
-		case PDT_WAKEUP:
-			{
-				w.workerWakeup()
-			}
-		//worker grab job
-		case PDT_W_GRAB_JOB:
-			{
-				go w.doWork()
-			}
-		//worker return data
-		case PDT_W_RETURN_DATA:
-			{
-				go w.returnData()
-			}
+	switch dataType {
+	//worker add function
+	case PDT_W_ADD_FUNC:
+		{
+			w.addFunction()
+		}
+	//worker del function
+	case PDT_W_DEL_FUNC:
+		{
+			w.delFunction()
+		}
+	case PDT_WAKEUP:
+		{
+			w.workerWakeup()
+		}
+	//worker grab job
+	case PDT_W_GRAB_JOB:
+		{
+			//go w.doWork(``)
+		}
+	//worker return data
+	case PDT_W_RETURN_DATA:
+		{
+			w.returnData()
 		}
 	}
+	//}
 }

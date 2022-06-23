@@ -35,6 +35,7 @@ type ConnectPool struct {
 	FreeNum  uint32
 	Pool     []*Connect
 	Free     []*Connect
+	CMaps    sync.Map
 }
 
 func NewConnectPool() *ConnectPool {
@@ -59,24 +60,28 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		// }
 	}
 
-	if pool.FreeNum > 0 {
-		fc := pool.Free[0]
-		if fc == nil {
-			log.Println("free connect nil")
-			return
-		}
-		if fc.isFree != 1 {
-			log.Println("connect not free")
-			return
-		}
-		c = fc
-		pool.Free = pool.Free[1:] //剔除第一个元素
-		pool.Lock()
-		pool.FreeNum--
-		pool.Unlock()
-	} else {
-		c = new(Connect)
-	}
+	//if pool.FreeNum > 0 {
+	//	fc := pool.Free[0]
+	//	if fc == nil {
+	//		log.Println("free connect nil")
+	//		return
+	//	}
+	//	if fc.isFree != 1 {
+	//		log.Println("connect not free")
+	//		return
+	//	}
+	//	c = fc
+	//	pool.Free = pool.Free[1:] //剔除第一个元素
+	//	pool.Lock()
+	//	pool.FreeNum--
+	//	pool.Unlock()
+	//} else {
+	//	c = new(Connect)
+	//}
+
+	c = &Connect{}
+
+	pool.Lock()
 
 	c.Id = GetId()
 	c.Addr = addr
@@ -89,60 +94,72 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.RunClient = nil
 	c.isFree = 0
 
-	if pool.TotalNum < MAX_POOL_SIZE {
-		pool.Pool[pool.TotalNum] = c
-	} else {
-		pool.Pool = append(pool.Pool, c)
-	}
-	pool.Lock()
-	pool.TotalNum++
+	pool.CMaps.Store(c.Id, c)
 	pool.Unlock()
+
+	//if pool.TotalNum < MAX_POOL_SIZE {
+	//	pool.Pool[pool.TotalNum] = c
+	//} else {
+	//	pool.Pool = append(pool.Pool, c)
+	//}
+	//pool.Lock()
+	//pool.TotalNum++
+	//pool.Unlock()
 
 	return c
 }
 
 func (pool *ConnectPool) GetConnect(id string) *Connect {
-	pool.Lock()
-	defer pool.Unlock()
+	//for _, c := range pool.Pool {
+	//	if c != nil && c.Id == id {
+	//		return c
+	//	}
+	//}
 
-	for _, c := range pool.Pool {
-		if c != nil && c.Id == id {
-			return c
-		}
+	pool.Lock()
+	item, ok := pool.CMaps.Load(id)
+	pool.Unlock()
+
+	if ok {
+		return item.(*Connect)
 	}
 
 	return nil
 }
 
 func (pool *ConnectPool) DelConnect(id string) {
-	if pool.TotalNum == 0 {
-		return
-	}
-
-	var fc *Connect
-	for _, c := range pool.Pool {
-		if c != nil && c.Id == id {
-			fc = c
-			break
-		} else {
-			fc = nil
-		}
-	}
-
-	if nil == fc {
-		return
-	}
-
 	pool.Lock()
-
-	fc.isFree = 1
-	fc.CloseConnect()
-	pool.Free = append(pool.Free, fc)
-
-	pool.FreeNum++
-	pool.TotalNum--
-
+	pool.CMaps.Delete(id)
 	pool.Unlock()
+
+	//if pool.TotalNum == 0 {
+	//	return
+	//}
+	//
+	//var fc *Connect
+	//for _, c := range pool.Pool {
+	//	if c != nil && c.Id == id {
+	//		fc = c
+	//		break
+	//	} else {
+	//		fc = nil
+	//	}
+	//}
+	//
+	//if nil == fc {
+	//	return
+	//}
+	//
+	//pool.Lock()
+	//
+	//fc.isFree = 1
+	//fc.CloseConnect()
+	//pool.Free = append(pool.Free, fc)
+	//
+	//pool.FreeNum++
+	//pool.TotalNum--
+	//
+	//pool.Unlock()
 }
 
 func (c *Connect) CloseConnect() {
@@ -183,18 +200,19 @@ func (c *Connect) Write(resPack []byte) {
 		}
 		worker.Connect.rw.Flush()
 	} else if c.ConnType == CONN_TYPE_CLIENT {
+		client := c.RunClient
 		if len(resPack) == 0 {
 			log.Println("resPack nil")
 			return
 		}
 
 		for i := 0; i < len(resPack); i += n {
-			n, err = c.rw.Write(resPack[i:])
+			n, err = client.Connect.rw.Write(resPack[i:])
 			if err != nil {
 				return
 			}
 		}
-		c.rw.Flush()
+		client.Connect.rw.Flush()
 	}
 }
 
@@ -206,7 +224,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	tmp := GetBuffer(size)
 
 	if n, err = c.rw.Read(tmp); err != nil {
-		log.Println("server read error", c.Ip, err)
+		//log.Println("server read error", c.Ip, err)
 		return []byte(``), err
 	}
 
@@ -268,17 +286,16 @@ func (c *Connect) DoIO() {
 					break
 				}
 			} else if err == io.EOF {
-				fmt.Println("read eof here")
 				if c.ConnType == CONN_TYPE_WORKER {
 					c.Ser.Funcs.DelWorker(c.Id)
 				}
-				fmt.Println("client close here")
 				c.Ser.Cpool.DelConnect(c.Id)
 				break
 			}
 		}
 
 		if c.ConnType == CONN_TYPE_WORKER {
+			fmt.Println(`server read worker`)
 			worker = c.RunWorker
 
 			allLen := uint32(len(data))
@@ -294,6 +311,7 @@ func (c *Connect) DoIO() {
 				worker.RunWorker()
 			}
 		} else if c.ConnType == CONN_TYPE_CLIENT {
+			fmt.Println(`server read client`)
 			client = c.RunClient
 
 			allLen := uint32(len(data))

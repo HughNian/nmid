@@ -83,7 +83,6 @@ func (jlist *JobDataList) PopJobData() (data *JobData) {
 	}
 
 	data = item.Value.(*JobData)
-	jlist.JList.Remove(item)
 
 	return data
 }

@@ -48,9 +48,9 @@ const (
 
 //ratelimit
 const (
-	MAXPENDING     = 100
+	MAXPENDING     = 500
 	MAXOUTSTANDING = 10
 	TARGETLATENCY  = 5 * time.Millisecond
 	FILLINTERVAL   = 1 * time.Second
-	CAPACITY       = 100
+	CAPACITY       = 500
 )

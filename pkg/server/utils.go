@@ -55,7 +55,7 @@ func GetId() string {
 
 func GetJobId(Handle, Params string) string {
 	md5Ctx := md5.New()
-	timeStr := strconv.FormatInt(time.Now().Unix(), 10)
+	timeStr := strconv.FormatInt(int64(time.Now().Nanosecond()), 10)
 	val := Handle + Params + timeStr
 	//md5Ctx.Write([]byte(val))
 

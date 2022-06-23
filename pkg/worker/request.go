@@ -1,6 +1,9 @@
 package worker
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 type Request struct {
 	DataType uint32
@@ -12,6 +15,8 @@ type Request struct {
 	ParamsType uint32
 	ParamsLen  uint32
 	Params     []byte
+	JobId      string
+	JobIdLen   uint32
 	Ret        []byte
 	RetLen     uint32
 }
@@ -80,7 +85,7 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	req.RetLen = uint32(len(ret))
 
 	req.DataType = PDT_W_RETURN_DATA
-	req.DataLen = UINT32_SIZE + req.HandleLen + UINT32_SIZE + req.ParamsLen + UINT32_SIZE + req.RetLen
+	req.DataLen = UINT32_SIZE + req.HandleLen + UINT32_SIZE + req.ParamsLen + UINT32_SIZE + req.RetLen + UINT32_SIZE + req.JobIdLen
 
 	length := int(req.DataLen)
 	content = GetBuffer(length)
@@ -100,6 +105,13 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	start = end
 	end = start + int(req.RetLen)
 	copy(content[start:end], req.Ret)
+	start = end
+	end = start + UINT32_SIZE
+	binary.BigEndian.PutUint32(content[start:end], req.JobIdLen)
+	start = end
+	end = start + int(req.JobIdLen)
+	fmt.Println(`ret pack job id`, req.JobId)
+	copy(content[start:end], req.JobId)
 	req.Data = content
 
 	return

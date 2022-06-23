@@ -14,6 +14,8 @@ type Request struct {
 	ParamsType uint32
 	ParamsLen  uint32
 	Params     []byte
+	JobId      string
+	JobIdLen   uint32
 	Ret        []byte
 	RetLen     uint32
 }
@@ -28,6 +30,8 @@ type Response struct {
 	ParamsType uint32
 	ParamsLen  uint32
 	Params     []byte
+	JobId      string
+	JobIdLen   uint32
 	Ret        []byte
 	RetLen     uint32
 }
@@ -91,7 +95,7 @@ func (res *Response) GetResHandle() string {
 //打包内容
 func (res *Response) GetResContent() (content []byte, contentLen int) {
 	if res.DataType == PDT_S_GET_DATA {
-		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen)
+		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.JobIdLen)
 		content = GetBuffer(contentLen)
 
 		//旧的发给worker的打包协议
@@ -112,10 +116,16 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 		end := UINT32_SIZE + UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
 		start = end
+		end = start + UINT32_SIZE
+		binary.BigEndian.PutUint32(content[start:end], uint32(res.JobIdLen))
+		start = end
 		end = start + int(res.HandleLen)
 		copy(content[start:end], []byte(res.Handle))
 		start = end
-		copy(content[start:], res.Params)
+		end = start + int(res.ParamsLen)
+		copy(content[start:end], res.Params)
+		start = end
+		copy(content[start:], res.JobId)
 	} else if res.DataType == PDT_S_RETURN_DATA {
 		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.RetLen)
 		content = GetBuffer(contentLen)
@@ -196,8 +206,20 @@ func (req *Request) ReqDecodePack() {
 			retLen = int(req.RetLen)
 			ret = GetBuffer(retLen)
 			start = end
-			copy(ret, req.Data[start:])
+			end = start + retLen
+			copy(ret, req.Data[start:end])
 			req.Ret = ret //append(req.Ret, ret...)
+
+			var jobId []byte
+			var jobIdLen int
+			start = end
+			end = start + UINT32_SIZE
+			req.JobIdLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
+			jobIdLen = int(req.JobIdLen)
+			jobId = GetBuffer(jobIdLen)
+			start = end
+			copy(jobId, req.Data[start:])
+			req.JobId = string(jobId)
 		} else if req.DataType == PDT_C_DO_JOB {
 			var handle []byte
 			var handLen int
