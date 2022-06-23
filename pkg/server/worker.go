@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/joshbohde/codel"
@@ -91,8 +90,6 @@ func (w *SWorker) delWorkerJobV2(jobId string) {
 }
 
 func (w *SWorker) doWork(job *JobData) {
-	fmt.Println(`server do work`)
-	fmt.Println(`server do work job id`, job.JobId)
 	if w.JobNum > 0 {
 		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
 			job.status = JOB_STATUS_DOING
@@ -146,9 +143,6 @@ func (w *SWorker) returnData() {
 			paramsLen := len(params)
 			if clientId != `` && functionName != `` && paramsLen != 0 {
 				if client := w.Connect.Ser.Cpool.GetConnect(clientId); client != nil {
-					fmt.Println(`server returndata job num`, w.JobNum)
-					fmt.Println(`returndata client id`, clientId)
-					fmt.Println(`server returndata getjob job id`, job.JobId)
 					w.Res.DataType = PDT_S_RETURN_DATA
 					w.Res.Ret = job.RetData
 					w.Res.RetLen = w.Req.RetLen
@@ -178,7 +172,7 @@ func (w *SWorker) doLimit() {
 	w.Connect.Write(resPack)
 }
 
-//runworker 此处做熔断操作
+//runworker 此处做限流操作
 func (w *SWorker) RunWorker() {
 	//if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
 	//	w.doLimit()

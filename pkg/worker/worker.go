@@ -188,8 +188,6 @@ func (w *Worker) WorkerDo() {
 	}
 
 	for resp := range w.Resps {
-		fmt.Println(`work data type`, resp.DataType)
-		fmt.Println(`jobid`, resp.JobId)
 		switch resp.DataType {
 		case PDT_TOSLEEP:
 			time.Sleep(time.Duration(2) * time.Second)

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/joshbohde/codel"
@@ -83,9 +82,6 @@ func (c *SClient) doJob() {
 		worker.JobNum++
 		worker.Unlock()
 	}
-
-	fmt.Println(`do worker client id`, c.ClientId)
-	fmt.Println(`do worker job id`, job.JobId)
 
 	worker.doWork(job)
 }

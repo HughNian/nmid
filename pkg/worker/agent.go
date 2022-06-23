@@ -85,10 +85,6 @@ func (a *Agent) Write() (err error) {
 	var n int
 	buf := a.Req.EncodePack()
 
-	// connType := uint32(binary.BigEndian.Uint32(buf[:4]))
-	// fmt.Println("######worker agent write connType-", connType)
-	// dataType := uint32(binary.BigEndian.Uint32(buf[4:8]))
-	// fmt.Println("######worker agent write dataType-", dataType)
 	for i := 0; i < len(buf); i += n {
 		if n, err = a.rw.Write(buf); err != nil {
 			return err

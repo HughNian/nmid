@@ -35,21 +35,8 @@ func getClient() *cli.Client {
 	return client
 }
 
-//短连接，需要最后close client
-func getClientV2() *cli.Client {
-	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr)
-	if nil == client || err != nil {
-		log.Println(err)
-	}
-
-	return client
-}
-
 func Test(ctx *fasthttp.RequestCtx) {
-	//client := getClient()
-	client := getClientV2()
-	defer client.Close()
+	client := getClient()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {
@@ -59,10 +46,35 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 		fmt.Println("client err here")
 
-		fmt.Fprint(ctx, `time out`)
+		fmt.Fprint(ctx, e.Error())
 	}
 
 	respHandler := func(resp *cli.Response) {
+		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				log.Println("ret empty")
+				return
+			}
+
+			var retStruct cli.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				log.Fatalln(err)
+				return
+			}
+
+			if retStruct.Code != 0 {
+				log.Println(retStruct.Msg)
+				return
+			}
+
+			fmt.Println(string(retStruct.Data))
+
+			fmt.Fprint(ctx, string(retStruct.Data))
+		}
+	}
+
+	respHandler2 := func(resp *cli.Response) {
 		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
@@ -95,6 +107,16 @@ func Test(ctx *fasthttp.RequestCtx) {
 	err = client.Do("ToUpper", params1, respHandler)
 	if nil != err {
 		fmt.Println(`--do err--`, err)
+	}
+
+	paramsName2 := []string{"name:niansong2"}
+	params2, err := msgpack.Marshal(&paramsName2)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+	}
+	err = client.Do("ToUpper", params2, respHandler2)
+	if nil != err {
+		fmt.Println(`--do2 err--`, err)
 	}
 }
 

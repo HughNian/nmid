@@ -2,7 +2,6 @@ package worker
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 type Request struct {
@@ -110,7 +109,6 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	binary.BigEndian.PutUint32(content[start:end], req.JobIdLen)
 	start = end
 	end = start + int(req.JobIdLen)
-	fmt.Println(`ret pack job id`, req.JobId)
 	copy(content[start:end], req.JobId)
 	req.Data = content
 

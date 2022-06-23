@@ -29,7 +29,6 @@ func getClient() *cli.Client {
 		if nil == client || err != nil {
 			log.Println(err)
 		}
-		// defer client.Close()
 	})
 
 	return client

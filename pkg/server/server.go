@@ -3,11 +3,9 @@ package server
 import (
 	"log"
 	"net"
-	"sync"
 )
 
 type Server struct {
-	mu    sync.Mutex
 	Host  string
 	Port  string
 	Net   string
@@ -41,9 +39,7 @@ func (ser *Server) ServerRun() {
 			continue
 		}
 
-		ser.mu.Lock()
 		c := ser.Cpool.NewConnect(ser, conn)
 		go c.DoIO()
-		ser.mu.Unlock()
 	}
 }
