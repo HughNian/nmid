@@ -44,7 +44,6 @@ func Test(ctx *fasthttp.RequestCtx) {
 		} else {
 			log.Println(e)
 		}
-		fmt.Println("client err here")
 
 		fmt.Fprint(ctx, e.Error())
 	}
