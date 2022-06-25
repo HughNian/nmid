@@ -10,7 +10,7 @@ const (
 	UINT32_SIZE       = 4
 	MAX_NOJOB_NUM     = 10
 	PARAMS_SCOPE      = 0x3A
-	CLIENT_ALIVE_TIME = 60 * time.Second //客户端长连接生存周期
+	CLIENT_ALIVE_TIME = 30 * 60 * time.Second //客户端长连接生存周期
 
 	//package data type
 	PDT_OK            = 1
