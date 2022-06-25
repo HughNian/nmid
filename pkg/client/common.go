@@ -10,7 +10,8 @@ const (
 	UINT32_SIZE      = 4
 	QUEUE_SIZE       = 1
 	BUFFER_SIZE      = 512
-	DEFAULT_TIME_OUT = 3 * time.Second
+	DEFAULT_TIME_OUT = 100 * time.Millisecond //io超时
+	DIAL_TIME_OUT    = 3 * time.Second        //连接超时
 
 	//package data type
 	PDT_OK            = 1

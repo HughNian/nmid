@@ -20,7 +20,7 @@ type Client struct {
 	Req      *Request
 	ResQueue chan *Response
 
-	Timeout time.Duration
+	IoTimeOut time.Duration
 
 	ErrHandler   ErrHandler
 	RespHandlers *RespHandlerMap
@@ -32,10 +32,10 @@ func NewClient(network, addr string) (client *Client, err error) {
 		addr:         addr,
 		Req:          nil,
 		ResQueue:     make(chan *Response, QUEUE_SIZE),
-		Timeout:      DEFAULT_TIME_OUT,
+		IoTimeOut:    DEFAULT_TIME_OUT,
 		RespHandlers: NewResHandlerMap(),
 	}
-	client.conn, err = net.Dial(client.net, client.addr)
+	client.conn, err = net.DialTimeout(client.net, client.addr, DIAL_TIME_OUT)
 	if err != nil {
 		return nil, err
 	}
@@ -96,17 +96,18 @@ Loop:
 
 			//服务端断开
 			if err == io.EOF {
-				c.ErrHandler(err)
+				//c.ErrHandler(err)
 			}
 
 			//断开重连
 			log.Println("client read error here:" + err.Error())
 			c.Close()
-			c.conn, err = net.Dial(c.net, c.addr)
+			c.conn, err = net.DialTimeout(c.net, c.addr, DIAL_TIME_OUT)
 			if err != nil {
 				break
 			}
 			c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
+			c.ResQueue = make(chan *Response, QUEUE_SIZE)
 			continue
 		}
 
@@ -163,25 +164,26 @@ func (c *Client) HandlerResp(resp *Response) {
 }
 
 func (c *Client) ProcessResp() {
-	var timer = time.After(c.Timeout)
+	var timer = time.After(c.IoTimeOut)
 	select {
 	case res := <-c.ResQueue:
-		switch res.DataType {
-		case PDT_ERROR:
-			c.ErrHandler(res.GetResError())
-			return
-		case PDT_CANT_DO:
-			c.ErrHandler(res.GetResError())
-			return
-		case PDT_RATELIMIT:
-			c.ErrHandler(res.GetResError())
-			return
-		case PDT_S_RETURN_DATA:
-			c.HandlerResp(res)
-			return
+		if nil != res {
+			switch res.DataType {
+			case PDT_ERROR:
+				c.ErrHandler(res.GetResError())
+				return
+			case PDT_CANT_DO:
+				c.ErrHandler(res.GetResError())
+				return
+			case PDT_RATELIMIT:
+				c.ErrHandler(res.GetResError())
+				return
+			case PDT_S_RETURN_DATA:
+				c.HandlerResp(res)
+				return
+			}
 		}
 	case <-timer:
-
 		log.Println("time out")
 		c.ErrHandler(RESTIMEOUT)
 		//c.Close()
@@ -195,6 +197,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 
 	if c.conn == nil {
 		return fmt.Errorf("conn fail")
+
 	}
 
 	c.RespHandlers.PutResHandlerMap(funcName, callback)
@@ -213,8 +216,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 func (c *Client) Close() {
 	if c.conn != nil {
 		c.conn.Close()
+		close(c.ResQueue)
 		c.conn = nil
 	}
-
-	close(c.ResQueue)
 }

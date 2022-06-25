@@ -2,6 +2,7 @@ package server
 
 import (
 	"sync"
+	"time"
 
 	"github.com/joshbohde/codel"
 	"github.com/juju/ratelimit"
@@ -92,7 +93,7 @@ func (c *SClient) doLimit() {
 	c.Connect.Write(resPack)
 }
 
-//runclient 此处做限流操作
+//RunClient 此处做限流操作
 func (c *SClient) RunClient() {
 	if !DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
 		c.doLimit()
@@ -106,4 +107,16 @@ func (c *SClient) RunClient() {
 			}
 		}
 	}
+}
+
+//AliveTimeOut 客户端长连接时长限制
+func (c *SClient) AliveTimeOut() {
+	timer := time.NewTimer(CLIENT_ALIVE_TIME) //todo 后期设置成配置文件
+	go func(t *time.Timer) {
+		for {
+			<-t.C
+			c.Connect.CloseConnect()
+			t.Reset(CLIENT_ALIVE_TIME)
+		}
+	}(timer)
 }

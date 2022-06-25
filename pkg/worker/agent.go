@@ -33,8 +33,7 @@ func NewAgent(net, adrr string, w *Worker) *Agent {
 }
 
 func (a *Agent) Connect() (err error) {
-	a.conn, err = net.Dial(a.net, a.addr)
-	//a.conn, err = net.DialTimeout(a.net, a.addr, 2 * time.Second)
+	a.conn, err = net.DialTimeout(a.net, a.addr, DIAL_TIME_OUT)
 	if err != nil {
 		log.Println("dial error:", err)
 		return err
@@ -47,7 +46,7 @@ func (a *Agent) Connect() (err error) {
 }
 
 func (a *Agent) ReConnect() error {
-	conn, err := net.Dial(a.net, a.addr)
+	conn, err := net.DialTimeout(a.net, a.addr, DIAL_TIME_OUT)
 	if err != nil {
 		return err
 	}

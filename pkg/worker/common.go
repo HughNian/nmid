@@ -1,11 +1,14 @@
 package worker
 
+import "time"
+
 const (
 	MIN_DATA_SIZE = 12
 	UINT32_SIZE   = 4
 	QUEUE_SIZE    = 1
 	BUFFER_SIZE   = 512
 	PARAMS_SCOPE  = 0x3A
+	DIAL_TIME_OUT = 3 * time.Second
 
 	//package data type
 	PDT_OK            = 1

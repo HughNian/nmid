@@ -120,6 +120,8 @@ func (c *Connect) getSCClient() *SClient {
 		c.RunClient = NewSClient(c)
 	}
 
+	c.RunClient.AliveTimeOut()
+
 	return c.RunClient
 }
 
@@ -145,6 +147,7 @@ func (c *Connect) Write(resPack []byte) {
 		for i := 0; i < len(resPack); i += n {
 			n, err = client.Connect.rw.Write(resPack[i:])
 			if err != nil {
+				log.Println("client write err", err)
 				return
 			}
 		}

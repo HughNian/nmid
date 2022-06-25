@@ -3,13 +3,14 @@ package server
 import "time"
 
 const (
-	MAX_POOL_SIZE = 128
-	QUEUE_SIZE    = 1
-	BUFFER_SIZE   = 512
-	MIN_DATA_SIZE = 12
-	UINT32_SIZE   = 4
-	MAX_NOJOB_NUM = 10
-	PARAMS_SCOPE  = 0x3A
+	MAX_POOL_SIZE     = 128
+	QUEUE_SIZE        = 1
+	BUFFER_SIZE       = 512
+	MIN_DATA_SIZE     = 12
+	UINT32_SIZE       = 4
+	MAX_NOJOB_NUM     = 10
+	PARAMS_SCOPE      = 0x3A
+	CLIENT_ALIVE_TIME = 60 * time.Second //客户端长连接生存周期
 
 	//package data type
 	PDT_OK            = 1
