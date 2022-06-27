@@ -103,6 +103,8 @@ func (c *Connect) CloseConnect() {
 		c.Conn.Close()
 		c.Conn = nil
 		c.RunWorker = nil
+
+		c.RunClient.Timer.Stop()
 		c.RunClient = nil
 	}
 }
@@ -121,6 +123,7 @@ func (c *Connect) getSCClient() *SClient {
 	}
 
 	c.RunClient.AliveTimeOut()
+	//c.Conn.SetDeadline(time.Now().Add(CLIENT_ALIVE_TIME))
 
 	return c.RunClient
 }

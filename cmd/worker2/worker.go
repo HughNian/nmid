@@ -49,6 +49,14 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 
 	name := resp.StrParams[0]
 
+	client.ErrHandler = func(e error) {
+		if cli.RESTIMEOUT == e {
+			log.Println("time out here")
+		} else {
+			log.Println(e)
+		}
+	}
+
 	respHandler := func(resp *cli.Response) {
 		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {

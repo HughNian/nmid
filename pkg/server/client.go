@@ -11,6 +11,8 @@ import (
 type SClient struct {
 	sync.Mutex
 
+	Timer *time.Timer
+
 	ClientId string
 	Connect  *Connect
 
@@ -27,6 +29,7 @@ func NewSClient(conn *Connect) *SClient {
 	}
 
 	return &SClient{
+		Timer:         time.NewTimer(CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
 		ClientId:      conn.Id,
 		Connect:       conn,
 		Req:           NewReq(),
@@ -111,12 +114,13 @@ func (c *SClient) RunClient() {
 
 //AliveTimeOut 客户端长连接时长限制
 func (c *SClient) AliveTimeOut() {
-	timer := time.NewTimer(CLIENT_ALIVE_TIME) //todo 后期设置成配置文件
 	go func(t *time.Timer) {
 		for {
-			<-t.C
-			c.Connect.CloseConnect()
-			t.Reset(CLIENT_ALIVE_TIME)
+			select {
+			case <-t.C:
+				c.Connect.CloseConnect()
+				t.Reset(CLIENT_ALIVE_TIME)
+			}
 		}
-	}(timer)
+	}(c.Timer)
 }
