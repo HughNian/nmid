@@ -122,7 +122,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 func main() {
 	//pprof
 	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
 	}()
 
 	//pyroscope, this is pyroscope push mode. also use pull mode better
