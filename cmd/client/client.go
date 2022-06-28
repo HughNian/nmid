@@ -27,7 +27,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	defer client.Close()
+	//defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if cli.RESTIMEOUT == e {
@@ -74,19 +74,19 @@ func main() {
 		fmt.Println(err)
 	}
 
-	cellphone := "13913873440"
-	obdnum := "531907250005"
-	carnum := "浙A9P733"
-	paramsPhone := []string{"phone:" + cellphone, "odbnum:" + obdnum, "carnum:" + carnum}
-	phone, err := msgpack.Marshal(&paramsPhone)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("sendObdPullOutSms", phone, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
+	//cellphone := "13913873440"
+	//obdnum := "531907250005"
+	//carnum := "浙A9P733"
+	//paramsPhone := []string{"phone:" + cellphone, "odbnum:" + obdnum, "carnum:" + carnum}
+	//phone, err := msgpack.Marshal(&paramsPhone)
+	//if err != nil {
+	//	log.Fatalln("params msgpack error:", err)
+	//	os.Exit(1)
+	//}
+	//err = client.Do("sendObdPullOutSms", phone, respHandler)
+	//if nil != err {
+	//	fmt.Println(err)
+	//}
 
 	//2 多个入参，参数中间以:分隔，xx:xxx
 	//paramsName2 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}

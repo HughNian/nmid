@@ -23,13 +23,13 @@ var client *cli.Client
 var err error
 
 func getClient() *cli.Client {
-	once.Do(func() {
+	if nil == client {
 		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 		client, err = cli.NewClient("tcp", serverAddr)
 		if nil == client || err != nil {
 			log.Println(err)
 		}
-	})
+	}
 
 	return client
 }

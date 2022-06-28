@@ -61,8 +61,6 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 
 	c = &Connect{}
 
-	pool.Lock()
-
 	c.Id = GetId()
 	c.Addr = addr
 	c.Ip = ip
@@ -74,6 +72,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.RunClient = nil
 	c.isFree = 0
 
+	pool.Lock()
 	pool.CMaps.Store(c.Id, c)
 	pool.Unlock()
 
