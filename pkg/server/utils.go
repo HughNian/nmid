@@ -15,10 +15,11 @@ import (
 )
 
 type ServerConfig struct {
-	NETWORK string  `yaml:"NETWORK"`
-	HOST    string  `yaml:"HOST"`
-	PORT    string  `yaml:"PORT"`
-	BREAKER Breaker `yaml:"BREAKER"`
+	NETWORK  string  `yaml:"NETWORK"`
+	HOST     string  `yaml:"HOST"`
+	PORT     string  `yaml:"PORT"`
+	HTTPPORT string  `yaml:"HTTPPORT"`
+	BREAKER  Breaker `yaml:"BREAKER"`
 }
 
 type Breaker struct {

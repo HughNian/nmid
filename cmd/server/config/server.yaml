@@ -1,6 +1,7 @@
 NETWORK: "tcp"
 HOST: "0.0.0.0"
 PORT: "6808"
+HTTPPORT: "6809"
 
 BREAKER:
   SERIAL_ERROR_NUMBERS: 5 # 默认连续错误次数触发熔断

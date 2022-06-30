@@ -2,6 +2,7 @@ package server
 
 import (
 	"container/list"
+	"net/http"
 	"sync"
 )
 
@@ -11,9 +12,11 @@ import (
 type JobData struct {
 	sync.Mutex
 
-	JobId    string //funcName + Params + time
-	ClientId string
-	WorkerId string
+	JobId       string //funcName + Params + time
+	ClientId    string
+	HTTPClientR *http.Request
+	HTTPClientW http.ResponseWriter
+	WorkerId    string
 
 	status uint32
 	// weight int

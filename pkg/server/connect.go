@@ -65,8 +65,10 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.Addr = addr
 	c.Ip = ip
 	c.Ser = ser
+	pool.Lock()
 	c.Conn = conn
 	c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+	pool.Unlock()
 	c.ConnType = CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
@@ -135,6 +137,7 @@ func (c *Connect) Write(resPack []byte) {
 		for i := 0; i < len(resPack); i += n {
 			n, err = worker.Connect.rw.Write(resPack[i:])
 			if err != nil {
+				log.Println(`write err`, err)
 				return
 			}
 		}

@@ -39,6 +39,8 @@ func main() {
 	if nil == server {
 		return
 	}
+	//开启http服务
+	server.SetHttpPort(conf.HTTPPORT)
 
 	_, cancel := context.WithCancel(context.Background())
 

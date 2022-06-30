@@ -1,16 +1,23 @@
 package server
 
 import (
+	"crypto/tls"
 	"log"
-	"net"
+	"net/http"
+	"sync"
 )
 
 type Server struct {
-	Host  string
-	Port  string
-	Net   string
-	Cpool *ConnectPool
-	Funcs *FuncMap
+	sync.Mutex
+
+	Host              string
+	Port              string
+	HttpPort          string
+	Net               string
+	Cpool             *ConnectPool
+	Funcs             *FuncMap
+	TlsConfig         *tls.Config
+	HTTPServerGateway *http.Server
 }
 
 func NewServer(net string, host string, port string) (ser *Server) {
@@ -24,12 +31,20 @@ func NewServer(net string, host string, port string) (ser *Server) {
 	return
 }
 
+func (ser *Server) SetHttpPort(HttpPort string) {
+	ser.HttpPort = HttpPort
+}
+
 func (ser *Server) ServerRun() {
 	var address string = ser.Host + ":" + ser.Port
-	listen, err := net.Listen(ser.Net, address)
+	listen, err := ser.MakeListener(ser.Net, address)
 	if err != nil {
 		log.Fatalln(err)
 		panic(err)
+	}
+
+	if len(ser.HttpPort) > 0 {
+		ser.NewHTTPAPIGateway("http")
 	}
 
 	for {

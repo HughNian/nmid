@@ -101,11 +101,7 @@ func (w *SWorker) doWork(job *JobData) {
 				w.Res.DataType = PDT_S_GET_DATA
 				w.Res.Handle = functionName
 				w.Res.HandleLen = uint32(len(functionName))
-				if IsMulParams(params) {
-					w.Res.ParamsType = PARAMS_TYPE_MUL
-				} else {
-					w.Res.ParamsType = PARAMS_TYPE_ONE
-				}
+				w.Res.ParamsType = job.ParamsType
 				w.Res.ParamsLen = paramsLen
 				w.Res.Params = params //append(w.Res.Params, params...)
 				w.Res.JobId = job.JobId
@@ -142,6 +138,7 @@ func (w *SWorker) returnData() {
 			params := job.Params
 			paramsLen := len(params)
 			if clientId != `` && functionName != `` && paramsLen != 0 {
+				//tcp client response
 				if client := w.Connect.Ser.Cpool.GetConnect(clientId); client != nil {
 					w.Res.DataType = PDT_S_RETURN_DATA
 					w.Res.Ret = job.RetData
@@ -154,6 +151,10 @@ func (w *SWorker) returnData() {
 						client.Unlock()
 					}
 				}
+			} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
+				//http client response
+				job.HTTPClientW.Header().Set(NPdtDataType, "PDT_S_RETURN_DATA")
+				job.HTTPClientW.Write(job.RetData)
 			}
 		}
 

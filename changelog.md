@@ -5,6 +5,7 @@
 - 增加限流操作，client,worker两处限流，codel和令牌桶限流 √
 
 ### v2.0.1+建设
+- 增加http的处理，使worker可以同时用tcp以及http进行访问
 - 增加注册中心
 - worker增加心跳机制
 - 创建worker时可以设置worker_label，相同worker_label的worker为同一组
