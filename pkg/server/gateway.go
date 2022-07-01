@@ -1,22 +1,20 @@
 package server
 
+//非tcp服务运行，http,ws,wss,grpc服务运行
+
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
+	"github.com/vmihailenco/msgpack"
 	"io"
 	"net"
 	"net/http"
+	cli "nmid-v2/pkg/client"
 	"strings"
-)
-
-const (
-	NMessageStatusType = "N-NMID-MessageStatusType"
-	NErrorMessage      = "N-NMID-ErrorMessage"
-	NPdtDataType       = "N-NMID-PdtDataType"
-	NFunctionName      = "N-NMID-FunctionName"
+	"time"
 )
 
 var (
@@ -26,8 +24,8 @@ var (
 
 //NewHTTPAPIGateway gateway init
 func (ser *Server) NewHTTPAPIGateway(network string) {
-	if network == "tcp" {
-		logrus.Println("http gateway only use http")
+	if network != "http" && network != "ws" && network != "wss" && network != "grpc" {
+		logrus.Println("protocol not supported")
 		return
 	}
 
@@ -37,13 +35,18 @@ func (ser *Server) NewHTTPAPIGateway(network string) {
 	}
 
 	address := ser.Host + ":" + ser.HttpPort
-	httpLn, err := ser.MakeListener(network, address)
+	ln, err := ser.MakeListener(network, address)
 	if err != nil {
 		logrus.Println("make http listen err", err)
 		return
 	}
 
+	m := cmux.New(ln)
+
+	httpLn := m.Match(cmux.HTTP1Fast())
 	go ser.StartHTTPAPIGateway(httpLn)
+
+	go m.Serve()
 }
 
 //StartHTTPAPIGateway start http api gateway
@@ -54,7 +57,11 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 	router.PUT("/*functionName", ser.HTTPAPIGatewayHandle)
 
 	ser.Lock()
-	ser.HTTPServerGateway = &http.Server{Handler: router}
+	ser.HTTPServerGateway = &http.Server{
+		Handler:      router,
+		ReadTimeout:  DEFAULT_TIME_OUT,
+		WriteTimeout: DEFAULT_TIME_OUT,
+	}
 	ser.Unlock()
 
 	if err := ser.HTTPServerGateway.Serve(ln); err != nil {
@@ -101,16 +108,36 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	body := make([]byte, clen)
-	fmt.Println(`body`, string(body))
 	r.Body.Read(body)
+	if len(body) == 0 {
+		wh.Set(NMessageStatusType, "READ PARAMS EMPTY")
+		err = errors.New("read params empty")
+		wh.Set(NErrorMessage, err.Error())
+		return
+	}
 
-	job := NewJobData(functionName, string(body))
+	var paramsval []string
+	err = json.Unmarshal(body, &paramsval)
+	if err != nil {
+		wh.Set(NMessageStatusType, "JSON UNMARSHAL ERROR")
+		err = errors.New("json unmarshal error")
+		wh.Set(NErrorMessage, err.Error())
+		return
+	}
+	msgpparams, err := msgpack.Marshal(&paramsval)
+	if err != nil {
+		wh.Set(NMessageStatusType, "PARAMS MSGPACK ERROR")
+		err = errors.New("params msgpack error")
+		wh.Set(NErrorMessage, err.Error())
+		return
+	}
+
+	job := NewJobData(functionName, string(msgpparams))
 	job.Lock()
 	job.WorkerId = worker.WorkerId
-	job.HTTPClientW = w
 	job.HTTPClientR = r
 	job.FuncName = functionName
-	job.Params = body
+	job.Params = msgpparams
 	if IsMulParams(job.Params) {
 		job.ParamsType = PARAMS_TYPE_MUL
 	} else {
@@ -123,13 +150,42 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 		worker.Unlock()
 	} else {
 		wh.Set(NMessageStatusType, "WORKER JOB PUSH JOBLIST ERROR")
-		err = errors.New("worker job push joblist error")
+		err = errors.New("worker job push jobList error")
 		wh.Set(NErrorMessage, err.Error())
 		return
 	}
 
 	//doWork
-	worker.doWork(job)
+	go worker.doWork(job)
+
+	//http client response
+	var timer = time.After(DEFAULT_TIME_OUT)
+	select {
+	case <-worker.HttpResTag:
+		{
+			var retStruct cli.RetStruct
+			err := msgpack.Unmarshal(worker.Res.Ret, &retStruct)
+			if nil != err {
+				w.Header().Set(NMessageStatusType, "RET MSGPACK UNMARSHAL ERROR")
+				wh.Set(NErrorMessage, err.Error())
+				return
+			}
+
+			if retStruct.Code != 0 {
+				w.Header().Set(NMessageStatusType, "RET CODE ERROR")
+				wh.Set(NErrorMessage, retStruct.Msg)
+				return
+			}
+
+			w.Header().Set(NPdtDataType, "PDT_S_RETURN_DATA")
+			w.Write(retStruct.Data)
+		}
+	case <-timer:
+		w.WriteHeader(200)
+		w.Header().Set(NMessageStatusType, "REQUST TIME OUT")
+		wh.Set(NErrorMessage, RESTIMEOUT.Error())
+		return
+	}
 }
 
 func nmidPrefixByteMatcher() cmux.Matcher {

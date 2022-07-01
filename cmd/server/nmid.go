@@ -35,16 +35,17 @@ func main() {
 		ServerAddress:   "http://127.0.0.1:4040",
 	})
 
-	server := ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT)
+	server := ser.NewServer(conf.NETWORK, conf.HOST, conf.PORT).SetHttpPort(conf.HTTPPORT)
 	if nil == server {
 		return
 	}
-	//开启http服务
-	server.SetHttpPort(conf.HTTPPORT)
 
 	_, cancel := context.WithCancel(context.Background())
 
+	//开启tcp服务
 	go server.ServerRun()
+	//开启http服务
+	go server.HttpServerRun()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

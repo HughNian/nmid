@@ -53,3 +53,10 @@ type RetStruct struct {
 }
 
 var RESTIMEOUT = errors.New("RESTIMEOUT")
+
+const (
+	NMessageStatusType = "N-NMID-MessageStatusType"
+	NErrorMessage      = "N-NMID-ErrorMessage"
+	NPdtDataType       = "N-NMID-PdtDataType"
+	NFunctionName      = "N-NMID-FunctionName"
+)

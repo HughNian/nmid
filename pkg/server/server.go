@@ -31,8 +31,20 @@ func NewServer(net string, host string, port string) (ser *Server) {
 	return
 }
 
-func (ser *Server) SetHttpPort(HttpPort string) {
+func (ser *Server) SetHttpPort(HttpPort string) *Server {
 	ser.HttpPort = HttpPort
+	return ser
+}
+
+func (ser *Server) SetTlsConfig(tls *tls.Config) *Server {
+	ser.TlsConfig = tls
+	return ser
+}
+
+func (ser *Server) HttpServerRun() {
+	if len(ser.HttpPort) > 0 {
+		ser.NewHTTPAPIGateway("http")
+	}
 }
 
 func (ser *Server) ServerRun() {
@@ -41,10 +53,6 @@ func (ser *Server) ServerRun() {
 	if err != nil {
 		log.Fatalln(err)
 		panic(err)
-	}
-
-	if len(ser.HttpPort) > 0 {
-		ser.NewHTTPAPIGateway("http")
 	}
 
 	for {

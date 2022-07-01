@@ -26,6 +26,8 @@ type SWorker struct {
 
 	CodelLimiter  *codel.Lock
 	BucketLimiter *ratelimit.Bucket
+
+	HttpResTag chan struct{}
 }
 
 func NewSWorker(conn *Connect) *SWorker {
@@ -44,6 +46,7 @@ func NewSWorker(conn *Connect) *SWorker {
 		Sleep:         false,
 		CodelLimiter:  NewCodelLimiter(),
 		BucketLimiter: NewBucketLimiter(),
+		HttpResTag:    make(chan struct{}),
 	}
 }
 
@@ -152,9 +155,11 @@ func (w *SWorker) returnData() {
 					}
 				}
 			} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
-				//http client response
-				job.HTTPClientW.Header().Set(NPdtDataType, "PDT_S_RETURN_DATA")
-				job.HTTPClientW.Write(job.RetData)
+				w.Res.DataType = PDT_S_RETURN_DATA
+				w.Res.Ret = job.RetData
+				w.Res.RetLen = w.Req.RetLen
+
+				w.HttpResTag <- struct{}{}
 			}
 		}
 
@@ -173,7 +178,6 @@ func (w *SWorker) doLimit() {
 	w.Connect.Write(resPack)
 }
 
-//runworker 此处做限流操作
 func (w *SWorker) RunWorker() {
 	//if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
 	//	w.doLimit()

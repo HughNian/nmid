@@ -1,6 +1,9 @@
 package server
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 const (
 	MAX_POOL_SIZE     = 128
@@ -10,6 +13,7 @@ const (
 	UINT32_SIZE       = 4
 	MAX_NOJOB_NUM     = 10
 	PARAMS_SCOPE      = 0x3A
+	DEFAULT_TIME_OUT  = 100 * time.Millisecond            //io超时
 	CLIENT_ALIVE_TIME = time.Duration(1800) * time.Second //客户端长连接生存周期
 
 	//package data type
@@ -55,3 +59,12 @@ const (
 	FILLINTERVAL   = 1 * time.Second
 	CAPACITY       = 1000
 )
+
+const (
+	NMessageStatusType = "N-NMID-MessageStatusType"
+	NErrorMessage      = "N-NMID-ErrorMessage"
+	NPdtDataType       = "N-NMID-PdtDataType"
+	NFunctionName      = "N-NMID-FunctionName"
+)
+
+var RESTIMEOUT = errors.New("RESTIMEOUT")
