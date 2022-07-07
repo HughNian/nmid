@@ -197,7 +197,6 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 
 	if c.conn == nil {
 		return fmt.Errorf("conn fail")
-
 	}
 
 	c.RespHandlers.PutResHandlerMap(funcName, callback)

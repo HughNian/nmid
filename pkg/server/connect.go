@@ -7,22 +7,22 @@ import (
 	"io"
 	"log"
 	"net"
-	"strings"
 	"sync"
 )
 
 type Connect struct {
 	sync.Mutex
 
-	Id        string
-	Addr      string
-	Ip        string
-	Ser       *Server
-	Conn      net.Conn
-	rw        *bufio.ReadWriter
-	ConnType  uint32
-	RunWorker *SWorker
-	RunClient *SClient
+	Id         string
+	Addr       string
+	Ip         string
+	Ser        *Server
+	Conn       net.Conn
+	rw         *bufio.ReadWriter
+	ConnType   uint32
+	RunWorker  *SWorker
+	RunClient  *SClient
+	RunService *Service
 
 	isFree uint32
 }
@@ -34,29 +34,26 @@ type ConnectPool struct {
 	FreeNum  uint32
 	Pool     []*Connect
 	Free     []*Connect
-	CMaps    sync.Map
+
+	CMaps  sync.Map
+	WhList *WhiteList
 }
 
 func NewConnectPool() *ConnectPool {
 	return &ConnectPool{
-		TotalNum: 0,
-		FreeNum:  0,
-		Pool:     make([]*Connect, MAX_POOL_SIZE),
-		Free:     make([]*Connect, 0),
+		WhList: GetWhiteList(),
 	}
 }
 
 func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	addr := conn.RemoteAddr().String()
-	addrArr := strings.Split(addr, ":")
-	ip := ""
-	if len(addrArr) > 0 {
-		ip = addrArr[0]
-
-		// if !AddrAllow(ip) {
-		// 	conn.Close()
-		// 	return nil
-		// }
+	ip, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil
+	}
+	if !pool.WhList.DoWhiteList(ip) {
+		conn.Close()
+		return nil
 	}
 
 	c = &Connect{}
@@ -72,8 +69,8 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.ConnType = CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
+	c.RunService = nil
 	c.isFree = 0
-
 	pool.Lock()
 	pool.CMaps.Store(c.Id, c)
 	pool.Unlock()
@@ -129,6 +126,17 @@ func (c *Connect) getSCClient() *SClient {
 	return c.RunClient
 }
 
+//getSSCClient server's service client
+func (c *Connect) getSSCClient() *Service {
+	if c.RunService == nil {
+		c.RunService = NewService(c)
+	}
+
+	c.RunService.AliveTimeOut()
+
+	return c.RunService
+}
+
 func (c *Connect) Write(resPack []byte) {
 	var n int
 	var err error
@@ -178,9 +186,12 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 		dataType = uint32(binary.BigEndian.Uint32(tmp[4:8]))
 		dataLen = int(binary.BigEndian.Uint32(tmp[8:MIN_DATA_SIZE]))
 
-		if connType != CONN_TYPE_WORKER && connType != CONN_TYPE_CLIENT {
+		if connType != CONN_TYPE_WORKER &&
+			connType != CONN_TYPE_CLIENT &&
+			connType != CONN_TYPE_SERVICE {
 			return []byte(``), nil
 		}
+
 		c.ConnType = connType
 		if c.ConnType == CONN_TYPE_WORKER {
 			worker := c.getSWClinet()
@@ -190,6 +201,10 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 			client := c.getSCClient()
 			client.Req.DataType = dataType
 			client.Req.DataLen = uint32(dataLen)
+		} else if c.ConnType == CONN_TYPE_SERVICE {
+			sclient := c.getSSCClient()
+			sclient.Req.DataType = dataType
+			sclient.Req.DataLen = uint32(dataLen)
 		}
 
 		buf.Write(tmp[:n])
@@ -219,6 +234,7 @@ func (c *Connect) DoIO() {
 	var rsize = MIN_DATA_SIZE
 	var worker *SWorker
 	var client *SClient
+	var service *Service
 
 	for {
 		if data, err = c.Read(rsize); err != nil {
@@ -268,8 +284,27 @@ func (c *Connect) DoIO() {
 				client.Req.Data = content
 				client.RunClient()
 			}
+		} else if c.ConnType == CONN_TYPE_SERVICE {
+			service = c.RunService
+
+			allLen := uint32(len(data))
+			if service.Req.DataLen > allLen {
+				continue
+			}
+
+			content = make([]byte, service.Req.DataLen)
+			copy(content, data[MIN_DATA_SIZE:allLen])
+			clen := uint32(len(content))
+			if service.Req.DataLen == clen {
+				service.Req.Data = content
+				service.RunService()
+			}
 		} else {
 			continue
 		}
 	}
+}
+
+func (c *Connect) DoRunWorker(worker *SWorker) {
+
 }

@@ -74,10 +74,23 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 }
 
 //HTTPAPIGatewayHandle http server router handle
+func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	requestType := r.Header.Get(NRequestType)
+
+	if requestType == HTTPDOWORK {
+		//client do work
+		ser.HTTPDoWorkHandle(w, r, params)
+	} else if requestType == HTTPADDSERVICE {
+		//service add service
+		ser.HTTPAddServiceHandle(w, r, params)
+	}
+}
+
+//HTTPDoWorkHandle http server router handle
 //first get functionName
 //second make nwe job
 //last doWork with job
-func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	var err error
 	if r.Header.Get(NFunctionName) == "" {
 		functionName := params.ByName("functionName")
@@ -186,6 +199,10 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 		wh.Set(NErrorMessage, RESTIMEOUT.Error())
 		return
 	}
+}
+
+func (ser *Server) HTTPAddServiceHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
 }
 
 func nmidPrefixByteMatcher() cmux.Matcher {

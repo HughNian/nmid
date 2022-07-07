@@ -34,7 +34,7 @@ func NewReq() (req *Request) {
 	return
 }
 
-//打包内容-添加方法
+//AddFunctionPack 打包内容-添加方法
 func (req *Request) AddFunctionPack(funcName string) (content []byte, err error) {
 	req.DataType = PDT_W_ADD_FUNC
 	req.DataLen = uint32(len(funcName))
@@ -44,7 +44,7 @@ func (req *Request) AddFunctionPack(funcName string) (content []byte, err error)
 	return
 }
 
-//打包内容-删除方法
+//DelFunctionPack 打包内容-删除方法
 func (req *Request) DelFunctionPack(funcName string) (content []byte, err error) {
 	req.DataType = PDT_W_DEL_FUNC
 	req.DataLen = uint32(len(funcName))
@@ -54,7 +54,7 @@ func (req *Request) DelFunctionPack(funcName string) (content []byte, err error)
 	return
 }
 
-//打包内容-抓取任务
+//GrabDataPack 打包内容-抓取任务
 func (req *Request) GrabDataPack() (content []byte, err error) {
 	req.DataType = PDT_W_GRAB_JOB
 	req.DataLen = 0
@@ -64,21 +64,21 @@ func (req *Request) GrabDataPack() (content []byte, err error) {
 	return
 }
 
-//打包内容-唤醒
+//WakeupPack 打包内容-唤醒
 func (req *Request) WakeupPack() {
 	req.DataType = PDT_WAKEUP
 	req.DataLen = 0
 	req.Data = []byte(``)
 }
 
-//打包内容-限流
+//LimitExceedPack 打包内容-限流
 func (req *Request) LimitExceedPack() {
 	req.DataType = PDT_RATELIMIT
 	req.DataLen = 0
 	req.Data = []byte(``)
 }
 
-//打包内容-返回结果
+//RetPack 打包内容-返回结果
 func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	req.Ret = ret
 	req.RetLen = uint32(len(ret))
@@ -115,7 +115,7 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	return
 }
 
-//打包
+//EncodePack 打包
 func (req *Request) EncodePack() (data []byte) {
 	len := MIN_DATA_SIZE + req.DataLen //add 12 bytes head
 	data = GetBuffer(int(len))

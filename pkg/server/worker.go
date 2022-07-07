@@ -155,6 +155,7 @@ func (w *SWorker) returnData() {
 					}
 				}
 			} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
+				//http client response data
 				w.Res.DataType = PDT_S_RETURN_DATA
 				w.Res.Ret = job.RetData
 				w.Res.RetLen = w.Req.RetLen

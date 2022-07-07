@@ -42,7 +42,7 @@ func NewRes() (res *Response) {
 	return
 }
 
-//解包
+//DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
 	if resLen < MIN_DATA_SIZE {
@@ -66,20 +66,6 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resp.Data = content
 
 	if resp.DataType == PDT_S_GET_DATA {
-		//旧的解包协议
-		//start := MIN_DATA_SIZE
-		//end   := MIN_DATA_SIZE + UINT32_SIZE
-		//resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
-		//start = end
-		//end   = start + int(resp.HandleLen)
-		//resp.Handle = string(data[start:end])
-		//start = end
-		//end   = start + UINT32_SIZE
-		//resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
-		//start = end
-		//end   = start + int(resp.ParamsLen)
-		//resp.ParseParams(data[start:end])
-
 		//新的解包协议
 		start := MIN_DATA_SIZE
 		end := MIN_DATA_SIZE + UINT32_SIZE

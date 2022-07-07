@@ -92,23 +92,11 @@ func (res *Response) GetResHandle() string {
 	return res.Handle
 }
 
-//打包内容
+//GetResContent 打包内容
 func (res *Response) GetResContent() (content []byte, contentLen int) {
 	if res.DataType == PDT_S_GET_DATA {
 		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.JobIdLen)
 		content = GetBuffer(contentLen)
-
-		//旧的发给worker的打包协议
-		//binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
-		//start := UINT32_SIZE
-		//end   := UINT32_SIZE + int(res.HandleLen)
-		//copy(content[start:end], []byte(res.Handle))
-		//start = end
-		//end   = start + UINT32_SIZE
-		//binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
-		//start = end
-		//end   = start + int(res.ParamsLen) //contentLen
-		//copy(content[start:],res.Params)
 
 		//新的发给worker的打包协议
 		binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
@@ -129,24 +117,6 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 	} else if res.DataType == PDT_S_RETURN_DATA {
 		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.RetLen)
 		content = GetBuffer(contentLen)
-
-		//旧的发给client的打包协议
-		//binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
-		//start := UINT32_SIZE
-		//end   := int(UINT32_SIZE + res.HandleLen)
-		//copy(content[start:end], []byte(res.Handle))
-		//start = end
-		//end   = start + UINT32_SIZE
-		//binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
-		//start = end
-		//end   = start + int(res.ParamsLen)
-		//copy(content[start:end], res.Params)
-		//start = end
-		//end   = start + UINT32_SIZE
-		//binary.BigEndian.PutUint32(content[start:end], uint32(res.RetLen))
-		//start = end
-		//end   = contentLen //start + int(res.RetLen)
-		//copy(content[start:], res.Ret)
 
 		//新的发给client的打包协议
 		binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
@@ -172,7 +142,7 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 	return
 }
 
-//解包
+//ReqDecodePack 解包
 func (req *Request) ReqDecodePack() {
 	if req.DataLen > 0 && len(req.Data) > 0 && req.DataLen == uint32(len(req.Data)) {
 		if req.DataType == PDT_W_RETURN_DATA {
@@ -241,11 +211,13 @@ func (req *Request) ReqDecodePack() {
 			start = end
 			copy(params, req.Data[start:])
 			req.Params = params //append(req.Params, params...)
+		} else if req.DataType == PDT_SC_REG_SERVICE {
+
 		}
 	}
 }
 
-//打包
+//ResEncodePack 打包
 func (res *Response) ResEncodePack() (resData []byte) {
 	content, contentLen := res.GetResContent()
 	// fmt.Println("######content-", content)
