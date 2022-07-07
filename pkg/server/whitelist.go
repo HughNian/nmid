@@ -1,45 +1,21 @@
 package server
 
 import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"log"
 	"net"
+	"nmid-v2/pkg/conf"
 )
 
-type WhiteList struct {
-	Enable        bool            `yaml:"ENABLE"`
-	AllowList     map[string]bool `yaml:"ALLOWLIST"`
-	AllowListMask []*net.IPNet    `yaml:"ALLOWLISTMASK"` //net.ParseCIDR("172.17.0.0/16") to get *net.IPNet
-}
-
-func GetWhiteList() *WhiteList {
-	var wh *WhiteList
-
-	listFile, err := ioutil.ReadFile("config/whitelist.yaml")
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	err = yaml.Unmarshal(listFile, wh)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	return wh
-}
-
-func (wh *WhiteList) DoWhiteList(ip string) bool {
-	if !wh.Enable {
+func DoWhiteList(ip string, list *conf.WhiteList) bool {
+	if !list.Enable {
 		return true
 	}
 
-	if wh.AllowList[ip] {
+	if list.AllowList[ip] {
 		return true
 	}
 
 	remoteIP := net.ParseIP(ip)
-	for _, mask := range wh.AllowListMask {
+	for _, mask := range list.AllowListMask {
 		if mask.Contains(remoteIP) {
 			return true
 		}

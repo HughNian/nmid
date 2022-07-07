@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"nmid-v2/pkg/conf"
 	"sync"
 	"time"
 )
@@ -31,11 +32,11 @@ func NewClient(network, addr string) (client *Client, err error) {
 		net:          network,
 		addr:         addr,
 		Req:          nil,
-		ResQueue:     make(chan *Response, QUEUE_SIZE),
-		IoTimeOut:    DEFAULT_TIME_OUT,
+		ResQueue:     make(chan *Response, conf.QUEUE_SIZE),
+		IoTimeOut:    conf.DEFAULT_TIME_OUT,
 		RespHandlers: NewResHandlerMap(),
 	}
-	client.conn, err = net.DialTimeout(client.net, client.addr, DIAL_TIME_OUT)
+	client.conn, err = net.DialTimeout(client.net, client.addr, conf.DIAL_TIME_OUT)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +64,12 @@ func (c *Client) Write() (err error) {
 func (c *Client) Read(length int) (data []byte, err error) {
 	n := 0
 	buf := GetBuffer(length)
-	for i := length; i > 0 || len(data) < MIN_DATA_SIZE; i -= n {
+	for i := length; i > 0 || len(data) < conf.MIN_DATA_SIZE; i -= n {
 		if n, err = c.rw.Read(buf); err != nil {
 			return
 		}
 		data = append(data, buf[0:n]...)
-		if n < MIN_DATA_SIZE {
+		if n < conf.MIN_DATA_SIZE {
 			break
 		}
 	}
@@ -83,7 +84,7 @@ func (c *Client) ClientRead() {
 	var resLen int
 Loop:
 	for c.conn != nil {
-		if data, err = c.Read(MIN_DATA_SIZE); err != nil {
+		if data, err = c.Read(conf.MIN_DATA_SIZE); err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
 				if opErr.Timeout() {
 					log.Println(err)
@@ -102,12 +103,12 @@ Loop:
 			//断开重连
 			log.Println("client read error here:" + err.Error())
 			c.Close()
-			c.conn, err = net.DialTimeout(c.net, c.addr, DIAL_TIME_OUT)
+			c.conn, err = net.DialTimeout(c.net, c.addr, conf.DIAL_TIME_OUT)
 			if err != nil {
 				break
 			}
 			c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
-			c.ResQueue = make(chan *Response, QUEUE_SIZE)
+			c.ResQueue = make(chan *Response, conf.QUEUE_SIZE)
 			continue
 		}
 
@@ -118,14 +119,14 @@ Loop:
 
 		for {
 			l := len(data)
-			if l < MIN_DATA_SIZE {
+			if l < conf.MIN_DATA_SIZE {
 				leftdata = data
 				continue Loop
 			}
 
 			if len(leftdata) == 0 {
 				connType := GetConnType(data)
-				if connType != CONN_TYPE_SERVER {
+				if connType != conf.CONN_TYPE_SERVER {
 					log.Println("read conn type error")
 					break
 				}
@@ -169,16 +170,16 @@ func (c *Client) ProcessResp() {
 	case res := <-c.ResQueue:
 		if nil != res {
 			switch res.DataType {
-			case PDT_ERROR:
+			case conf.PDT_ERROR:
 				c.ErrHandler(res.GetResError())
 				return
-			case PDT_CANT_DO:
+			case conf.PDT_CANT_DO:
 				c.ErrHandler(res.GetResError())
 				return
-			case PDT_RATELIMIT:
+			case conf.PDT_RATELIMIT:
 				c.ErrHandler(res.GetResError())
 				return
-			case PDT_S_RETURN_DATA:
+			case conf.PDT_S_RETURN_DATA:
 				c.HandlerResp(res)
 				return
 			}
@@ -202,7 +203,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 	c.RespHandlers.PutResHandlerMap(funcName, callback)
 
 	c.Req = NewReq()
-	c.Req.ContentPack(PDT_C_DO_JOB, funcName, params)
+	c.Req.ContentPack(conf.PDT_C_DO_JOB, funcName, params)
 	if err = c.Write(); err != nil {
 		return err
 	}

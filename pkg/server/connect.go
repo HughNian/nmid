@@ -35,14 +35,11 @@ type ConnectPool struct {
 	Pool     []*Connect
 	Free     []*Connect
 
-	CMaps  sync.Map
-	WhList *WhiteList
+	CMaps sync.Map
 }
 
 func NewConnectPool() *ConnectPool {
-	return &ConnectPool{
-		WhList: GetWhiteList(),
-	}
+	return &ConnectPool{}
 }
 
 func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
@@ -51,7 +48,13 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	if err != nil {
 		return nil
 	}
-	if !pool.WhList.DoWhiteList(ip) {
+	//DoWhiteList do whitelist
+	if !DoWhiteList(ip, ser.SConfig.WhiteList) {
+		conn.Close()
+		return nil
+	}
+	//DoBlackList do blacklist
+	if DoBlackList(ip, ser.SConfig.BlackList) {
 		conn.Close()
 		return nil
 	}

@@ -1,6 +1,9 @@
 package service
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"nmid-v2/pkg/conf"
+)
 
 type Request struct {
 	DataType uint32
@@ -30,19 +33,19 @@ func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen
 	serviceIdLen := uint32(len(req.ScInfo.ServiceId))
 	serviceNameLen := uint32(len(req.ScInfo.ServiceName))
 	serviceHostLen := uint32(len(req.ScInfo.ServiceHost))
-	req.DataLen = UINT32_SIZE + serviceIdLen + UINT32_SIZE + serviceNameLen + UINT32_SIZE + serviceHostLen + UINT32_SIZE
+	req.DataLen = conf.UINT32_SIZE + serviceIdLen + conf.UINT32_SIZE + serviceNameLen + conf.UINT32_SIZE + serviceHostLen + conf.UINT32_SIZE
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
-	binary.BigEndian.PutUint32(content[:UINT32_SIZE], serviceIdLen)
-	start := UINT32_SIZE
-	end := UINT32_SIZE + UINT32_SIZE
+	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], serviceIdLen)
+	start := conf.UINT32_SIZE
+	end := conf.UINT32_SIZE + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], serviceNameLen)
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], serviceHostLen)
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.ScInfo.ServicePort)
 	start = end
 	end = start + int(serviceIdLen)
@@ -60,13 +63,13 @@ func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen
 
 //EncodePack 打包
 func (req *Request) EncodePack() (data []byte) {
-	len := MIN_DATA_SIZE + req.DataLen //add 12 bytes head
+	len := conf.MIN_DATA_SIZE + req.DataLen //add 12 bytes head
 	data = GetBuffer(int(len))
 
-	binary.BigEndian.PutUint32(data[:4], CONN_TYPE_SERVICE)
+	binary.BigEndian.PutUint32(data[:4], conf.CONN_TYPE_SERVICE)
 	binary.BigEndian.PutUint32(data[4:8], req.DataType)
-	binary.BigEndian.PutUint32(data[8:MIN_DATA_SIZE], req.DataLen)
-	copy(data[MIN_DATA_SIZE:], req.Data)
+	binary.BigEndian.PutUint32(data[8:conf.MIN_DATA_SIZE], req.DataLen)
+	copy(data[conf.MIN_DATA_SIZE:], req.Data)
 
 	return
 }

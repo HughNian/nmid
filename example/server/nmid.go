@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"nmid-v2/pkg/conf"
 	ser "nmid-v2/pkg/server"
 	"os"
 	"os/signal"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	sConfig = ser.GetConfig()
+	sConfig = conf.GetConfig()
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 		ServerAddress:   "http://127.0.0.1:4040",
 	})
 
-	server := ser.NewServer(sConfig.Server.NETWORK, sConfig.Server.HOST, sConfig.Server.PORT).SetHttpPort(sConfig.Server.HTTPPORT)
+	server := ser.NewServer().SetSConfig(sConfig)
 	if nil == server {
 		return
 	}

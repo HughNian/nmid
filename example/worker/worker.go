@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"nmid-v2/pkg/conf"
 	wor "nmid-v2/pkg/worker"
 	"strconv"
 	"strings"
@@ -28,7 +29,7 @@ func ToUpper(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == wor.PARAMS_TYPE_MUL {
+	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
@@ -55,13 +56,13 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType != wor.PARAMS_TYPE_MUL {
+	if resp.ParamsType != conf.PARAMS_TYPE_MUL {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
 	orderSn, orderType := "", ""
 	for _, v := range resp.StrParams {
-		column := strings.Split(v, strconv.Itoa(wor.PARAMS_SCOPE))
+		column := strings.Split(v, strconv.Itoa(conf.PARAMS_SCOPE))
 		switch column[0] {
 		case "order_sn":
 			orderSn = column[1]

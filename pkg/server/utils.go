@@ -5,22 +5,10 @@ import (
 	"encoding/hex"
 	"github.com/vmihailenco/msgpack"
 	"io"
-	"log"
-	"nmid-v2/conf"
-
 	"strconv"
 	"sync/atomic"
 	"time"
 )
-
-func GetConfig() *conf.ServerConfig {
-	sConfig, err := conf.ParseYaml4File("config/server.yaml") //这个路径相对于main函数文件的路径
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	return sConfig
-}
 
 func GetId() string {
 	value := int64(time.Now().Nanosecond()) << 32

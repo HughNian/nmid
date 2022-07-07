@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/binary"
 	"fmt"
+	"nmid-v2/pkg/conf"
 )
 
 type Response struct {
@@ -31,8 +32,8 @@ func NewRes() (res *Response) {
 		DataLen:    0,
 		Handle:     ``,
 		HandleLen:  0,
-		ParamsType: PARAMS_TYPE_ONE, //4-one param, 5-multiple params, default 4
-		ParamsNum:  0,               //参数个数，一般单个参数只有一个参数，多个参数有相应数量的参数
+		ParamsType: conf.PARAMS_TYPE_ONE, //4-one param, 5-multiple params, default 4
+		ParamsNum:  0,                    //参数个数，一般单个参数只有一个参数，多个参数有相应数量的参数
 		ParamsLen:  0,
 		Params:     make([]byte, 0),
 		StrParams:  make([]string, 0),
@@ -45,16 +46,16 @@ func NewRes() (res *Response) {
 //DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
-	if resLen < MIN_DATA_SIZE {
+	if resLen < conf.MIN_DATA_SIZE {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
-	cl := int(binary.BigEndian.Uint32(data[8:MIN_DATA_SIZE]))
-	if resLen < MIN_DATA_SIZE+cl {
+	cl := int(binary.BigEndian.Uint32(data[8:conf.MIN_DATA_SIZE]))
+	if resLen < conf.MIN_DATA_SIZE+cl {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
-	content := data[MIN_DATA_SIZE : MIN_DATA_SIZE+cl]
+	content := data[conf.MIN_DATA_SIZE : conf.MIN_DATA_SIZE+cl]
 	if len(content) != cl {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
@@ -65,16 +66,16 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resp.DataLen = uint32(cl)
 	resp.Data = content
 
-	if resp.DataType == PDT_S_GET_DATA {
+	if resp.DataType == conf.PDT_S_GET_DATA {
 		//新的解包协议
-		start := MIN_DATA_SIZE
-		end := MIN_DATA_SIZE + UINT32_SIZE
+		start := conf.MIN_DATA_SIZE
+		end := conf.MIN_DATA_SIZE + conf.UINT32_SIZE
 		resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + UINT32_SIZE
+		end = start + conf.UINT32_SIZE
 		resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + UINT32_SIZE
+		end = start + conf.UINT32_SIZE
 		resp.JobIdLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
 		end = start + int(resp.HandleLen)
@@ -101,7 +102,7 @@ func (resp *Response) ParseParams(params []byte) {
 		resp.StrParams = strArrParams
 		resp.ParamsNum = uint32(len(strArrParams))
 		if resp.ParamsNum > 1 {
-			resp.ParamsType = PARAMS_TYPE_MUL
+			resp.ParamsType = conf.PARAMS_TYPE_MUL
 		}
 	}
 }

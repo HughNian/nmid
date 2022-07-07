@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/binary"
+	"nmid-v2/pkg/conf"
 )
 
 type Request struct {
@@ -39,16 +40,16 @@ func (req *Request) ContentPack(dataType uint32, handle string, params []byte) (
 	req.HandleLen = uint32(len(handle))
 	req.Params = params
 	req.ParamsLen = uint32(len(params))
-	req.DataLen = uint32(UINT32_SIZE + req.HandleLen + UINT32_SIZE + req.ParamsLen)
+	req.DataLen = uint32(conf.UINT32_SIZE + req.HandleLen + conf.UINT32_SIZE + req.ParamsLen)
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
-	binary.BigEndian.PutUint32(content[:UINT32_SIZE], req.HandleLen)
-	start := UINT32_SIZE
-	end := UINT32_SIZE + int(req.HandleLen)
+	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], req.HandleLen)
+	start := conf.UINT32_SIZE
+	end := conf.UINT32_SIZE + int(req.HandleLen)
 	copy(content[start:end], []byte(req.Handle))
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.ParamsLen)
 	start = end
 	end = start + int(req.ParamsLen)
@@ -60,13 +61,13 @@ func (req *Request) ContentPack(dataType uint32, handle string, params []byte) (
 
 //EncodePack 打包
 func (req *Request) EncodePack() (data []byte) {
-	len := MIN_DATA_SIZE + req.DataLen //add 12 bytes head
+	len := conf.MIN_DATA_SIZE + req.DataLen //add 12 bytes head
 	data = GetBuffer(int(len))
 
-	binary.BigEndian.PutUint32(data[:4], CONN_TYPE_CLIENT)
+	binary.BigEndian.PutUint32(data[:4], conf.CONN_TYPE_CLIENT)
 	binary.BigEndian.PutUint32(data[4:8], req.DataType)
-	binary.BigEndian.PutUint32(data[8:MIN_DATA_SIZE], req.DataLen)
-	copy(data[MIN_DATA_SIZE:], req.Data)
+	binary.BigEndian.PutUint32(data[8:conf.MIN_DATA_SIZE], req.DataLen)
+	copy(data[conf.MIN_DATA_SIZE:], req.Data)
 
 	return
 }

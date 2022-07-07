@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	cli "nmid-v2/pkg/client"
+	"nmid-v2/pkg/conf"
 )
 
 func main() {
@@ -19,8 +19,8 @@ func main() {
 	}
 
 	h := req.Header
-	h.Set(cli.NRequestType, cli.HTTPDOWORK)
-	h.Set(cli.NFunctionName, "ToUpper")
+	h.Set(conf.NRequestType, conf.HTTPDOWORK)
+	h.Set(conf.NFunctionName, "ToUpper")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

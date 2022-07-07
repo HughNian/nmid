@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/binary"
+	"nmid-v2/pkg/conf"
 )
 
 type Request struct {
@@ -36,7 +37,7 @@ func NewReq() (req *Request) {
 
 //AddFunctionPack 打包内容-添加方法
 func (req *Request) AddFunctionPack(funcName string) (content []byte, err error) {
-	req.DataType = PDT_W_ADD_FUNC
+	req.DataType = conf.PDT_W_ADD_FUNC
 	req.DataLen = uint32(len(funcName))
 	req.Data = []byte(funcName)
 	content = req.Data
@@ -46,7 +47,7 @@ func (req *Request) AddFunctionPack(funcName string) (content []byte, err error)
 
 //DelFunctionPack 打包内容-删除方法
 func (req *Request) DelFunctionPack(funcName string) (content []byte, err error) {
-	req.DataType = PDT_W_DEL_FUNC
+	req.DataType = conf.PDT_W_DEL_FUNC
 	req.DataLen = uint32(len(funcName))
 	req.Data = []byte(funcName)
 	content = req.Data
@@ -56,7 +57,7 @@ func (req *Request) DelFunctionPack(funcName string) (content []byte, err error)
 
 //GrabDataPack 打包内容-抓取任务
 func (req *Request) GrabDataPack() (content []byte, err error) {
-	req.DataType = PDT_W_GRAB_JOB
+	req.DataType = conf.PDT_W_GRAB_JOB
 	req.DataLen = 0
 	req.Data = []byte(``)
 	content = req.Data
@@ -66,14 +67,14 @@ func (req *Request) GrabDataPack() (content []byte, err error) {
 
 //WakeupPack 打包内容-唤醒
 func (req *Request) WakeupPack() {
-	req.DataType = PDT_WAKEUP
+	req.DataType = conf.PDT_WAKEUP
 	req.DataLen = 0
 	req.Data = []byte(``)
 }
 
 //LimitExceedPack 打包内容-限流
 func (req *Request) LimitExceedPack() {
-	req.DataType = PDT_RATELIMIT
+	req.DataType = conf.PDT_RATELIMIT
 	req.DataLen = 0
 	req.Data = []byte(``)
 }
@@ -83,29 +84,29 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 	req.Ret = ret
 	req.RetLen = uint32(len(ret))
 
-	req.DataType = PDT_W_RETURN_DATA
-	req.DataLen = UINT32_SIZE + req.HandleLen + UINT32_SIZE + req.ParamsLen + UINT32_SIZE + req.RetLen + UINT32_SIZE + req.JobIdLen
+	req.DataType = conf.PDT_W_RETURN_DATA
+	req.DataLen = conf.UINT32_SIZE + req.HandleLen + conf.UINT32_SIZE + req.ParamsLen + conf.UINT32_SIZE + req.RetLen + conf.UINT32_SIZE + req.JobIdLen
 
 	length := int(req.DataLen)
 	content = GetBuffer(length)
-	binary.BigEndian.PutUint32(content[:UINT32_SIZE], req.HandleLen)
-	start := UINT32_SIZE
-	end := int(UINT32_SIZE + req.HandleLen)
+	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], req.HandleLen)
+	start := conf.UINT32_SIZE
+	end := int(conf.UINT32_SIZE + req.HandleLen)
 	copy(content[start:end], []byte(req.Handle))
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], uint32(req.ParamsLen))
 	start = end
 	end = start + int(req.ParamsLen)
 	copy(content[start:end], req.Params)
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.RetLen)
 	start = end
 	end = start + int(req.RetLen)
 	copy(content[start:end], req.Ret)
 	start = end
-	end = start + UINT32_SIZE
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.JobIdLen)
 	start = end
 	end = start + int(req.JobIdLen)
@@ -117,13 +118,13 @@ func (req *Request) RetPack(ret []byte) (content []byte, err error) {
 
 //EncodePack 打包
 func (req *Request) EncodePack() (data []byte) {
-	len := MIN_DATA_SIZE + req.DataLen //add 12 bytes head
+	len := conf.MIN_DATA_SIZE + req.DataLen //add 12 bytes head
 	data = GetBuffer(int(len))
 
-	binary.BigEndian.PutUint32(data[:4], CONN_TYPE_WORKER)
+	binary.BigEndian.PutUint32(data[:4], conf.CONN_TYPE_WORKER)
 	binary.BigEndian.PutUint32(data[4:8], req.DataType)
-	binary.BigEndian.PutUint32(data[8:MIN_DATA_SIZE], req.DataLen)
-	copy(data[MIN_DATA_SIZE:], req.Data)
+	binary.BigEndian.PutUint32(data[8:conf.MIN_DATA_SIZE], req.DataLen)
+	copy(data[conf.MIN_DATA_SIZE:], req.Data)
 
 	return
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"nmid-v2/pkg/conf"
 	"sync"
 	"time"
 )
@@ -25,7 +26,7 @@ func NewWorker() *Worker {
 		Agents:   make([]*Agent, 0),
 		Funcs:    make(map[string]*Function),
 		FuncsNum: 0,
-		Resps:    make(chan *Response, QUEUE_SIZE),
+		Resps:    make(chan *Response, conf.QUEUE_SIZE),
 		ready:    false,
 		running:  false,
 	}
@@ -53,7 +54,7 @@ func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
 	w.Unlock()
 
 	if w.running {
-		go w.FuncBroadcast(funcName, PDT_W_ADD_FUNC)
+		go w.FuncBroadcast(funcName, conf.PDT_W_ADD_FUNC)
 	}
 
 	return nil
@@ -70,7 +71,7 @@ func (w *Worker) DelFunction(funcName string) (err error) {
 	w.Unlock()
 
 	if w.running {
-		go w.FuncBroadcast(funcName, PDT_W_DEL_FUNC)
+		go w.FuncBroadcast(funcName, conf.PDT_W_DEL_FUNC)
 	}
 
 	return nil
@@ -99,7 +100,7 @@ func (w *Worker) GetFunction(funcName string) (function *Function, err error) {
 }
 
 func (w *Worker) DoFunction(resp *Response) (err error) {
-	if resp.DataType == PDT_S_GET_DATA {
+	if resp.DataType == conf.PDT_S_GET_DATA {
 		funcName := resp.Handle
 		if function, err := w.GetFunction(funcName); err != nil {
 			return err
@@ -135,9 +136,9 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 func (w *Worker) FuncBroadcast(funcName string, flag int) {
 	for _, a := range w.Agents {
 		switch flag {
-		case PDT_W_ADD_FUNC:
+		case conf.PDT_W_ADD_FUNC:
 			a.Req.AddFunctionPack(funcName)
-		case PDT_W_DEL_FUNC:
+		case conf.PDT_W_DEL_FUNC:
 			a.Req.DelFunctionPack(funcName)
 		default:
 			a.Req.AddFunctionPack(funcName)
@@ -161,7 +162,7 @@ func (w *Worker) WorkerReady() (err error) {
 	}
 
 	for fn := range w.Funcs {
-		w.FuncBroadcast(fn, PDT_W_ADD_FUNC)
+		w.FuncBroadcast(fn, conf.PDT_W_ADD_FUNC)
 	}
 
 	w.Lock()
@@ -189,20 +190,20 @@ func (w *Worker) WorkerDo() {
 
 	for resp := range w.Resps {
 		switch resp.DataType {
-		case PDT_TOSLEEP:
+		case conf.PDT_TOSLEEP:
 			time.Sleep(time.Duration(2) * time.Second)
 			go resp.Agent.Wakeup()
 
 			//fallthrough
-		case PDT_S_GET_DATA:
+		case conf.PDT_S_GET_DATA:
 			if err := w.DoFunction(resp); err != nil {
 				log.Println(err)
 			}
 			//fallthrough
-		case PDT_NO_JOB:
+		case conf.PDT_NO_JOB:
 			go resp.Agent.Grab()
 
-		case PDT_WAKEUPED:
+		case conf.PDT_WAKEUPED:
 		default:
 			go resp.Agent.Grab()
 		}

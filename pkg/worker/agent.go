@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"nmid-v2/pkg/conf"
 	"sync"
 )
 
@@ -33,7 +34,7 @@ func NewAgent(net, adrr string, w *Worker) *Agent {
 }
 
 func (a *Agent) Connect() (err error) {
-	a.conn, err = net.DialTimeout(a.net, a.addr, DIAL_TIME_OUT)
+	a.conn, err = net.DialTimeout(a.net, a.addr, conf.DIAL_TIME_OUT)
 	if err != nil {
 		log.Println("dial error:", err)
 		return err
@@ -46,7 +47,7 @@ func (a *Agent) Connect() (err error) {
 }
 
 func (a *Agent) ReConnect() error {
-	conn, err := net.DialTimeout(a.net, a.addr, DIAL_TIME_OUT)
+	conn, err := net.DialTimeout(a.net, a.addr, conf.DIAL_TIME_OUT)
 	if err != nil {
 		return err
 	}
@@ -58,17 +59,17 @@ func (a *Agent) ReConnect() error {
 
 func (a *Agent) Read() (data []byte, err error) {
 	n := 0
-	temp := GetBuffer(MIN_DATA_SIZE)
+	temp := GetBuffer(conf.MIN_DATA_SIZE)
 	var buf bytes.Buffer
 
 	if n, err = a.rw.Read(temp); err != nil {
 		return []byte(``), err
 	}
 
-	dataLen := int(binary.BigEndian.Uint32(temp[8:MIN_DATA_SIZE]))
+	dataLen := int(binary.BigEndian.Uint32(temp[8:conf.MIN_DATA_SIZE]))
 	buf.Write(temp[:n])
 
-	for buf.Len() < MIN_DATA_SIZE+dataLen {
+	for buf.Len() < conf.MIN_DATA_SIZE+dataLen {
 		tmpcontent := GetBuffer(dataLen)
 		if n, err = a.rw.Read(tmpcontent); err != nil {
 			return buf.Bytes(), err
@@ -113,7 +114,7 @@ func (a *Agent) Work() {
 			data = append(leftData, data...)
 		}
 
-		if len(data) < MIN_DATA_SIZE {
+		if len(data) < conf.MIN_DATA_SIZE {
 			leftData = data
 			continue
 		}

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	cli "nmid-v2/pkg/client"
+	"nmid-v2/pkg/conf"
 	wor "nmid-v2/pkg/worker"
 	"sync"
 
@@ -43,14 +44,14 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == wor.PARAMS_TYPE_MUL {
+	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
 	name := resp.StrParams[0]
 
 	client.ErrHandler = func(e error) {
-		if cli.RESTIMEOUT == e {
+		if conf.RESTIMEOUT == e {
 			log.Println("time out here")
 		} else {
 			log.Println(e)
@@ -58,14 +59,14 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				err = errors.New("ret empty")
 				return
 			}
 
-			var cretStruct cli.RetStruct
+			var cretStruct conf.RetStruct
 			uerr := msgpack.Unmarshal(resp.Ret, &cretStruct)
 			if nil != uerr {
 				log.Fatalln(uerr)

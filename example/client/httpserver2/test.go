@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"nmid-v2/pkg/conf"
 	"sync"
 
 	_ "net/http/pprof"
@@ -39,7 +40,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 	client := getClient()
 
 	client.ErrHandler = func(e error) {
-		if cli.RESTIMEOUT == e {
+		if conf.RESTIMEOUT == e {
 			log.Println("time out here")
 		} else {
 			log.Println(e)
@@ -49,13 +50,13 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct cli.RetStruct
+			var retStruct conf.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)
@@ -74,13 +75,13 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	respHandler2 := func(resp *cli.Response) {
-		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct cli.RetStruct
+			var retStruct conf.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)

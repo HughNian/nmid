@@ -3,6 +3,7 @@ package worker
 import (
 	"github.com/vmihailenco/msgpack"
 	"log"
+	"nmid-v2/pkg/conf"
 )
 
 func GetBuffer(n int) (buf []byte) {
@@ -22,10 +23,10 @@ func GetStrParamsArr(params []byte) []string {
 	return strParamsArr
 }
 
-func GetRetStruct() *RetStruct {
-	return &RetStruct{
-		Code : 0,
-		Msg  : "",
-		Data : make([]byte, 0),
+func GetRetStruct() *conf.RetStruct {
+	return &conf.RetStruct{
+		Code: 0,
+		Msg:  "",
+		Data: make([]byte, 0),
 	}
 }

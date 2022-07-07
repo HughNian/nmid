@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"nmid-v2/pkg/conf"
 	"sync"
 )
 
@@ -15,21 +16,43 @@ type Server struct {
 	Port              string
 	HttpPort          string
 	Net               string
+	SConfig           conf.ServerConfig
 	Cpool             *ConnectPool
 	Funcs             *FuncMap
 	TlsConfig         *tls.Config
 	HTTPServerGateway *http.Server
 }
 
-func NewServer(net string, host string, port string) (ser *Server) {
+func NewServer() (ser *Server) {
 	ser = &Server{
-		Host:  host,
-		Port:  port,
-		Net:   net,
 		Cpool: NewConnectPool(),
 		Funcs: NewFuncMap(),
 	}
 	return
+}
+
+func (ser *Server) SetSConfig(SConfig conf.ServerConfig) *Server {
+	ser.SConfig = SConfig
+	ser.Net = SConfig.Server.NETWORK
+	ser.Host = SConfig.Server.HOST
+	ser.Port = SConfig.Server.PORT
+	ser.HttpPort = SConfig.Server.HTTPPORT
+	return ser
+}
+
+func (ser *Server) SetNet(net string) *Server {
+	ser.Net = net
+	return ser
+}
+
+func (ser *Server) SetHost(host string) *Server {
+	ser.Host = host
+	return ser
+}
+
+func (ser *Server) SetPort(port string) *Server {
+	ser.Port = port
+	return ser
 }
 
 func (ser *Server) SetHttpPort(HttpPort string) *Server {
