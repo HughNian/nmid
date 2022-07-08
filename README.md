@@ -18,6 +18,8 @@ nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的�
 
 6.PHP扩展：https://github.com/HughNian/nmid-php-ext  
 
+7.支持http请求nmid服务
+
 ## 建议配置
 
 ```
@@ -366,6 +368,38 @@ func main() {
 	worker.WorkerDo()
 }
 
+```
+
+```cpp
+http客户端请求
+
+func main() {
+	args := []string{`testtestcontent`}
+	data, _ := json.Marshal(args)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:6809/", bytes.NewReader(data))
+	if err != nil {
+		log.Fatal("failed to create request: ", err)
+		return
+	}
+
+	h := req.Header
+	h.Set(conf.NRequestType, conf.HTTPDOWORK)
+	h.Set(conf.NFunctionName, "ToUpper")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal("failed to call: ", err)
+	}
+	defer res.Body.Close()
+
+	// handle http response
+	replyData, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal("failed to read response: ", err)
+	}
+
+	log.Println("ret data", string(replyData))
+}
 ```
 
 ## I/O的通信网络协议
