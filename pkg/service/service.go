@@ -14,10 +14,12 @@ import (
 type Service struct {
 	sync.Mutex
 
-	ServiceId   string
-	ServiceName string
-	ServiceHost string
-	ServicePort uint32
+	ServiceId       string
+	ServiceName     string
+	ServiceHost     string
+	ServiceHostName string
+	ServiceEnv      string
+	ServicePort     uint32
 
 	net, addr string
 	conn      net.Conn
@@ -49,10 +51,12 @@ func NewService(network, addr string) (service *Service, err error) {
 	return service, nil
 }
 
-func (sc *Service) SetServiceInfo(ServiceName, ServiceHost string, ServicePort uint32) *Service {
+func (sc *Service) SetServiceInfo(ServiceName, ServiceHost, ServiceHostName, ServiceEnv string, ServicePort uint32) *Service {
 	sc.ServiceName = ServiceName
 	sc.ServiceHost = ServiceHost
+	sc.ServiceHostName = ServiceHostName
 	sc.ServicePort = ServicePort
+	sc.ServiceEnv = ServiceEnv
 	sc.ServiceId = GenServiceId(ServiceName, ServiceHost)
 	return sc
 }
@@ -206,15 +210,23 @@ func (sc *Service) RegService() (ret bool, err error) {
 	if len(sc.ServiceHost) == 0 {
 		return false, fmt.Errorf("service host empty")
 	}
+	if len(sc.ServiceHostName) == 0 {
+		return false, fmt.Errorf("service host empty")
+	}
+	if len(sc.ServiceEnv) == 0 {
+		return false, fmt.Errorf("service host empty")
+	}
 	if sc.ServicePort == 0 {
 		return false, fmt.Errorf("service port err")
 	}
 
 	NewReq(ScInfo{
-		ServiceId:   sc.ServiceId,
-		ServiceName: sc.ServiceName,
-		ServiceHost: sc.ServiceHost,
-		ServicePort: sc.ServicePort,
+		ServiceId:       sc.ServiceId,
+		ServiceName:     sc.ServiceName,
+		ServiceHost:     sc.ServiceHost,
+		ServiceHostName: sc.ServiceHostName,
+		ServiceEnv:      sc.ServiceEnv,
+		ServicePort:     sc.ServicePort,
 	}).ServiceInfoPack(conf.PDT_SC_REG_SERVICE)
 	if err = sc.Write(); err != nil {
 		return false, err
@@ -235,6 +247,12 @@ func (sc *Service) OffService() (ret bool, err error) {
 		return false, fmt.Errorf("service name empty")
 	}
 	if len(sc.ServiceHost) == 0 {
+		return false, fmt.Errorf("service host empty")
+	}
+	if len(sc.ServiceHostName) == 0 {
+		return false, fmt.Errorf("service host empty")
+	}
+	if len(sc.ServiceEnv) == 0 {
 		return false, fmt.Errorf("service host empty")
 	}
 	if sc.ServicePort == 0 {

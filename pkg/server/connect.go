@@ -16,6 +16,7 @@ type Connect struct {
 	Id         string
 	Addr       string
 	Ip         string
+	Port       string
 	Ser        *Server
 	Conn       net.Conn
 	rw         *bufio.ReadWriter
@@ -44,17 +45,17 @@ func NewConnectPool() *ConnectPool {
 
 func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	addr := conn.RemoteAddr().String()
-	ip, _, err := net.SplitHostPort(addr)
+	ip, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil
 	}
 	//DoWhiteList do whitelist
-	if !DoWhiteList(ip, ser.SConfig.WhiteList) {
+	if ser.SConfig.WhiteList.Enable && !DoWhiteList(ip, ser.SConfig.WhiteList) {
 		conn.Close()
 		return nil
 	}
 	//DoBlackList do blacklist
-	if DoBlackList(ip, ser.SConfig.BlackList) {
+	if ser.SConfig.BlackList.Enable && DoBlackList(ip, ser.SConfig.BlackList) {
 		conn.Close()
 		return nil
 	}
@@ -64,6 +65,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.Id = GetId()
 	c.Addr = addr
 	c.Ip = ip
+	c.Port = port
 	c.Ser = ser
 	pool.Lock()
 	c.Conn = conn

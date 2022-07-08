@@ -11,16 +11,12 @@ Registry:
 
 WhiteList:
   ENABLE: false
-  ALLOWLIST:
-    127.0.0.1: true
-    127.0.0.2: true
+  ALLOWLIST: {"127.0.0.1":true, "127.0.0.2":true}
   ALLOWLISTMASK: ["172.17.0.0/16", "172.17.0.0/26" ]
 
 BlackList:
   ENABLE: false
-  NOALLOWLIST:
-    127.0.0.1: true
-    127.0.0.2: true
+  NOALLOWLIST: {"127.0.0.1":true, "127.0.0.2":true}
   NOALLOWLISTMASK: ["172.17.0.0/16", "172.17.0.0/26" ]
   
 Breaker:

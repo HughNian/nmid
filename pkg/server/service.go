@@ -12,16 +12,18 @@ type Service struct {
 
 	Connect *Connect
 
-	Infos []*ServiceInfo
+	Infos map[string]*ServiceInfo
 	Req   *Request
 	Res   *Response
 }
 
 type ServiceInfo struct {
-	ServiceId   string
-	ServiceName string
-	ServiceHost string
-	ServicePort uint32
+	ServiceId       string
+	ServiceName     string
+	ServiceHost     string
+	ServiceHostName string
+	ServiceEnv      string
+	ServicePort     uint32
 }
 
 func NewService(conn *Connect) *Service {

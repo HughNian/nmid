@@ -16,8 +16,11 @@ func DoWhiteList(ip string, list *conf.WhiteList) bool {
 
 	remoteIP := net.ParseIP(ip)
 	for _, mask := range list.AllowListMask {
-		if mask.Contains(remoteIP) {
-			return true
+		_, ipNet, err := net.ParseCIDR(mask)
+		if nil == err {
+			if ipNet.Contains(remoteIP) {
+				return true
+			}
 		}
 	}
 

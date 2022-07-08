@@ -18,6 +18,8 @@ type Request struct {
 	JobIdLen   uint32
 	Ret        []byte
 	RetLen     uint32
+
+	ScInfo ServiceInfo
 }
 
 type Response struct {

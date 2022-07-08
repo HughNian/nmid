@@ -16,8 +16,11 @@ func DoBlackList(ip string, list *conf.BlackList) bool {
 
 	remoteIP := net.ParseIP(ip)
 	for _, mask := range list.NoAllowListMask {
-		if mask.Contains(remoteIP) {
-			return false
+		_, ipNet, err := net.ParseCIDR(mask)
+		if nil == err {
+			if ipNet.Contains(remoteIP) {
+				return false
+			}
 		}
 	}
 

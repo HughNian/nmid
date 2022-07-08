@@ -14,10 +14,12 @@ type Request struct {
 }
 
 type ScInfo struct {
-	ServiceId   string
-	ServiceName string
-	ServiceHost string
-	ServicePort uint32
+	ServiceId       string
+	ServiceName     string
+	ServiceHost     string
+	ServiceHostName string
+	ServiceEnv      string
+	ServicePort     uint32
 }
 
 func NewReq(scInfo ScInfo) (req *Request) {
@@ -33,7 +35,14 @@ func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen
 	serviceIdLen := uint32(len(req.ScInfo.ServiceId))
 	serviceNameLen := uint32(len(req.ScInfo.ServiceName))
 	serviceHostLen := uint32(len(req.ScInfo.ServiceHost))
-	req.DataLen = conf.UINT32_SIZE + serviceIdLen + conf.UINT32_SIZE + serviceNameLen + conf.UINT32_SIZE + serviceHostLen + conf.UINT32_SIZE
+	serviceHostNameLen := uint32(len(req.ScInfo.ServiceHostName))
+	serviceEnvLen := uint32(len(req.ScInfo.ServiceEnv))
+	req.DataLen = conf.UINT32_SIZE + serviceIdLen +
+		conf.UINT32_SIZE + serviceNameLen +
+		conf.UINT32_SIZE + serviceHostLen +
+		conf.UINT32_SIZE + serviceHostNameLen +
+		conf.UINT32_SIZE + serviceEnvLen +
+		conf.UINT32_SIZE
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
@@ -46,6 +55,12 @@ func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen
 	binary.BigEndian.PutUint32(content[start:end], serviceHostLen)
 	start = end
 	end = start + conf.UINT32_SIZE
+	binary.BigEndian.PutUint32(content[start:end], serviceHostNameLen)
+	start = end
+	end = start + conf.UINT32_SIZE
+	binary.BigEndian.PutUint32(content[start:end], serviceEnvLen)
+	start = end
+	end = start + conf.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.ScInfo.ServicePort)
 	start = end
 	end = start + int(serviceIdLen)
@@ -56,6 +71,12 @@ func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen
 	start = end
 	end = start + int(serviceHostLen)
 	copy(content[start:end], req.ScInfo.ServiceHost)
+	start = end
+	end = start + int(serviceHostNameLen)
+	copy(content[start:end], req.ScInfo.ServiceHostName)
+	start = end
+	end = start + int(serviceEnvLen)
+	copy(content[start:end], req.ScInfo.ServiceEnv)
 	req.Data = content
 
 	return
