@@ -12,7 +12,6 @@ import (
 	_ "net/http/pprof"
 	"nmid-v2/pkg/conf"
 	wor "nmid-v2/pkg/worker"
-	"strconv"
 	"strings"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
@@ -22,7 +21,7 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-//单个入参
+//ToUpper 单个入参
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
@@ -49,7 +48,7 @@ func ToUpper(job wor.Job) ([]byte, error) {
 	return ret, nil
 }
 
-//多个入参
+//GetOrderInfo 多个入参
 func GetOrderInfo(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
@@ -62,7 +61,7 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 
 	orderSn, orderType := "", ""
 	for _, v := range resp.StrParams {
-		column := strings.Split(v, strconv.Itoa(conf.PARAMS_SCOPE))
+		column := strings.Split(v, conf.PARAMS_SCOPE)
 		switch column[0] {
 		case "order_sn":
 			orderSn = column[1]

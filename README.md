@@ -61,45 +61,63 @@ make
 ```cpp
 客户端代码
 
-package main
-
 import (
-	cli "nmid-go/client"
 	"fmt"
 	"log"
+	"net/http"
+	"nmid-v2/pkg/conf"
+	"sync"
+
+	_ "net/http/pprof"
+	cli "nmid-v2/pkg/client"
+
+	"github.com/buaazp/fasthttprouter"
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
+	"github.com/valyala/fasthttp"
 	"github.com/vmihailenco/msgpack"
-	"os"
 )
 
-const SERVERHOST = "192.168.1.176"
-const SERVERPORT = "6808"
+const NMIDSERVERHOST = "127.0.0.1"
+const NMIDSERVERPORT = "6808"
 
-func main() {
-	var client *cli.Client
-	var err error
+var once sync.Once
+var client *cli.Client
+var err error
 
-	serverAddr := SERVERHOST + ":" + SERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr)
-	if nil == client || err != nil {
-		log.Println(err)
-		return
-	}
-	defer client.Close()
+//单实列连接，适合长连接
+func getClient() *cli.Client {
+	once.Do(func() {
+		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+		client, err = cli.NewClient("tcp", serverAddr)
+		if nil == client || err != nil {
+			log.Println(err)
+		}
+	})
 
-	client.ErrHandler= func(e error) {
-		log.Println(e)
-		fmt.Println("client err here")
-		//client.Close()
+	return client
+}
+
+func Test(ctx *fasthttp.RequestCtx) {
+	client := getClient()
+
+	client.ErrHandler = func(e error) {
+		if conf.RESTIMEOUT == e {
+			log.Println("time out here")
+		} else {
+			log.Println(e)
+		}
+
+		fmt.Fprint(ctx, e.Error())
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == cli.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct cli.RetStruct
+			var retStruct conf.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)
@@ -112,125 +130,109 @@ func main() {
 			}
 
 			fmt.Println(string(retStruct.Data))
+
+			fmt.Fprint(ctx, string(retStruct.Data))
 		}
 	}
 
+	respHandler2 := func(resp *cli.Response) {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				log.Println("ret empty")
+				return
+			}
 
-	//1 单个入参
+			var retStruct conf.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				log.Fatalln(err)
+				return
+			}
+
+			if retStruct.Code != 0 {
+				log.Println(retStruct.Msg)
+				return
+			}
+
+			fmt.Println(string(retStruct.Data))
+
+			fmt.Fprint(ctx, string(retStruct.Data))
+		}
+	}
+
+	respHandler3 := func(resp *cli.Response) {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				log.Println("ret empty")
+				return
+			}
+
+			var retStruct conf.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				log.Fatalln(err)
+				return
+			}
+
+			if retStruct.Code != 0 {
+				log.Println(retStruct.Msg)
+				return
+			}
+
+			fmt.Println(string(retStruct.Data))
+
+			fmt.Fprint(ctx, string(retStruct.Data))
+		}
+	}
+
 	paramsName1 := []string{"name:niansong"}
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
 	}
 	err = client.Do("ToUpper", params1, respHandler)
 	if nil != err {
-		fmt.Println(err)
+		fmt.Println(`--do err--`, err)
 	}
 
-	//2 多个入参，参数中间以:分隔，xx:xxx
-	paramsName2 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
+	paramsName2 := []string{"name:niansong2"}
 	params2, err := msgpack.Marshal(&paramsName2)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
 	}
-	err = client.Do("GetOrderInfo", params2, respHandler)
+	err = client.Do("ToUpper2", params2, respHandler2)
 	if nil != err {
-		fmt.Println(err)
+		fmt.Println(`--do2 err--`, err)
 	}
 
-	paramsName3 := []string{"name:niansong", "pwd:123456"}
+	//多个入参
+	paramsName3 := []string{"order_sn::MBO993889253", "order_type::4"}
 	params3, err := msgpack.Marshal(&paramsName3)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
 	}
-	err = client.Do("PostInfo", params3, respHandler)
+	err = client.Do("GetOrderInfo", params3, respHandler3)
 	if nil != err {
-		fmt.Println(err)
+		fmt.Println(`--do3 err--`, err)
 	}
+}
 
-	paramsName4 := []string{"order_sn:MBO993889253", "order_type:4"}
-	params4, err := msgpack.Marshal(&paramsName4)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("GetOrderInfo", params4, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
+func main() {
+	//pprof
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	}()
 
-	paramsName5 := []string{"name:niansong", "pwd:123456"}
-	params5, err := msgpack.Marshal(&paramsName5)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("PostInfo", params5, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
+	//pyroscope, this is pyroscope push mode. also use pull mode better
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.httpclient",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
 
-	//2 多个入参，参数中间以:分隔，xx:xxx
-	paramsName6 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
-	params6, err := msgpack.Marshal(&paramsName6)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("GetOrderInfo", params6, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
-
-	//2 多个入参，参数中间以:分隔，xx:xxx
-	paramsName7 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
-	params7, err := msgpack.Marshal(&paramsName7)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("GetOrderInfo", params7, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
-
-	//2 多个入参，参数中间以:分隔，xx:xxx
-	paramsName8 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
-	params8, err := msgpack.Marshal(&paramsName8)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("GetOrderInfo", params8, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
-
-	//2 多个入参，参数中间以:分隔，xx:xxx
-	paramsName9 := []string{"order_sn:MBO993889253", "order_type:4", "fenxiao:2253", "open_id:all", "order_status:1"}
-	params9, err := msgpack.Marshal(&paramsName9)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("GetOrderInfo", params9, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
-
-	paramsName10 := []string{"key:Go was publicly announced in November 2009, and version 1.0 was released in March 2012. Go is widely used in production at Google and in many other organizations and open-source projects.Gopher mascot.In November 2016, the Go and Go Mono fonts were released by type designers Charles Bigelow and Kris Holmes specifically for use by the Go project. Go and Go Mono fonts are sans-serif and monospaced respectively. Both fonts adhere to WGL4 and were designed to be legible, with a large x-height and distinct letterforms, by conforming to the DIN 1450 standard.In April 2018, the original logo was replaced with a stylized GO slanting right with trailing streamlines. However, the Gopher mascot remained the same."}
-	params10, err := msgpack.Marshal(&paramsName10)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-		os.Exit(1)
-	}
-	err = client.Do("ToUpper", params10, respHandler)
-	if nil != err {
-		fmt.Println(err)
-	}
+	router := fasthttprouter.New()
+	router.GET("/test", Test)
+	err := fasthttp.ListenAndServe(":5981", router.Handler)
+	fmt.Println(`err info:`, err)
 }
 
 ```
@@ -241,18 +243,58 @@ func main() {
 package main
 
 import (
-	ser "nmid-go/server"
+	"context"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"nmid-v2/pkg/conf"
+	ser "nmid-v2/pkg/server"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
+)
+
+var (
+	sConfig = conf.GetConfig()
 )
 
 func main() {
-	var server *ser.Server
-	server = ser.NewServer()
+	//pprof
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+	}()
 
+	//pyroscope, this is pyroscope push mode. also use pull mode better
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.server",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
+
+	server := ser.NewServer().SetSConfig(sConfig)
 	if nil == server {
 		return
 	}
 
-	server.ServerRun()
+	_, cancel := context.WithCancel(context.Background())
+
+	//开启tcp服务
+	go server.ServerRun()
+	//开启http服务
+	go server.HttpServerRun()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	cancel()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	server.ServerClose(wg)
+	wg.Wait()
+	os.Exit(0)
 }
 
 ```
@@ -263,24 +305,30 @@ func main() {
 package main
 
 import (
-	wor "nmid-go/worker"
 	"fmt"
-	"strings"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"nmid-v2/pkg/conf"
+	wor "nmid-v2/pkg/worker"
+	"strconv"
+	"strings"
+
+	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/vmihailenco/msgpack"
 )
 
-const SERVERHOST = "192.168.1.176"
-const SERVERPORT = "6808"
+const NMIDSERVERHOST = "127.0.0.1"
+const NMIDSERVERPORT = "6808"
 
-//单个入参
+//ToUpper 单个入参
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == wor.PARAMS_TYPE_MUL {
+	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
@@ -300,35 +348,35 @@ func ToUpper(job wor.Job) ([]byte, error) {
 	return ret, nil
 }
 
-//多个入参
+//GetOrderInfo 多个入参
 func GetOrderInfo(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType != wor.PARAMS_TYPE_MUL {
+	if resp.ParamsType != conf.PARAMS_TYPE_MUL {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
 	orderSn, orderType := "", ""
 	for _, v := range resp.StrParams {
-		column := strings.Split(v, string(wor.PARAMS_SCOPE))
+		column := strings.Split(v, conf.PARAMS_SCOPE)
 		switch column[0] {
-			case "order_sn":
-				orderSn = column[1]
-			case "order_type":
-				orderType = column[1]
+		case "order_sn":
+			orderSn = column[1]
+		case "order_type":
+			orderType = column[1]
 		}
 	}
 
 	retStruct := wor.GetRetStruct()
 	if orderSn == "MBO993889253" && orderType == "4" {
-		retStruct.Msg  = "ok"
+		retStruct.Msg = "ok"
 		retStruct.Data = []byte("good goods")
 	} else {
 		retStruct.Code = 100
-		retStruct.Msg  = "params error"
+		retStruct.Msg = "params error"
 		retStruct.Data = []byte(``)
 	}
 
@@ -344,10 +392,21 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 }
 
 func main() {
+	//pprof
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
+	}()
+
+	//pyroscope, this is pyroscope push mode. also use pull mode better
+	profiler.Start(profiler.Config{
+		ApplicationName: "nmid.worker",
+		ServerAddress:   "http://127.0.0.1:4040",
+	})
+
 	var worker *wor.Worker
 	var err error
 
-	serverAddr := SERVERHOST + ":" + SERVERPORT
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {

@@ -3,7 +3,9 @@ package server
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/soheilhy/cmux"
 	"log"
+	"net"
 	"net/http"
 	"nmid-v2/pkg/conf"
 	"sync"
@@ -16,11 +18,13 @@ type Server struct {
 	Port              string
 	HttpPort          string
 	Net               string
+	Ln                net.Listener
+	Cm                cmux.CMux
+	HTTPServerGateway *http.Server
 	SConfig           conf.ServerConfig
 	Cpool             *ConnectPool
 	Funcs             *FuncMap
 	TlsConfig         *tls.Config
-	HTTPServerGateway *http.Server
 }
 
 func NewServer() (ser *Server) {
@@ -100,9 +104,10 @@ func (ser *Server) ServerRun() {
 		log.Fatalln(err)
 		panic(err)
 	}
+	ser.Ln = listen
 
 	for {
-		conn, err := listen.Accept()
+		conn, err := ser.Ln.Accept()
 		if err != nil {
 			log.Fatalln(err)
 			continue
@@ -116,4 +121,12 @@ func (ser *Server) ServerRun() {
 
 		go c.DoIO()
 	}
+}
+
+func (ser *Server) ServerClose(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	ser.Cm.Close()
+	ser.HTTPServerGateway.Close()
+	ser.Ln.Close()
 }

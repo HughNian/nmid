@@ -99,6 +99,31 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
+	respHandler3 := func(resp *cli.Response) {
+		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				log.Println("ret empty")
+				return
+			}
+
+			var retStruct conf.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				log.Fatalln(err)
+				return
+			}
+
+			if retStruct.Code != 0 {
+				log.Println(retStruct.Msg)
+				return
+			}
+
+			fmt.Println(string(retStruct.Data))
+
+			fmt.Fprint(ctx, string(retStruct.Data))
+		}
+	}
+
 	paramsName1 := []string{"name:niansong"}
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
@@ -117,6 +142,17 @@ func Test(ctx *fasthttp.RequestCtx) {
 	err = client.Do("ToUpper2", params2, respHandler2)
 	if nil != err {
 		fmt.Println(`--do2 err--`, err)
+	}
+
+	//多个入参
+	paramsName3 := []string{"order_sn::MBO993889253", "order_type::4"}
+	params3, err := msgpack.Marshal(&paramsName3)
+	if err != nil {
+		log.Fatalln("params msgpack error:", err)
+	}
+	err = client.Do("GetOrderInfo", params3, respHandler3)
+	if nil != err {
+		fmt.Println(`--do3 err--`, err)
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	ser "nmid-v2/pkg/server"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
@@ -52,5 +53,9 @@ func main() {
 	<-quit
 
 	cancel()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	server.ServerClose(wg)
+	wg.Wait()
 	os.Exit(0)
 }

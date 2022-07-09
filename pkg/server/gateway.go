@@ -41,12 +41,12 @@ func (ser *Server) NewHTTPAPIGateway(network string) {
 		return
 	}
 
-	m := cmux.New(ln)
+	ser.Cm = cmux.New(ln)
 
-	httpLn := m.Match(cmux.HTTP1Fast())
+	httpLn := ser.Cm.Match(cmux.HTTP1Fast())
 	go ser.StartHTTPAPIGateway(httpLn)
 
-	go m.Serve()
+	go ser.Cm.Serve()
 }
 
 //StartHTTPAPIGateway start http api gateway
