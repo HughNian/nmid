@@ -2,6 +2,8 @@ package service
 
 import (
 	"encoding/binary"
+	"github.com/vmihailenco/msgpack"
+	"log"
 	"nmid-v2/pkg/conf"
 )
 
@@ -10,19 +12,10 @@ type Request struct {
 	Data     []byte
 	DataLen  uint32
 
-	ScInfo ScInfo
+	ScInfo *ServiceInfo
 }
 
-type ScInfo struct {
-	ServiceId       string
-	ServiceName     string
-	ServiceHost     string
-	ServiceHostName string
-	ServiceEnv      string
-	ServicePort     uint32
-}
-
-func NewReq(scInfo ScInfo) (req *Request) {
+func NewReq(scInfo *ServiceInfo) (req *Request) {
 	req = &Request{
 		ScInfo: scInfo,
 	}
@@ -31,52 +24,37 @@ func NewReq(scInfo ScInfo) (req *Request) {
 
 //ServiceInfoPack service信息打包内容
 func (req *Request) ServiceInfoPack(dataType uint32) (content []byte, contentLen uint32) {
+	instanceMapVal, err := Struct2Map(req.ScInfo.Instance)
+	if nil != err {
+		log.Fatalln("ServiceInfoPack instance map val err", err)
+		return
+	}
+	instancePackVal, err := msgpack.Marshal(instanceMapVal)
+	if nil != err {
+		log.Println("ServiceInfoPack instance pack val err", err)
+		return
+	}
+
 	req.DataType = dataType
 	serviceIdLen := uint32(len(req.ScInfo.ServiceId))
-	serviceNameLen := uint32(len(req.ScInfo.ServiceName))
-	serviceHostLen := uint32(len(req.ScInfo.ServiceHost))
-	serviceHostNameLen := uint32(len(req.ScInfo.ServiceHostName))
-	serviceEnvLen := uint32(len(req.ScInfo.ServiceEnv))
+	ingressUrlLen := uint32(len(req.ScInfo.IngressUrl))
+	instanceLen := uint32(len(instancePackVal))
 	req.DataLen = conf.UINT32_SIZE + serviceIdLen +
-		conf.UINT32_SIZE + serviceNameLen +
-		conf.UINT32_SIZE + serviceHostLen +
-		conf.UINT32_SIZE + serviceHostNameLen +
-		conf.UINT32_SIZE + serviceEnvLen +
-		conf.UINT32_SIZE
+		conf.UINT32_SIZE + ingressUrlLen +
+		conf.UINT32_SIZE + instanceLen
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
 	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], serviceIdLen)
 	start := conf.UINT32_SIZE
 	end := conf.UINT32_SIZE + conf.UINT32_SIZE
-	binary.BigEndian.PutUint32(content[start:end], serviceNameLen)
+	binary.BigEndian.PutUint32(content[start:end], serviceIdLen)
 	start = end
 	end = start + conf.UINT32_SIZE
-	binary.BigEndian.PutUint32(content[start:end], serviceHostLen)
+	binary.BigEndian.PutUint32(content[start:end], ingressUrlLen)
 	start = end
-	end = start + conf.UINT32_SIZE
-	binary.BigEndian.PutUint32(content[start:end], serviceHostNameLen)
-	start = end
-	end = start + conf.UINT32_SIZE
-	binary.BigEndian.PutUint32(content[start:end], serviceEnvLen)
-	start = end
-	end = start + conf.UINT32_SIZE
-	binary.BigEndian.PutUint32(content[start:end], req.ScInfo.ServicePort)
-	start = end
-	end = start + int(serviceIdLen)
-	copy(content[start:end], req.ScInfo.ServiceId)
-	start = end
-	end = start + int(serviceNameLen)
-	copy(content[start:end], req.ScInfo.ServiceName)
-	start = end
-	end = start + int(serviceHostLen)
-	copy(content[start:end], req.ScInfo.ServiceHost)
-	start = end
-	end = start + int(serviceHostNameLen)
-	copy(content[start:end], req.ScInfo.ServiceHostName)
-	start = end
-	end = start + int(serviceEnvLen)
-	copy(content[start:end], req.ScInfo.ServiceEnv)
+	end = start + int(instanceLen)
+	copy(content[start:end], instancePackVal)
 	req.Data = content
 
 	return

@@ -13,7 +13,9 @@ type SWorker struct {
 	WorkerId string
 	Connect  *Connect
 
-	JobNum   int
+	JobNum int
+	Weight uint
+
 	Jobs     *JobDataList
 	DingJobs *JobDataList
 	DoneJobs *JobDataList
@@ -38,7 +40,6 @@ func NewSWorker(conn *Connect) *SWorker {
 	return &SWorker{
 		WorkerId:      conn.Id,
 		Connect:       conn,
-		JobNum:        0,
 		Jobs:          NewJobDataList(),
 		Req:           NewReq(),
 		Res:           NewRes(),

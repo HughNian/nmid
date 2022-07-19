@@ -8,6 +8,7 @@ require (
 	github.com/joshbohde/codel v0.1.2 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
+	github.com/mroth/weightedrand v0.4.1 // indirect
 	github.com/pyroscope-io/client v0.0.0-20211206204731-3fd0a4b8239c // indirect
 	github.com/pyroscope-io/pyroscope v0.7.2 // indirect
 	github.com/shirou/gopsutil v3.21.4+incompatible // indirect

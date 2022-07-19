@@ -1,15 +1,19 @@
 package server
 
 import (
+	wr "github.com/mroth/weightedrand"
 	"math/rand"
+	"nmid-v2/pkg/conf"
 	"sync"
+	"time"
 )
 
 type Func struct {
 	FuncName string
 
-	WorkerNum int
-	Workers   []*SWorker
+	WorkerNum      int
+	LoadBlanceType int
+	Workers        []*SWorker
 }
 
 type FuncMap struct {
@@ -39,9 +43,9 @@ func (fm *FuncMap) AddFunc(worker *SWorker, name string) bool {
 		function = item.(*Func)
 	} else {
 		function = &Func{
-			FuncName:  name,
-			WorkerNum: 0,
-			Workers:   make([]*SWorker, 0),
+			FuncName:       name,
+			LoadBlanceType: conf.LOADBLANCE_HASH,
+			Workers:        make([]*SWorker, 0),
 		}
 
 		fm.mutex.Lock()
@@ -121,13 +125,56 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 	if item, exist := fm.Funcs.Load(name); exist {
 		function := item.(*Func)
 		if function.WorkerNum > 0 {
-			rkey := int(rand.Int() % function.WorkerNum)
-			var best = function.Workers[rkey]
-			for _, val := range function.Workers {
-				if val.JobNum < best.JobNum {
-					best = val
-				}
+			var best *SWorker
+
+			var hashfunc = func() *SWorker {
+				rkey := int(rand.Int() % function.WorkerNum)
+				return function.Workers[rkey]
 			}
+
+			switch function.LoadBlanceType {
+			//一致性hash
+			case conf.LOADBLANCE_HASH:
+				best = hashfunc()
+
+			//加权随机
+			case conf.LOADBLANCE_ROUND_WEIGHT:
+				{
+					if function.WorkerNum <= 10 {
+						rand.Seed(time.Now().UTC().UnixNano())
+
+						ch := make([]wr.Choice, 0)
+						for _, w := range function.Workers {
+							ch = append(ch, wr.NewChoice(w, w.Weight))
+						}
+
+						chooser, err := wr.NewChooser(ch...)
+						if nil == err {
+							best = chooser.Pick().(*SWorker)
+						}
+
+						//以防止weight都为0的情况
+						if nil == best {
+							best = hashfunc()
+						}
+					} else {
+						best = hashfunc()
+					}
+				}
+
+			//lru 最少使用率
+			case conf.LOADBLANCE_LRU:
+				for _, val := range function.Workers {
+					if val.JobNum < best.JobNum {
+						best = val
+					}
+				}
+
+			//默认，一致性hash
+			default:
+				best = hashfunc()
+			}
+
 			worker = best
 			return worker
 		}

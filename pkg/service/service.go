@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,30 +12,46 @@ import (
 	"time"
 )
 
-type Service struct {
-	sync.Mutex
+type (
+	Service struct {
+		sync.Mutex
 
-	ServiceId       string
-	ServiceName     string
-	ServiceHost     string
-	ServiceHostName string
-	ServiceEnv      string
-	ServicePort     uint32
+		net, addr string
+		conn      net.Conn
+		rw        *bufio.ReadWriter
 
-	net, addr string
-	conn      net.Conn
-	rw        *bufio.ReadWriter
+		SInfo *ServiceInfo
 
-	Req      *Request
-	ResQueue chan *Response
+		Req      *Request
+		ResQueue chan *Response
 
-	IoTimeOut time.Duration
-}
+		IoTimeOut time.Duration
+	}
+
+	ServiceInfo struct {
+		ServiceId  string
+		IngressUrl string
+		Instance   *Instance
+	}
+
+	Instance struct {
+		Region      string            `json:"region"`
+		Zone        string            `json:"zone"`
+		Env         string            `json:"env"`
+		ServiceId   string            `json:"serviceId"`
+		ServiceName string            `json:"servicename"`
+		HostName    string            `json:"hostname"`
+		Addrs       []string          `json:"addrs"`
+		Version     string            `json:"version"`
+		Metadata    map[string]string `json:"metadata"`
+	}
+)
 
 func NewService(network, addr string) (service *Service, err error) {
 	service = &Service{
 		net:       network,
 		addr:      addr,
+		SInfo:     &ServiceInfo{},
 		Req:       nil,
 		ResQueue:  make(chan *Response, conf.QUEUE_SIZE),
 		IoTimeOut: conf.DEFAULT_TIME_OUT,
@@ -51,18 +68,46 @@ func NewService(network, addr string) (service *Service, err error) {
 	return service, nil
 }
 
-func (sc *Service) SetServiceInfo(ServiceName, ServiceHost, ServiceHostName, ServiceEnv string, ServicePort uint32) *Service {
-	sc.ServiceName = ServiceName
-	sc.ServiceHost = ServiceHost
-	sc.ServiceHostName = ServiceHostName
-	sc.ServicePort = ServicePort
-	sc.ServiceEnv = ServiceEnv
-	sc.ServiceId = GenServiceId(ServiceName, ServiceHost)
+func (sc *Service) SetServiceInfo(ingressUrl string, instance []byte) *Service {
+	if len(ingressUrl) == 0 {
+		fmt.Errorf("ingressUrl empty")
+		return nil
+	}
+
+	sc.SInfo.IngressUrl = ingressUrl
+	ins := Instance{}
+	err := json.Unmarshal(instance, &ins)
+	if nil != err {
+		log.Fatalln("instance info error", err)
+		return nil
+	}
+
+	if len(ins.ServiceName) == 0 {
+		fmt.Errorf("service name empty")
+		return nil
+	}
+	if len(ins.HostName) == 0 {
+		fmt.Errorf("host name empty")
+		return nil
+	}
+	if len(ins.Addrs) == 0 {
+		fmt.Errorf("addrs empty")
+		return nil
+	}
+	if len(ins.Metadata) == 0 {
+		fmt.Errorf("metadata empty")
+		return nil
+	}
+
+	sc.SInfo.ServiceId = GenServiceId(ins.ServiceName)
+	ins.ServiceId = sc.SInfo.ServiceId
+	sc.SInfo.Instance = &ins
+
 	return sc
 }
 
 func (sc *Service) GetServiceId() string {
-	return sc.ServiceId
+	return sc.SInfo.ServiceId
 }
 
 func (sc *Service) Write() (err error) {
@@ -204,30 +249,8 @@ func (sc *Service) RegService() (ret bool, err error) {
 	if sc.conn == nil {
 		return false, fmt.Errorf("conn fail")
 	}
-	if len(sc.ServiceName) == 0 {
-		return false, fmt.Errorf("service name empty")
-	}
-	if len(sc.ServiceHost) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if len(sc.ServiceHostName) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if len(sc.ServiceEnv) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if sc.ServicePort == 0 {
-		return false, fmt.Errorf("service port err")
-	}
 
-	NewReq(ScInfo{
-		ServiceId:       sc.ServiceId,
-		ServiceName:     sc.ServiceName,
-		ServiceHost:     sc.ServiceHost,
-		ServiceHostName: sc.ServiceHostName,
-		ServiceEnv:      sc.ServiceEnv,
-		ServicePort:     sc.ServicePort,
-	}).ServiceInfoPack(conf.PDT_SC_REG_SERVICE)
+	NewReq(sc.SInfo).ServiceInfoPack(conf.PDT_SC_REG_SERVICE)
 	if err = sc.Write(); err != nil {
 		return false, err
 	}
@@ -243,28 +266,8 @@ func (sc *Service) OffService() (ret bool, err error) {
 	if sc.conn == nil {
 		return false, fmt.Errorf("conn fail")
 	}
-	if len(sc.ServiceName) == 0 {
-		return false, fmt.Errorf("service name empty")
-	}
-	if len(sc.ServiceHost) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if len(sc.ServiceHostName) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if len(sc.ServiceEnv) == 0 {
-		return false, fmt.Errorf("service host empty")
-	}
-	if sc.ServicePort == 0 {
-		return false, fmt.Errorf("service port err")
-	}
 
-	NewReq(ScInfo{
-		ServiceId:   sc.ServiceId,
-		ServiceName: sc.ServiceName,
-		ServiceHost: sc.ServiceHost,
-		ServicePort: sc.ServicePort,
-	}).ServiceInfoPack(conf.PDT_SC_OFF_SERVICE)
+	NewReq(sc.SInfo).ServiceInfoPack(conf.PDT_SC_OFF_SERVICE)
 	if err = sc.Write(); err != nil {
 		return false, err
 	}

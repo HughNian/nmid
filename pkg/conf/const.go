@@ -56,6 +56,13 @@ const (
 	JOB_STATUS_DONE   = 9
 )
 
+//loadblance type
+const (
+	LOADBLANCE_HASH         = 1
+	LOADBLANCE_LRU          = 2
+	LOADBLANCE_ROUND_WEIGHT = 3
+)
+
 type RetStruct struct {
 	Code int
 	Msg  string

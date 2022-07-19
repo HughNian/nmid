@@ -19,7 +19,7 @@ func NewCodelLimiter() *codel.Lock {
 	})
 }
 
-//codel限流
+//DoCodelLimiter codel限流
 func DoCodelLimiter(c *codel.Lock) bool {
 	// Attempt to acquire the lock.
 	err := c.Acquire(context.Background())
@@ -35,7 +35,7 @@ func DoCodelLimiter(c *codel.Lock) bool {
 	return true
 }
 
-//token ratelimiter, 令牌桶限流
+//NewBucketLimiter token rate limiter, 令牌桶限流
 func NewBucketLimiter() *ratelimit.Bucket {
 	return ratelimit.NewBucket(FILLINTERVAL, CAPACITY)
 }
