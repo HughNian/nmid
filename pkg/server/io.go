@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/binary"
+	"nmid-v2/pkg/conf"
 )
 
 type Request struct {
@@ -96,17 +97,17 @@ func (res *Response) GetResHandle() string {
 
 //GetResContent 打包内容
 func (res *Response) GetResContent() (content []byte, contentLen int) {
-	if res.DataType == PDT_S_GET_DATA {
-		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.JobIdLen)
+	if res.DataType == conf.PDT_S_GET_DATA {
+		contentLen = int(conf.UINT32_SIZE + res.HandleLen + conf.UINT32_SIZE + res.ParamsLen + conf.UINT32_SIZE + res.JobIdLen)
 		content = GetBuffer(contentLen)
 
 		//新的发给worker的打包协议
-		binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
-		start := UINT32_SIZE
-		end := UINT32_SIZE + UINT32_SIZE
+		binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], uint32(res.HandleLen))
+		start := conf.UINT32_SIZE
+		end := conf.UINT32_SIZE + conf.UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
 		start = end
-		end = start + UINT32_SIZE
+		end = start + conf.UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.JobIdLen))
 		start = end
 		end = start + int(res.HandleLen)
@@ -116,17 +117,17 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 		copy(content[start:end], res.Params)
 		start = end
 		copy(content[start:], res.JobId)
-	} else if res.DataType == PDT_S_RETURN_DATA {
-		contentLen = int(UINT32_SIZE + res.HandleLen + UINT32_SIZE + res.ParamsLen + UINT32_SIZE + res.RetLen)
+	} else if res.DataType == conf.PDT_S_RETURN_DATA {
+		contentLen = int(conf.UINT32_SIZE + res.HandleLen + conf.UINT32_SIZE + res.ParamsLen + conf.UINT32_SIZE + res.RetLen)
 		content = GetBuffer(contentLen)
 
 		//新的发给client的打包协议
-		binary.BigEndian.PutUint32(content[:UINT32_SIZE], uint32(res.HandleLen))
-		start := UINT32_SIZE
-		end := start + UINT32_SIZE
+		binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], uint32(res.HandleLen))
+		start := conf.UINT32_SIZE
+		end := start + conf.UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
 		start = end
-		end = start + UINT32_SIZE
+		end = start + conf.UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.RetLen))
 		start = end
 		end = start + int(res.HandleLen)
@@ -136,7 +137,7 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 		copy(content[start:end], res.Params)
 		start = end
 		copy(content[start:], res.Ret)
-	} else if res.DataType == PDT_NO_JOB || res.DataType == PDT_OK || res.DataType == PDT_ERROR || res.DataType == PDT_CANT_DO {
+	} else if res.DataType == conf.PDT_NO_JOB || res.DataType == conf.PDT_OK || res.DataType == conf.PDT_ERROR || res.DataType == conf.PDT_CANT_DO {
 		content = []byte(``)
 		contentLen = 0
 	}
@@ -147,21 +148,21 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 //ReqDecodePack 解包
 func (req *Request) ReqDecodePack() {
 	if req.DataLen > 0 && len(req.Data) > 0 && req.DataLen == uint32(len(req.Data)) {
-		if req.DataType == PDT_W_RETURN_DATA {
+		if req.DataType == conf.PDT_W_RETURN_DATA {
 			var handle []byte
 			var handLen int
-			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[:UINT32_SIZE]))
+			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[:conf.UINT32_SIZE]))
 			handLen = int(req.HandleLen)
 			handle = GetBuffer(handLen)
-			start := UINT32_SIZE
-			end := UINT32_SIZE + handLen
+			start := conf.UINT32_SIZE
+			end := conf.UINT32_SIZE + handLen
 			copy(handle, req.Data[start:end])
 			req.Handle = string(handle)
 
 			var params []byte
 			var paramsLen int
 			start = end
-			end = start + UINT32_SIZE
+			end = start + conf.UINT32_SIZE
 			req.ParamsLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
 			paramsLen = int(req.ParamsLen)
 			params = GetBuffer(paramsLen)
@@ -173,7 +174,7 @@ func (req *Request) ReqDecodePack() {
 			var ret []byte
 			var retLen int
 			start = end
-			end = start + UINT32_SIZE
+			end = start + conf.UINT32_SIZE
 			req.RetLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
 			retLen = int(req.RetLen)
 			ret = GetBuffer(retLen)
@@ -185,35 +186,35 @@ func (req *Request) ReqDecodePack() {
 			var jobId []byte
 			var jobIdLen int
 			start = end
-			end = start + UINT32_SIZE
+			end = start + conf.UINT32_SIZE
 			req.JobIdLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
 			jobIdLen = int(req.JobIdLen)
 			jobId = GetBuffer(jobIdLen)
 			start = end
 			copy(jobId, req.Data[start:])
 			req.JobId = string(jobId)
-		} else if req.DataType == PDT_C_DO_JOB {
+		} else if req.DataType == conf.PDT_C_DO_JOB {
 			var handle []byte
 			var handLen int
-			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[:UINT32_SIZE]))
+			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[:conf.UINT32_SIZE]))
 			handLen = int(req.HandleLen)
 			handle = GetBuffer(handLen)
-			start := UINT32_SIZE
-			end := UINT32_SIZE + handLen
+			start := conf.UINT32_SIZE
+			end := conf.UINT32_SIZE + handLen
 			copy(handle, req.Data[start:end])
 			req.Handle = string(handle)
 
 			var params []byte
 			var paramsLen int
 			start = end
-			end = start + UINT32_SIZE
+			end = start + conf.UINT32_SIZE
 			req.ParamsLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
 			paramsLen = int(req.ParamsLen)
 			params = GetBuffer(paramsLen)
 			start = end
 			copy(params, req.Data[start:])
 			req.Params = params //append(req.Params, params...)
-		} else if req.DataType == PDT_SC_REG_SERVICE {
+		} else if req.DataType == conf.PDT_SC_REG_SERVICE {
 
 		}
 	}
@@ -225,17 +226,17 @@ func (res *Response) ResEncodePack() (resData []byte) {
 	// fmt.Println("######content-", content)
 	// fmt.Println("######contentLen-", contentLen)
 
-	resDataLen := MIN_DATA_SIZE + contentLen //数据内容长度
+	resDataLen := conf.MIN_DATA_SIZE + contentLen //数据内容长度
 	res.DataLen = uint32(resDataLen)
 	// fmt.Println("######resDataLen-", resDataLen)
 
 	resData = GetBuffer(resDataLen)
-	binary.BigEndian.PutUint32(resData[:UINT32_SIZE], CONN_TYPE_SERVER)
-	binary.BigEndian.PutUint32(resData[UINT32_SIZE:8], res.DataType)
-	binary.BigEndian.PutUint32(resData[8:MIN_DATA_SIZE], uint32(contentLen))
+	binary.BigEndian.PutUint32(resData[:conf.UINT32_SIZE], conf.CONN_TYPE_SERVER)
+	binary.BigEndian.PutUint32(resData[conf.UINT32_SIZE:8], res.DataType)
+	binary.BigEndian.PutUint32(resData[8:conf.MIN_DATA_SIZE], uint32(contentLen))
 
 	if contentLen > 0 {
-		copy(resData[MIN_DATA_SIZE:], content)
+		copy(resData[conf.MIN_DATA_SIZE:], content)
 		res.Data = resData //append(res.Data, resData...)
 	}
 

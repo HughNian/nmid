@@ -3,6 +3,7 @@ package server
 import (
 	"container/list"
 	"net/http"
+	"nmid-v2/pkg/conf"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func NewJobData(Handle, Params string) (data *JobData) {
 	data = new(JobData)
 
 	data.JobId = GetJobId(Handle, Params)
-	data.status = JOB_STATUS_INIT
+	data.status = conf.JOB_STATUS_INIT
 
 	return data
 }

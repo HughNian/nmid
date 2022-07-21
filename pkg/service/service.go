@@ -30,7 +30,8 @@ type (
 
 	ServiceInfo struct {
 		ServiceId  string
-		IngressUrl string
+		InFlowUrl  string
+		OutFlowUrl string
 		Instance   *Instance
 	}
 
@@ -68,13 +69,14 @@ func NewService(network, addr string) (service *Service, err error) {
 	return service, nil
 }
 
-func (sc *Service) SetServiceInfo(ingressUrl string, instance []byte) *Service {
-	if len(ingressUrl) == 0 {
-		fmt.Errorf("ingressUrl empty")
+func (sc *Service) SetServiceInfo(inflowUrl, outflowUrl string, instance []byte) *Service {
+	if len(inflowUrl) == 0 {
+		fmt.Errorf("inflowUrl empty")
 		return nil
 	}
 
-	sc.SInfo.IngressUrl = ingressUrl
+	sc.SInfo.InFlowUrl = inflowUrl
+	sc.SInfo.OutFlowUrl = outflowUrl
 	ins := Instance{}
 	err := json.Unmarshal(instance, &ins)
 	if nil != err {

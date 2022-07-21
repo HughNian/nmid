@@ -1,6 +1,7 @@
 package server
 
 import (
+	"nmid-v2/pkg/conf"
 	"sync"
 
 	"github.com/joshbohde/codel"
@@ -60,7 +61,7 @@ func (w *SWorker) addFunction() {
 		}
 	}
 
-	w.Res.DataType = PDT_OK
+	w.Res.DataType = conf.PDT_OK
 	resPack := w.Res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
@@ -95,14 +96,14 @@ func (w *SWorker) delWorkerJobV2(jobId string) {
 
 func (w *SWorker) doWork(job *JobData) {
 	if w.JobNum > 0 {
-		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_INIT {
-			job.status = JOB_STATUS_DOING
+		if job != nil && job.WorkerId == w.WorkerId && job.status == conf.JOB_STATUS_INIT {
+			job.status = conf.JOB_STATUS_DOING
 
 			functionName := job.FuncName
 			params := job.Params
 			paramsLen := uint32(len(params))
 			if functionName != `` && paramsLen != 0 {
-				w.Res.DataType = PDT_S_GET_DATA
+				w.Res.DataType = conf.PDT_S_GET_DATA
 				w.Res.Handle = functionName
 				w.Res.HandleLen = uint32(len(functionName))
 				w.Res.ParamsType = job.ParamsType
@@ -125,14 +126,14 @@ func (w *SWorker) returnData() {
 		//解包获取数据内容
 		w.Req.ReqDecodePack()
 		job := w.Jobs.GetJobData(w.Req.JobId)
-		if job != nil && job.WorkerId == w.WorkerId && job.status == JOB_STATUS_DOING {
+		if job != nil && job.WorkerId == w.WorkerId && job.status == conf.JOB_STATUS_DOING {
 			//任务完成判断
 			if w.Res.HandleLen == w.Req.HandleLen &&
 				w.Res.Handle == w.Req.Handle &&
 				w.Res.ParamsLen == w.Req.ParamsLen &&
 				string(w.Res.Params) == string(w.Req.Params) {
 				job.RetData = append(job.RetData, w.Req.Ret...)
-				job.status = JOB_STATUS_DONE
+				job.status = conf.JOB_STATUS_DONE
 			} else {
 				return
 			}
@@ -144,11 +145,11 @@ func (w *SWorker) returnData() {
 			if clientId != `` && functionName != `` && paramsLen != 0 {
 				//tcp client response
 				if client := w.Connect.Ser.Cpool.GetConnect(clientId); client != nil {
-					w.Res.DataType = PDT_S_RETURN_DATA
+					w.Res.DataType = conf.PDT_S_RETURN_DATA
 					w.Res.Ret = job.RetData
 					w.Res.RetLen = w.Req.RetLen
 
-					if client.ConnType == CONN_TYPE_CLIENT {
+					if client.ConnType == conf.CONN_TYPE_CLIENT {
 						client.Lock()
 						resPack := w.Res.ResEncodePack()
 						client.Write(resPack)
@@ -157,7 +158,7 @@ func (w *SWorker) returnData() {
 				}
 			} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
 				//http client response data
-				w.Res.DataType = PDT_S_RETURN_DATA
+				w.Res.DataType = conf.PDT_S_RETURN_DATA
 				w.Res.Ret = job.RetData
 				w.Res.RetLen = w.Req.RetLen
 
@@ -175,7 +176,7 @@ func (w *SWorker) workerWakeup() {
 }
 
 func (w *SWorker) doLimit() {
-	w.Res.DataType = PDT_RATELIMIT
+	w.Res.DataType = conf.PDT_RATELIMIT
 	resPack := w.Res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
@@ -188,26 +189,26 @@ func (w *SWorker) RunWorker() {
 
 	switch dataType {
 	//worker add function
-	case PDT_W_ADD_FUNC:
+	case conf.PDT_W_ADD_FUNC:
 		{
 			w.addFunction()
 		}
 	//worker del function
-	case PDT_W_DEL_FUNC:
+	case conf.PDT_W_DEL_FUNC:
 		{
 			w.delFunction()
 		}
-	case PDT_WAKEUP:
+	case conf.PDT_WAKEUP:
 		{
 			w.workerWakeup()
 		}
 	//worker grab job
-	case PDT_W_GRAB_JOB:
+	case conf.PDT_W_GRAB_JOB:
 		{
 			//go w.doWork(``)
 		}
 	//worker return data
-	case PDT_W_RETURN_DATA:
+	case conf.PDT_W_RETURN_DATA:
 		{
 			w.returnData()
 		}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"nmid-v2/pkg/conf"
 	"sync"
 	"time"
 
@@ -29,7 +30,7 @@ func NewSClient(conn *Connect) *SClient {
 	}
 
 	return &SClient{
-		Timer:         time.NewTimer(CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
+		Timer:         time.NewTimer(conf.CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
 		ClientId:      conn.Id,
 		Connect:       conn,
 		Req:           NewReq(),
@@ -45,14 +46,14 @@ func (c *SClient) doJob() {
 	// fmt.Println("######Client Req-", c.Req.DataType)
 
 	if c.Req.HandleLen == 0 || c.Req.Handle == `` {
-		c.Res.DataType = PDT_ERROR
+		c.Res.DataType = conf.PDT_ERROR
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
 		return
 	}
 	if c.Req.ParamsLen == 0 || len(c.Req.Params) == 0 {
-		c.Res.DataType = PDT_ERROR
+		c.Res.DataType = conf.PDT_ERROR
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
@@ -61,7 +62,7 @@ func (c *SClient) doJob() {
 
 	worker := c.Connect.Ser.Funcs.GetBestWorker(c.Req.Handle)
 	if worker == nil {
-		c.Res.DataType = PDT_CANT_DO
+		c.Res.DataType = conf.PDT_CANT_DO
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
@@ -76,9 +77,9 @@ func (c *SClient) doJob() {
 	job.FuncName = c.Req.Handle
 	job.Params = c.Req.Params
 	if IsMulParams(job.Params) {
-		job.ParamsType = PARAMS_TYPE_MUL
+		job.ParamsType = conf.PARAMS_TYPE_MUL
 	} else {
-		job.ParamsType = PARAMS_TYPE_ONE
+		job.ParamsType = conf.PARAMS_TYPE_ONE
 	}
 
 	if ok := worker.Jobs.PushJobData(job); ok {
@@ -91,7 +92,7 @@ func (c *SClient) doJob() {
 }
 
 func (c *SClient) doLimit() {
-	c.Res.DataType = PDT_RATELIMIT
+	c.Res.DataType = conf.PDT_RATELIMIT
 	resPack := c.Res.ResEncodePack()
 	c.Connect.Write(resPack)
 }
@@ -104,7 +105,7 @@ func (c *SClient) RunClient() {
 		dataType := c.Req.GetReqDataType()
 
 		switch dataType {
-		case PDT_C_DO_JOB:
+		case conf.PDT_C_DO_JOB:
 			{
 				c.doJob()
 			}
@@ -119,7 +120,7 @@ func (c *SClient) AliveTimeOut() {
 			select {
 			case <-t.C:
 				c.Connect.CloseConnect()
-				t.Reset(CLIENT_ALIVE_TIME)
+				t.Reset(conf.CLIENT_ALIVE_TIME)
 			}
 		}
 	}(c.Timer)

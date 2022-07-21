@@ -36,16 +36,31 @@ func NewClient(network, addr string) (client *Client, err error) {
 		IoTimeOut:    conf.DEFAULT_TIME_OUT,
 		RespHandlers: NewResHandlerMap(),
 	}
-	client.conn, err = net.DialTimeout(client.net, client.addr, conf.DIAL_TIME_OUT)
-	if err != nil {
+
+	err = client.ClientConn()
+	if nil != err {
 		return nil, err
 	}
-
-	client.rw = bufio.NewReadWriter(bufio.NewReader(client.conn), bufio.NewWriter(client.conn))
 
 	go client.ClientRead()
 
 	return client, nil
+}
+
+func (c *Client) ClientConn() error {
+	var err error
+
+	c.conn, err = net.DialTimeout(c.net, c.addr, conf.DIAL_TIME_OUT)
+	if err != nil {
+		return err
+	}
+	//if tcpCon, ok := c.conn.(*net.TCPConn); ok {
+	//	tcpCon.SetLinger(0)
+	//}
+
+	c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
+
+	return nil
 }
 
 func (c *Client) Write() (err error) {
@@ -103,11 +118,10 @@ Loop:
 			//断开重连
 			log.Println("client read error here:" + err.Error())
 			c.Close()
-			c.conn, err = net.DialTimeout(c.net, c.addr, conf.DIAL_TIME_OUT)
-			if err != nil {
+			err = c.ClientConn()
+			if nil != err {
 				break
 			}
-			c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
 			c.ResQueue = make(chan *Response, conf.QUEUE_SIZE)
 			continue
 		}

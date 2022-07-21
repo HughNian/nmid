@@ -13,9 +13,9 @@ const (
 	UINT32_SIZE       = 4
 	MAX_NOJOB_NUM     = 10
 	PARAMS_SCOPE      = "::"
-	DEFAULT_TIME_OUT  = 100 * time.Millisecond            //io超时
-	DIAL_TIME_OUT     = 3 * time.Second                   //连接超时
-	CLIENT_ALIVE_TIME = time.Duration(1800) * time.Second //客户端长连接生存周期
+	DEFAULT_TIME_OUT  = 100 * time.Millisecond          //io超时
+	DIAL_TIME_OUT     = 3 * time.Second                 //连接超时
+	CLIENT_ALIVE_TIME = time.Duration(30) * time.Second //客户端长连接生存周期
 
 	//package data type
 	PDT_OK               = 1

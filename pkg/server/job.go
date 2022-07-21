@@ -1,6 +1,7 @@
 package server
 
 import (
+	"nmid-v2/pkg/conf"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func NewJob(Handle, Params string) (j *Job) {
 	j.JobId = GetJobId(Handle, Params)
 	j.ClientId = ``
 	j.WorkerId = ``
-	j.status = JOB_STATUS_INIT
+	j.status = conf.JOB_STATUS_INIT
 	j.FuncName = ``
 	j.Params = make([]byte, 0)
 	j.RetData = make([]byte, 0)

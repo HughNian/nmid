@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"nmid-v2/pkg/conf"
 	"sync"
 )
 
@@ -71,7 +72,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.Conn = conn
 	c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	pool.Unlock()
-	c.ConnType = CONN_TYPE_INIT
+	c.ConnType = conf.CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
 	c.RunService = nil
@@ -126,7 +127,7 @@ func (c *Connect) getSCClient() *SClient {
 	}
 
 	c.RunClient.AliveTimeOut()
-	//c.Conn.SetDeadline(time.Now().Add(CLIENT_ALIVE_TIME))
+	//c.Conn.SetDeadline(time.Now().Add(conf.CLIENT_ALIVE_TIME))
 
 	return c.RunClient
 }
@@ -145,7 +146,7 @@ func (c *Connect) getSSCClient() *Service {
 func (c *Connect) Write(resPack []byte) {
 	var n int
 	var err error
-	if c.ConnType == CONN_TYPE_WORKER {
+	if c.ConnType == conf.CONN_TYPE_WORKER {
 		worker := c.RunWorker
 		for i := 0; i < len(resPack); i += n {
 			n, err = worker.Connect.rw.Write(resPack[i:])
@@ -155,7 +156,7 @@ func (c *Connect) Write(resPack []byte) {
 			}
 		}
 		worker.Connect.rw.Flush()
-	} else if c.ConnType == CONN_TYPE_CLIENT {
+	} else if c.ConnType == conf.CONN_TYPE_CLIENT {
 		client := c.RunClient
 		if len(resPack) == 0 {
 			log.Println("resPack nil")
@@ -186,27 +187,27 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	}
 
 	//读取数据头
-	if n >= MIN_DATA_SIZE {
+	if n >= conf.MIN_DATA_SIZE {
 		connType = uint32(binary.BigEndian.Uint32(tmp[:4]))
 		dataType = uint32(binary.BigEndian.Uint32(tmp[4:8]))
-		dataLen = int(binary.BigEndian.Uint32(tmp[8:MIN_DATA_SIZE]))
+		dataLen = int(binary.BigEndian.Uint32(tmp[8:conf.MIN_DATA_SIZE]))
 
-		if connType != CONN_TYPE_WORKER &&
-			connType != CONN_TYPE_CLIENT &&
-			connType != CONN_TYPE_SERVICE {
+		if connType != conf.CONN_TYPE_WORKER &&
+			connType != conf.CONN_TYPE_CLIENT &&
+			connType != conf.CONN_TYPE_SERVICE {
 			return []byte(``), nil
 		}
 
 		c.ConnType = connType
-		if c.ConnType == CONN_TYPE_WORKER {
+		if c.ConnType == conf.CONN_TYPE_WORKER {
 			worker := c.getSWClinet()
 			worker.Req.DataType = dataType
 			worker.Req.DataLen = uint32(dataLen)
-		} else if c.ConnType == CONN_TYPE_CLIENT {
+		} else if c.ConnType == conf.CONN_TYPE_CLIENT {
 			client := c.getSCClient()
 			client.Req.DataType = dataType
 			client.Req.DataLen = uint32(dataLen)
-		} else if c.ConnType == CONN_TYPE_SERVICE {
+		} else if c.ConnType == conf.CONN_TYPE_SERVICE {
 			sclient := c.getSSCClient()
 			sclient.Req.DataType = dataType
 			sclient.Req.DataLen = uint32(dataLen)
@@ -220,7 +221,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	}
 
 	//读取所有内容
-	for buf.Len() < dataLen+MIN_DATA_SIZE {
+	for buf.Len() < dataLen+conf.MIN_DATA_SIZE {
 		tmpcontent := GetBuffer(dataLen)
 		if n, err = c.rw.Read(tmpcontent); err != nil {
 			log.Println("read content error")
@@ -236,7 +237,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 func (c *Connect) DoIO() {
 	var err error
 	var data, content []byte
-	var rsize = MIN_DATA_SIZE
+	var rsize = conf.MIN_DATA_SIZE
 	var worker *SWorker
 	var client *SClient
 	var service *Service
@@ -251,7 +252,7 @@ func (c *Connect) DoIO() {
 					break
 				}
 			} else if err == io.EOF {
-				if c.ConnType == CONN_TYPE_WORKER {
+				if c.ConnType == conf.CONN_TYPE_WORKER {
 					c.Ser.Funcs.DelWorker(c.Id)
 				}
 				c.Ser.Cpool.DelConnect(c.Id)
@@ -259,7 +260,7 @@ func (c *Connect) DoIO() {
 			}
 		}
 
-		if c.ConnType == CONN_TYPE_WORKER {
+		if c.ConnType == conf.CONN_TYPE_WORKER {
 			worker = c.RunWorker
 
 			allLen := uint32(len(data))
@@ -268,13 +269,13 @@ func (c *Connect) DoIO() {
 			}
 
 			content = make([]byte, worker.Req.DataLen)
-			copy(content, data[MIN_DATA_SIZE:allLen])
+			copy(content, data[conf.MIN_DATA_SIZE:allLen])
 			clen := uint32(len(content))
 			if worker.Req.DataLen == clen {
 				worker.Req.Data = content
 				worker.RunWorker()
 			}
-		} else if c.ConnType == CONN_TYPE_CLIENT {
+		} else if c.ConnType == conf.CONN_TYPE_CLIENT {
 			client = c.RunClient
 
 			allLen := uint32(len(data))
@@ -283,13 +284,13 @@ func (c *Connect) DoIO() {
 			}
 
 			content = make([]byte, client.Req.DataLen)
-			copy(content, data[MIN_DATA_SIZE:allLen])
+			copy(content, data[conf.MIN_DATA_SIZE:allLen])
 			clen := uint32(len(content))
 			if client.Req.DataLen == clen {
 				client.Req.Data = content
 				client.RunClient()
 			}
-		} else if c.ConnType == CONN_TYPE_SERVICE {
+		} else if c.ConnType == conf.CONN_TYPE_SERVICE {
 			service = c.RunService
 
 			allLen := uint32(len(data))
@@ -298,7 +299,7 @@ func (c *Connect) DoIO() {
 			}
 
 			content = make([]byte, service.Req.DataLen)
-			copy(content, data[MIN_DATA_SIZE:allLen])
+			copy(content, data[conf.MIN_DATA_SIZE:allLen])
 			clen := uint32(len(content))
 			if service.Req.DataLen == clen {
 				service.Req.Data = content
