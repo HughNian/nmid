@@ -185,7 +185,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	paramsName1 := []string{"name:niansong"}
+	paramsName1 := make(map[string]interface{})
+	paramsName1["name"] = "niansong"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -195,7 +196,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		fmt.Println(`--do err--`, err)
 	}
 
-	paramsName2 := []string{"name:niansong2"}
+	paramsName2 := make(map[string]interface{})
+	paramsName2["name"] = "niansong2"
 	params2, err := msgpack.Marshal(&paramsName2)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -205,8 +207,9 @@ func Test(ctx *fasthttp.RequestCtx) {
 		fmt.Println(`--do2 err--`, err)
 	}
 
-	//多个入参
-	paramsName3 := []string{"order_sn::MBO993889253", "order_type::4"}
+	paramsName3 := make(map[string]interface{})
+	paramsName3["order_sn"] = "MBO993889253"
+	paramsName3["order_type"] = 4
 	params3, err := msgpack.Marshal(&paramsName3)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -321,34 +324,32 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-//ToUpper 单个入参
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
-		return []byte(``), fmt.Errorf("params num error")
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+		name := resp.ParamsMap["name"].(string)
+
+		retStruct := wor.GetRetStruct()
+		retStruct.Msg = "ok"
+		retStruct.Data = []byte(strings.ToUpper(name))
+		ret, err := msgpack.Marshal(retStruct)
+		if nil != err {
+			return []byte(``), err
+		}
+
+		resp.RetLen = uint32(len(ret))
+		resp.Ret = ret
+
+		return ret, nil
 	}
 
-	name := resp.StrParams[0]
-
-	retStruct := wor.GetRetStruct()
-	retStruct.Msg = "ok"
-	retStruct.Data = []byte(strings.ToUpper(name))
-	ret, err := msgpack.Marshal(retStruct)
-	if nil != err {
-		return []byte(``), err
-	}
-
-	resp.RetLen = uint32(len(ret))
-	resp.Ret = ret
-
-	return ret, nil
+	return nil, fmt.Errorf("response data error")
 }
 
-//GetOrderInfo 多个入参
 func GetOrderInfo(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
@@ -359,36 +360,32 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("params num error")
 	}
 
-	orderSn, orderType := "", ""
-	for _, v := range resp.StrParams {
-		column := strings.Split(v, conf.PARAMS_SCOPE)
-		switch column[0] {
-		case "order_sn":
-			orderSn = column[1]
-		case "order_type":
-			orderType = column[1]
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+		orderSn := resp.ParamsMap["order_sn"].(string)
+		orderType := resp.ParamsMap["order_type"].(int64)
+
+		retStruct := wor.GetRetStruct()
+		if orderSn == "MBO993889253" && orderType == 4 {
+			retStruct.Msg = "ok"
+			retStruct.Data = []byte("good goods")
+		} else {
+			retStruct.Code = 100
+			retStruct.Msg = "params error"
+			retStruct.Data = []byte(``)
 		}
+
+		ret, err := msgpack.Marshal(retStruct)
+		if nil != err {
+			return []byte(``), err
+		}
+
+		resp.RetLen = uint32(len(ret))
+		resp.Ret = ret
+
+		return ret, nil
 	}
 
-	retStruct := wor.GetRetStruct()
-	if orderSn == "MBO993889253" && orderType == "4" {
-		retStruct.Msg = "ok"
-		retStruct.Data = []byte("good goods")
-	} else {
-		retStruct.Code = 100
-		retStruct.Msg = "params error"
-		retStruct.Data = []byte(``)
-	}
-
-	ret, err := msgpack.Marshal(retStruct)
-	if nil != err {
-		return []byte(``), err
-	}
-
-	resp.RetLen = uint32(len(ret))
-	resp.Ret = ret
-
-	return ret, nil
+	return nil, fmt.Errorf("response data error")
 }
 
 func main() {
@@ -433,7 +430,8 @@ func main() {
 http客户端请求
 
 func main() {
-	args := []string{`testtestcontent`}
+	args := make(map[string]interface{})
+	args["name"] = "testtestcontent"
 	data, _ := json.Marshal(args)
 	req, err := http.NewRequest("POST", "http://127.0.0.1:6809/", bytes.NewReader(data))
 	if err != nil {
