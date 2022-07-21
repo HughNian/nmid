@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	args := []string{`testtestcontent`}
+	args := make(map[string]interface{})
+	args["name"] = "testtestcontent"
 	data, _ := json.Marshal(args)
 	req, err := http.NewRequest("POST", "http://127.0.0.1:6809/", bytes.NewReader(data))
 	if err != nil {
@@ -20,6 +21,7 @@ func main() {
 
 	h := req.Header
 	h.Set(conf.NRequestType, conf.HTTPDOWORK)
+	h.Set(conf.NParamsType, conf.PARAMSTYPEMSGPACK)
 	h.Set(conf.NFunctionName, "ToUpper")
 
 	res, err := http.DefaultClient.Do(req)

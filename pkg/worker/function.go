@@ -4,7 +4,7 @@ type Job interface {
 	GetResponse() *Response
 	ParseParams(params []byte)
 	GetParams() []byte
-	GetStrParams() []string
+	GetParamsMap() map[string]interface{}
 }
 
 type JobFunc func(Job) ([]byte, error)
@@ -15,8 +15,8 @@ type Function struct {
 }
 
 func NewFunction(jf JobFunc, fname string) *Function {
-	return &Function {
-		Func    : jf,
+	return &Function{
+		Func:     jf,
 		FuncName: fname,
 	}
 }

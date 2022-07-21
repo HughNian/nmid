@@ -35,7 +35,6 @@ func getClient() *cli.Client {
 	return client
 }
 
-//单个入参
 func ToUpper2(job wor.Job) (ret []byte, err error) {
 	client := getClient()
 
@@ -44,11 +43,10 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
-		return []byte(``), fmt.Errorf("params num error")
+	var name string
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+		name = resp.ParamsMap["name"].(string)
 	}
-
-	name := resp.StrParams[0]
 
 	client.ErrHandler = func(e error) {
 		if conf.RESTIMEOUT == e {
@@ -91,7 +89,8 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 		}
 	}
 
-	paramsName1 := []string{name}
+	paramsName1 := make(map[string]string)
+	paramsName1["name"] = name
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)

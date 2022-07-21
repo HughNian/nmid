@@ -99,7 +99,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	paramsName1 := []string{"name:niansong"}
+	paramsName1 := make(map[string]interface{})
+	paramsName1["name"] = "niansong"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -109,7 +110,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		fmt.Println(`--do err--`, err)
 	}
 
-	paramsName2 := []string{"name:niansong2"}
+	paramsName2 := make(map[string]interface{})
+	paramsName2["name"] = "niansong2"
 	params2, err := msgpack.Marshal(&paramsName2)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)

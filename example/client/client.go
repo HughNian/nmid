@@ -63,8 +63,8 @@ func main() {
 		}
 	}
 
-	//1 单个入参
-	paramsName1 := []string{"name:niansong"}
+	paramsName1 := make(map[string]interface{})
+	paramsName1["name"] = "niansong"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)

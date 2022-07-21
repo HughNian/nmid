@@ -124,7 +124,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	paramsName1 := []string{"name:niansong"}
+	paramsName1 := make(map[string]interface{})
+	paramsName1["name"] = "niansong"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -134,7 +135,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 		fmt.Println(`--do err--`, err)
 	}
 
-	paramsName2 := []string{"name:niansong2"}
+	paramsName2 := make(map[string]interface{})
+	paramsName2["name"] = "niansong2"
 	params2, err := msgpack.Marshal(&paramsName2)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
@@ -144,8 +146,9 @@ func Test(ctx *fasthttp.RequestCtx) {
 		fmt.Println(`--do2 err--`, err)
 	}
 
-	//多个入参
-	paramsName3 := []string{"order_sn::MBO993889253", "order_type::4"}
+	paramsName3 := make(map[string]interface{})
+	paramsName3["order_sn"] = "MBO993889253"
+	paramsName3["order_type"] = 4
 	params3, err := msgpack.Marshal(&paramsName3)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)

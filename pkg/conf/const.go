@@ -13,9 +13,9 @@ const (
 	UINT32_SIZE       = 4
 	MAX_NOJOB_NUM     = 10
 	PARAMS_SCOPE      = "::"
-	DEFAULT_TIME_OUT  = 100 * time.Millisecond          //io超时
-	DIAL_TIME_OUT     = 3 * time.Second                 //连接超时
-	CLIENT_ALIVE_TIME = time.Duration(30) * time.Second //客户端长连接生存周期
+	DEFAULT_TIME_OUT  = 100 * time.Millisecond            //io超时
+	DIAL_TIME_OUT     = 3 * time.Second                   //连接超时
+	CLIENT_ALIVE_TIME = time.Duration(1800) * time.Second //客户端长连接生存周期
 
 	//package data type
 	PDT_OK               = 1
@@ -44,16 +44,16 @@ const (
 
 //connect types & status
 const (
-	CONN_TYPE_INIT    = 0
-	CONN_TYPE_SERVER  = 1
-	CONN_TYPE_WORKER  = 2
-	CONN_TYPE_CLIENT  = 3
-	CONN_TYPE_SERVICE = 4
-	PARAMS_TYPE_ONE   = 5
-	PARAMS_TYPE_MUL   = 6
-	JOB_STATUS_INIT   = 7
-	JOB_STATUS_DOING  = 8
-	JOB_STATUS_DONE   = 9
+	CONN_TYPE_INIT      = 0
+	CONN_TYPE_SERVER    = 1
+	CONN_TYPE_WORKER    = 2
+	CONN_TYPE_CLIENT    = 3
+	CONN_TYPE_SERVICE   = 4
+	PARAMS_TYPE_MSGPACK = 5
+	PARAMS_TYPE_JSON    = 6
+	JOB_STATUS_INIT     = 7
+	JOB_STATUS_DOING    = 8
+	JOB_STATUS_DONE     = 9
 )
 
 //loadblance type
@@ -81,6 +81,7 @@ const (
 //http request
 const (
 	NRequestType       = "N-NMID-RequestType"
+	NParamsType        = "N-NMID-ParamsType"
 	NMessageStatusType = "N-NMID-MessageStatusType"
 	NErrorMessage      = "N-NMID-ErrorMessage"
 	NPdtDataType       = "N-NMID-PdtDataType"
@@ -88,7 +89,9 @@ const (
 )
 
 var (
-	RESTIMEOUT     = errors.New("RESTIMEOUT")
-	HTTPDOWORK     = "HTTP_DO_WORK"
-	HTTPADDSERVICE = "HTTP_ADD_SERVICE"
+	RESTIMEOUT        = errors.New("RESTIMEOUT")
+	HTTPDOWORK        = "HTTP_DO_WORK"
+	HTTPADDSERVICE    = "HTTP_ADD_SERVICE"
+	PARAMSTYPEMSGPACK = "5"
+	PARAMSTYPEJSON    = "6"
 )

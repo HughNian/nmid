@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"nmid-v2/pkg/conf"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -92,12 +93,23 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 //last doWork with job
 func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	var err error
+	var paramsType uint32
+	var paramsBytes []byte
+
 	if r.Header.Get(conf.NFunctionName) == "" {
 		functionName := params.ByName("functionName")
 		functionName = strings.TrimPrefix(functionName, "/")
 		r.Header.Set(conf.NFunctionName, functionName)
 	}
 	functionName := r.Header.Get(conf.NFunctionName)
+
+	paramsType = conf.PARAMS_TYPE_MSGPACK
+	if ptype := r.Header.Get(conf.NParamsType); ptype != "" {
+		val, err := strconv.Atoi(ptype)
+		if nil == err {
+			paramsType = uint32(val)
+		}
+	}
 
 	//set headers
 	wh := w.Header()
@@ -129,34 +141,36 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 		return
 	}
 
-	var paramsval []string
-	err = json.Unmarshal(body, &paramsval)
-	if err != nil {
-		wh.Set(conf.NMessageStatusType, "JSON UNMARSHAL ERROR")
-		err = errors.New("json unmarshal error")
-		wh.Set(conf.NErrorMessage, err.Error())
-		return
-	}
-	msgpparams, err := msgpack.Marshal(&paramsval)
-	if err != nil {
-		wh.Set(conf.NMessageStatusType, "PARAMS MSGPACK ERROR")
-		err = errors.New("params msgpack error")
-		wh.Set(conf.NErrorMessage, err.Error())
-		return
+	if paramsType == conf.PARAMS_TYPE_MSGPACK {
+		paramsval := make(map[string]interface{})
+		err = json.Unmarshal(body, &paramsval)
+		if err != nil {
+			wh.Set(conf.NMessageStatusType, "JSON UNMARSHAL ERROR")
+			err = errors.New("json unmarshal error")
+			wh.Set(conf.NErrorMessage, err.Error())
+			return
+		}
+
+		paramsBytes, err = msgpack.Marshal(&paramsval)
+		if err != nil {
+			wh.Set(conf.NMessageStatusType, "PARAMS MSGPACK ERROR")
+			err = errors.New("params msgpack error")
+			wh.Set(conf.NErrorMessage, err.Error())
+			return
+		}
+	} else if paramsType == conf.PARAMS_TYPE_JSON {
+		paramsBytes = body
 	}
 
-	job := NewJobData(functionName, string(msgpparams))
+	job := NewJobData(functionName, string(paramsBytes))
 	job.Lock()
 	job.WorkerId = worker.WorkerId
 	job.HTTPClientR = r
 	job.FuncName = functionName
-	job.Params = msgpparams
-	if IsMulParams(job.Params) {
-		job.ParamsType = conf.PARAMS_TYPE_MUL
-	} else {
-		job.ParamsType = conf.PARAMS_TYPE_ONE
-	}
+	job.Params = paramsBytes
+	job.ParamsType = paramsType
 	job.Unlock()
+
 	if ok := worker.Jobs.PushJobData(job); ok {
 		worker.Lock()
 		worker.JobNum++

@@ -21,74 +21,64 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-//ToUpper 单个入参
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == conf.PARAMS_TYPE_MUL {
-		return []byte(``), fmt.Errorf("params num error")
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+		name := resp.ParamsMap["name"].(string)
+
+		retStruct := wor.GetRetStruct()
+		retStruct.Msg = "ok"
+		retStruct.Data = []byte(strings.ToUpper(name))
+		ret, err := msgpack.Marshal(retStruct)
+		if nil != err {
+			return []byte(``), err
+		}
+
+		resp.RetLen = uint32(len(ret))
+		resp.Ret = ret
+
+		return ret, nil
 	}
 
-	name := resp.StrParams[0]
-
-	retStruct := wor.GetRetStruct()
-	retStruct.Msg = "ok"
-	retStruct.Data = []byte(strings.ToUpper(name))
-	ret, err := msgpack.Marshal(retStruct)
-	if nil != err {
-		return []byte(``), err
-	}
-
-	resp.RetLen = uint32(len(ret))
-	resp.Ret = ret
-
-	return ret, nil
+	return nil, fmt.Errorf("response data error")
 }
 
-//GetOrderInfo 多个入参
 func GetOrderInfo(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType != conf.PARAMS_TYPE_MUL {
-		return []byte(``), fmt.Errorf("params num error")
-	}
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+		orderSn := resp.ParamsMap["order_sn"].(string)
+		orderType := resp.ParamsMap["order_type"].(int64)
 
-	orderSn, orderType := "", ""
-	for _, v := range resp.StrParams {
-		column := strings.Split(v, conf.PARAMS_SCOPE)
-		switch column[0] {
-		case "order_sn":
-			orderSn = column[1]
-		case "order_type":
-			orderType = column[1]
+		retStruct := wor.GetRetStruct()
+		if orderSn == "MBO993889253" && orderType == 4 {
+			retStruct.Msg = "ok"
+			retStruct.Data = []byte("good goods")
+		} else {
+			retStruct.Code = 100
+			retStruct.Msg = "params error"
+			retStruct.Data = []byte(``)
 		}
+
+		ret, err := msgpack.Marshal(retStruct)
+		if nil != err {
+			return []byte(``), err
+		}
+
+		resp.RetLen = uint32(len(ret))
+		resp.Ret = ret
+
+		return ret, nil
 	}
 
-	retStruct := wor.GetRetStruct()
-	if orderSn == "MBO993889253" && orderType == "4" {
-		retStruct.Msg = "ok"
-		retStruct.Data = []byte("good goods")
-	} else {
-		retStruct.Code = 100
-		retStruct.Msg = "params error"
-		retStruct.Data = []byte(``)
-	}
-
-	ret, err := msgpack.Marshal(retStruct)
-	if nil != err {
-		return []byte(``), err
-	}
-
-	resp.RetLen = uint32(len(ret))
-	resp.Ret = ret
-
-	return ret, nil
+	return nil, fmt.Errorf("response data error")
 }
 
 func main() {

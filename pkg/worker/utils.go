@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"github.com/vmihailenco/msgpack"
 	"log"
 	"nmid-v2/pkg/conf"
@@ -11,16 +12,28 @@ func GetBuffer(n int) (buf []byte) {
 	return
 }
 
-func GetStrParamsArr(params []byte) []string {
-	var strParamsArr []string
+func MsgpackParamsMap(params []byte) map[string]interface{} {
+	paramsMap := make(map[string]interface{})
 
-	err := msgpack.Unmarshal(params, &strParamsArr)
+	err := msgpack.Unmarshal(params, &paramsMap)
 	if err != nil {
 		log.Println("msgpack unmarshal error:", err)
 		return nil
 	}
 
-	return strParamsArr
+	return paramsMap
+}
+
+func JsonParamsMap(params []byte) map[string]interface{} {
+	paramsMap := make(map[string]interface{})
+
+	err := json.Unmarshal(params, &paramsMap)
+	if err != nil {
+		log.Println("msgpack unmarshal error:", err)
+		return nil
+	}
+
+	return paramsMap
 }
 
 func GetRetStruct() *conf.RetStruct {

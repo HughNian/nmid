@@ -17,7 +17,7 @@ type Response struct {
 	ParamsNum  uint32
 	ParamsLen  uint32
 	Params     []byte
-	StrParams  []string
+	ParamsMap  map[string]interface{}
 	JobId      string
 	JobIdLen   uint32
 	Ret        []byte
@@ -32,11 +32,10 @@ func NewRes() (res *Response) {
 		DataLen:    0,
 		Handle:     ``,
 		HandleLen:  0,
-		ParamsType: conf.PARAMS_TYPE_ONE, //4-one param, 5-multiple params, default 4
-		ParamsNum:  0,                    //参数个数，一般单个参数只有一个参数，多个参数有相应数量的参数
+		ParamsType: conf.PARAMS_TYPE_MSGPACK,
+		ParamsNum:  0,
 		ParamsLen:  0,
 		Params:     make([]byte, 0),
-		StrParams:  make([]string, 0),
 		Ret:        make([]byte, 0),
 		RetLen:     0,
 	}
@@ -97,13 +96,10 @@ func (resp *Response) GetResponse() *Response {
 
 func (resp *Response) ParseParams(params []byte) {
 	resp.Params = params
-	strArrParams := GetStrParamsArr(params)
-	if strArrParams != nil {
-		resp.StrParams = strArrParams
-		resp.ParamsNum = uint32(len(strArrParams))
-		if resp.ParamsNum > 1 {
-			resp.ParamsType = conf.PARAMS_TYPE_MUL
-		}
+	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK {
+		resp.ParamsMap = MsgpackParamsMap(params)
+	} else if resp.ParamsType == conf.PARAMS_TYPE_JSON {
+		resp.ParamsMap = JsonParamsMap(params)
 	}
 }
 
@@ -115,10 +111,10 @@ func (resp *Response) GetParams() []byte {
 	return resp.Params
 }
 
-func (resp *Response) GetStrParams() []string {
+func (resp *Response) GetParamsMap() map[string]interface{} {
 	if resp.ParamsLen == 0 {
 		return nil
 	}
 
-	return resp.StrParams
+	return resp.ParamsMap
 }
