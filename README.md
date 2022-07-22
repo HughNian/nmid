@@ -358,10 +358,6 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType != conf.PARAMS_TYPE_MUL {
-		return []byte(``), fmt.Errorf("params num error")
-	}
-
 	if  len(resp.ParamsMap) > 0 {
 	    var orderType int
 		orderSn := resp.ParamsMap["order_sn"].(string)
