@@ -53,7 +53,7 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+	if len(resp.ParamsMap) > 0 {
 		orderSn := resp.ParamsMap["order_sn"].(string)
 		orderType := resp.ParamsMap["order_type"].(int64)
 

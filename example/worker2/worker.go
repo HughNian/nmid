@@ -44,7 +44,7 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	}
 
 	var name string
-	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+	if len(resp.ParamsMap) > 0 {
 		name = resp.ParamsMap["name"].(string)
 	}
 

@@ -44,16 +44,18 @@ const (
 
 //connect types & status
 const (
-	CONN_TYPE_INIT      = 0
-	CONN_TYPE_SERVER    = 1
-	CONN_TYPE_WORKER    = 2
-	CONN_TYPE_CLIENT    = 3
-	CONN_TYPE_SERVICE   = 4
-	PARAMS_TYPE_MSGPACK = 5
-	PARAMS_TYPE_JSON    = 6
-	JOB_STATUS_INIT     = 7
-	JOB_STATUS_DOING    = 8
-	JOB_STATUS_DONE     = 9
+	CONN_TYPE_INIT              = 0
+	CONN_TYPE_SERVER            = 1
+	CONN_TYPE_WORKER            = 2
+	CONN_TYPE_CLIENT            = 3
+	CONN_TYPE_SERVICE           = 4
+	PARAMS_TYPE_MSGPACK         = 5
+	PARAMS_TYPE_JSON            = 6
+	JOB_STATUS_INIT             = 7
+	JOB_STATUS_DOING            = 8
+	JOB_STATUS_DONE             = 9
+	PARAMS_HANDLE_TYPE_ENCODE   = 10
+	PARAMS_HANDLE_TYPE_ORIGINAL = 11
 )
 
 //loadblance type
