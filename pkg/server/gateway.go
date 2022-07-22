@@ -94,6 +94,7 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	var err error
 	var paramsType uint32
+	var paramsHandleType uint32
 	var paramsBytes []byte
 
 	if r.Header.Get(conf.NFunctionName) == "" {
@@ -108,6 +109,13 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 		val, err := strconv.Atoi(ptype)
 		if nil == err {
 			paramsType = uint32(val)
+		}
+	}
+	paramsHandleType = conf.PARAMS_HANDLE_TYPE_ENCODE
+	if phtype := r.Header.Get(conf.NParamsHandleType); phtype != "" {
+		val, err := strconv.Atoi(phtype)
+		if nil == err {
+			paramsHandleType = uint32(val)
 		}
 	}
 
@@ -169,6 +177,7 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 	job.FuncName = functionName
 	job.Params = paramsBytes
 	job.ParamsType = paramsType
+	job.ParamsHandleType = paramsHandleType
 	job.Unlock()
 
 	if ok := worker.Jobs.PushJobData(job); ok {

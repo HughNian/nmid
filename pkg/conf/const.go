@@ -84,6 +84,7 @@ const (
 const (
 	NRequestType       = "N-NMID-RequestType"
 	NParamsType        = "N-NMID-ParamsType"
+	NParamsHandleType  = "N-NMID-ParamsHandleType"
 	NMessageStatusType = "N-NMID-MessageStatusType"
 	NErrorMessage      = "N-NMID-ErrorMessage"
 	NPdtDataType       = "N-NMID-PdtDataType"
@@ -91,9 +92,11 @@ const (
 )
 
 var (
-	RESTIMEOUT        = errors.New("RESTIMEOUT")
-	HTTPDOWORK        = "HTTP_DO_WORK"
-	HTTPADDSERVICE    = "HTTP_ADD_SERVICE"
-	PARAMSTYPEMSGPACK = "5"
-	PARAMSTYPEJSON    = "6"
+	RESTIMEOUT               = errors.New("RESTIMEOUT")
+	HTTPDOWORK               = "HTTP_DO_WORK"
+	HTTPADDSERVICE           = "HTTP_ADD_SERVICE"
+	PARAMSTYPEMSGPACK        = "5"
+	PARAMSTYPEJSON           = "6"
+	PARAMSHANDLETYPEENCODE   = "10"
+	PARAMSHANDLETYPEORIGINAL = "11"
 )

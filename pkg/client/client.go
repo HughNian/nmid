@@ -206,6 +206,32 @@ func (c *Client) ProcessResp() {
 	}
 }
 
+func (c *Client) SetParamsType(pType uint32) *Client {
+	if pType != conf.PARAMS_TYPE_MSGPACK && pType != conf.PARAMS_TYPE_JSON {
+		log.Println("set params type value error not in msgpack or json")
+		return c
+	}
+
+	if c.Req == nil {
+		c.Req = NewReq()
+	}
+	c.Req.ParamsType = pType
+	return c
+}
+
+func (c *Client) SetParamsHandle(hType uint32) *Client {
+	if hType != conf.PARAMS_HANDLE_TYPE_ENCODE && hType != conf.PARAMS_HANDLE_TYPE_ORIGINAL {
+		log.Println("set params handle type value error not in encode or original")
+		return c
+	}
+
+	if c.Req == nil {
+		c.Req = NewReq()
+	}
+	c.Req.ParamsHandleType = hType
+	return c
+}
+
 func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err error) {
 	c.Lock()
 	defer c.Unlock()
@@ -216,7 +242,9 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 
 	c.RespHandlers.PutResHandlerMap(funcName, callback)
 
-	c.Req = NewReq()
+	if c.Req == nil {
+		c.Req = NewReq()
+	}
 	c.Req.ContentPack(conf.PDT_C_DO_JOB, funcName, params)
 	if err = c.Write(); err != nil {
 		return err

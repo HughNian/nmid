@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,6 +39,7 @@ func getClient() *cli.Client {
 
 func Test(ctx *fasthttp.RequestCtx) {
 	client := getClient()
+	client.SetParamsType(conf.PARAMS_TYPE_JSON)
 
 	client.ErrHandler = func(e error) {
 		if conf.RESTIMEOUT == e {
@@ -101,7 +103,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 
 	paramsName1 := make(map[string]interface{})
 	paramsName1["name"] = "niansong"
-	params1, err := msgpack.Marshal(&paramsName1)
+	//params1, err := msgpack.Marshal(&paramsName1)
+	params1, err := json.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 	}
@@ -112,7 +115,8 @@ func Test(ctx *fasthttp.RequestCtx) {
 
 	paramsName2 := make(map[string]interface{})
 	paramsName2["name"] = "niansong2"
-	params2, err := msgpack.Marshal(&paramsName2)
+	//params2, err := msgpack.Marshal(&paramsName2)
+	params2, err := json.Marshal(&paramsName2)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 	}

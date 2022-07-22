@@ -22,6 +22,7 @@ func main() {
 	h := req.Header
 	h.Set(conf.NRequestType, conf.HTTPDOWORK)
 	h.Set(conf.NParamsType, conf.PARAMSTYPEMSGPACK)
+	h.Set(conf.NParamsHandleType, conf.PARAMSHANDLETYPEENCODE)
 	h.Set(conf.NFunctionName, "ToUpper")
 
 	res, err := http.DefaultClient.Do(req)

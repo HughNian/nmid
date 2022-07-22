@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"nmid-v2/pkg/conf"
 	wor "nmid-v2/pkg/worker"
 	"strings"
 
@@ -27,7 +26,7 @@ func ToUpper(job wor.Job) ([]byte, error) {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK && len(resp.ParamsMap) > 0 {
+	if len(resp.ParamsMap) > 0 {
 		name := resp.ParamsMap["name"].(string)
 
 		retStruct := wor.GetRetStruct()
@@ -54,8 +53,16 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 	}
 
 	if len(resp.ParamsMap) > 0 {
+		var orderType int
 		orderSn := resp.ParamsMap["order_sn"].(string)
-		orderType := resp.ParamsMap["order_type"].(int64)
+		switch resp.ParamsMap["order_type"].(type) {
+		case int64:
+			int64val := resp.ParamsMap["order_type"].(int64)
+			orderType = int(int64val)
+		case float64:
+			float64val := resp.ParamsMap["order_type"].(float64)
+			orderType = int(float64val)
+		}
 
 		retStruct := wor.GetRetStruct()
 		if orderSn == "MBO993889253" && orderType == 4 {

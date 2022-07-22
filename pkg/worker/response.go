@@ -11,17 +11,17 @@ type Response struct {
 	Data     []byte
 	DataLen  uint32
 
-	Handle     string
-	HandleLen  uint32
-	ParamsType uint32
-	ParamsNum  uint32
-	ParamsLen  uint32
-	Params     []byte
-	ParamsMap  map[string]interface{}
-	JobId      string
-	JobIdLen   uint32
-	Ret        []byte
-	RetLen     uint32
+	Handle           string
+	HandleLen        uint32
+	ParamsType       uint32
+	ParamsHandleType uint32
+	ParamsLen        uint32
+	Params           []byte
+	ParamsMap        map[string]interface{}
+	JobId            string
+	JobIdLen         uint32
+	Ret              []byte
+	RetLen           uint32
 
 	Agent *Agent
 }
@@ -29,15 +29,8 @@ type Response struct {
 func NewRes() (res *Response) {
 	res = &Response{
 		Data:       make([]byte, 0),
-		DataLen:    0,
-		Handle:     ``,
-		HandleLen:  0,
 		ParamsType: conf.PARAMS_TYPE_MSGPACK,
-		ParamsNum:  0,
-		ParamsLen:  0,
-		Params:     make([]byte, 0),
 		Ret:        make([]byte, 0),
-		RetLen:     0,
 	}
 	return
 }
@@ -69,6 +62,12 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 		//新的解包协议
 		start := conf.MIN_DATA_SIZE
 		end := conf.MIN_DATA_SIZE + conf.UINT32_SIZE
+		resp.ParamsType = uint32(binary.BigEndian.Uint32(data[start:end]))
+		start = end
+		end = start + conf.UINT32_SIZE
+		resp.ParamsHandleType = uint32(binary.BigEndian.Uint32(data[start:end]))
+		start = end
+		end = start + conf.UINT32_SIZE
 		resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
 		end = start + conf.UINT32_SIZE

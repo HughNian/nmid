@@ -76,7 +76,8 @@ func (c *SClient) doJob() {
 	job.Unlock()
 	job.FuncName = c.Req.Handle
 	job.Params = c.Req.Params
-	job.ParamsType = conf.PARAMS_TYPE_MSGPACK
+	job.ParamsType = c.Req.ParamsType
+	job.ParamsHandleType = c.Req.ParamsHandleType
 
 	if ok := worker.Jobs.PushJobData(job); ok {
 		worker.Lock()

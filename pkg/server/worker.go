@@ -107,6 +107,7 @@ func (w *SWorker) doWork(job *JobData) {
 				w.Res.Handle = functionName
 				w.Res.HandleLen = uint32(len(functionName))
 				w.Res.ParamsType = job.ParamsType
+				w.Res.ParamsHandleType = job.ParamsHandleType
 				w.Res.ParamsLen = paramsLen
 				w.Res.Params = params //append(w.Res.Params, params...)
 				w.Res.JobId = job.JobId

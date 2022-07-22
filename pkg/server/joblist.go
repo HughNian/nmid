@@ -21,10 +21,11 @@ type JobData struct {
 	status uint32
 	// weight int
 
-	FuncName   string
-	ParamsType uint32
-	Params     []byte
-	RetData    []byte
+	FuncName         string
+	ParamsType       uint32
+	ParamsHandleType uint32
+	Params           []byte
+	RetData          []byte
 }
 
 type JobDataList struct {

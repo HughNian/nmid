@@ -10,15 +10,16 @@ type Request struct {
 	Data     []byte
 	DataLen  uint32
 
-	Handle     string
-	HandleLen  uint32
-	ParamsType uint32
-	ParamsLen  uint32
-	Params     []byte
-	JobId      string
-	JobIdLen   uint32
-	Ret        []byte
-	RetLen     uint32
+	Handle           string
+	HandleLen        uint32
+	ParamsType       uint32
+	ParamsHandleType uint32
+	ParamsLen        uint32
+	Params           []byte
+	JobId            string
+	JobIdLen         uint32
+	Ret              []byte
+	RetLen           uint32
 
 	ScInfo ServiceInfo
 }
@@ -28,41 +29,30 @@ type Response struct {
 	Data     []byte
 	DataLen  uint32
 
-	Handle     string
-	HandleLen  uint32
-	ParamsType uint32
-	ParamsLen  uint32
-	Params     []byte
-	JobId      string
-	JobIdLen   uint32
-	Ret        []byte
-	RetLen     uint32
+	Handle           string
+	HandleLen        uint32
+	ParamsType       uint32
+	ParamsHandleType uint32
+	ParamsLen        uint32
+	Params           []byte
+	JobId            string
+	JobIdLen         uint32
+	Ret              []byte
+	RetLen           uint32
 }
 
 func NewReq() (req *Request) {
 	req = &Request{
-		Data:      make([]byte, 0),
-		DataLen:   0,
-		Handle:    ``,
-		HandleLen: 0,
-		ParamsLen: 0,
-		Params:    make([]byte, 0),
-		Ret:       make([]byte, 0),
-		RetLen:    0,
+		Data: make([]byte, 0),
+		Ret:  make([]byte, 0),
 	}
 	return
 }
 
 func NewRes() (res *Response) {
 	res = &Response{
-		Data:      make([]byte, 0),
-		DataLen:   0,
-		Handle:    ``,
-		HandleLen: 0,
-		ParamsLen: 0,
-		Params:    make([]byte, 0),
-		Ret:       make([]byte, 0),
-		RetLen:    0,
+		Data: make([]byte, 0),
+		Ret:  make([]byte, 0),
 	}
 	return
 }
@@ -98,13 +88,19 @@ func (res *Response) GetResHandle() string {
 //GetResContent 打包内容
 func (res *Response) GetResContent() (content []byte, contentLen int) {
 	if res.DataType == conf.PDT_S_GET_DATA {
-		contentLen = int(conf.UINT32_SIZE + res.HandleLen + conf.UINT32_SIZE + res.ParamsLen + conf.UINT32_SIZE + res.JobIdLen)
+		contentLen = int(conf.UINT32_SIZE + conf.UINT32_SIZE + conf.UINT32_SIZE + res.HandleLen + conf.UINT32_SIZE + res.ParamsLen + conf.UINT32_SIZE + res.JobIdLen)
 		content = GetBuffer(contentLen)
 
 		//新的发给worker的打包协议
-		binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], uint32(res.HandleLen))
+		binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], res.ParamsType)
 		start := conf.UINT32_SIZE
-		end := conf.UINT32_SIZE + conf.UINT32_SIZE
+		end := start + conf.UINT32_SIZE
+		binary.BigEndian.PutUint32(content[start:end], res.ParamsHandleType)
+		start = end
+		end = start + conf.UINT32_SIZE
+		binary.BigEndian.PutUint32(content[start:end], uint32(res.HandleLen))
+		start = end
+		end = start + conf.UINT32_SIZE
 		binary.BigEndian.PutUint32(content[start:end], uint32(res.ParamsLen))
 		start = end
 		end = start + conf.UINT32_SIZE
@@ -196,11 +192,18 @@ func (req *Request) ReqDecodePack() {
 		} else if req.DataType == conf.PDT_C_DO_JOB {
 			var handle []byte
 			var handLen int
-			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[:conf.UINT32_SIZE]))
+
+			req.ParamsType = uint32(binary.BigEndian.Uint32(req.Data[:conf.UINT32_SIZE]))
+			start := conf.UINT32_SIZE
+			end := start + conf.UINT32_SIZE
+			req.ParamsHandleType = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
+			start = end
+			end = start + conf.UINT32_SIZE
+			req.HandleLen = uint32(binary.BigEndian.Uint32(req.Data[start:end]))
 			handLen = int(req.HandleLen)
 			handle = GetBuffer(handLen)
-			start := conf.UINT32_SIZE
-			end := conf.UINT32_SIZE + handLen
+			start = end
+			end = start + handLen
 			copy(handle, req.Data[start:end])
 			req.Handle = string(handle)
 

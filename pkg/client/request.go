@@ -10,25 +10,22 @@ type Request struct {
 	Data     []byte
 	DataLen  uint32
 
-	Handle     string
-	HandleLen  uint32
-	ParamsType uint32
-	ParamsLen  uint32
-	Params     []byte
-	Ret        []byte
-	RetLen     uint32
+	Handle           string
+	HandleLen        uint32
+	ParamsType       uint32
+	ParamsHandleType uint32
+	ParamsLen        uint32
+	Params           []byte
+	Ret              []byte
+	RetLen           uint32
 }
 
 func NewReq() (req *Request) {
 	req = &Request{
-		Data:      make([]byte, 0),
-		DataLen:   0,
-		Handle:    ``,
-		HandleLen: 0,
-		ParamsLen: 0,
-		Params:    make([]byte, 0),
-		Ret:       make([]byte, 0),
-		RetLen:    0,
+		Data:             make([]byte, 0),
+		ParamsType:       conf.PARAMS_TYPE_MSGPACK,
+		ParamsHandleType: conf.PARAMS_HANDLE_TYPE_ENCODE,
+		Ret:              make([]byte, 0),
 	}
 	return
 }
@@ -40,13 +37,19 @@ func (req *Request) ContentPack(dataType uint32, handle string, params []byte) (
 	req.HandleLen = uint32(len(handle))
 	req.Params = params
 	req.ParamsLen = uint32(len(params))
-	req.DataLen = uint32(conf.UINT32_SIZE + req.HandleLen + conf.UINT32_SIZE + req.ParamsLen)
+	req.DataLen = uint32(conf.UINT32_SIZE + conf.UINT32_SIZE + conf.UINT32_SIZE + req.HandleLen + conf.UINT32_SIZE + req.ParamsLen)
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
-	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], req.HandleLen)
+	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], req.ParamsType)
 	start := conf.UINT32_SIZE
-	end := conf.UINT32_SIZE + int(req.HandleLen)
+	end := start + conf.UINT32_SIZE
+	binary.BigEndian.PutUint32(content[start:end], req.ParamsHandleType)
+	start = end
+	end = start + conf.UINT32_SIZE
+	binary.BigEndian.PutUint32(content[start:end], req.HandleLen)
+	start = end
+	end = start + int(req.HandleLen)
 	copy(content[start:end], []byte(req.Handle))
 	start = end
 	end = start + conf.UINT32_SIZE
