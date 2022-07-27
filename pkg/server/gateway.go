@@ -12,7 +12,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"nmid-v2/pkg/conf"
 	"nmid-v2/pkg/model"
 	"strconv"
 	"strings"
@@ -200,7 +199,7 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 	select {
 	case <-worker.HttpResTag:
 		{
-			var retStruct conf.RetStruct
+			var retStruct model.RetStruct
 			err := msgpack.Unmarshal(worker.Res.Ret, &retStruct)
 			if nil != err {
 				w.Header().Set(model.NMessageStatusType, "RET MSGPACK UNMARSHAL ERROR")
