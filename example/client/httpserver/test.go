@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"sync"
 
 	_ "net/http/pprof"
@@ -39,10 +39,10 @@ func getClient() *cli.Client {
 
 func Test(ctx *fasthttp.RequestCtx) {
 	client := getClient()
-	client.SetParamsType(conf.PARAMS_TYPE_JSON)
+	client.SetParamsType(model.PARAMS_TYPE_JSON)
 
 	client.ErrHandler = func(e error) {
-		if conf.RESTIMEOUT == e {
+		if model.RESTIMEOUT == e {
 			log.Println("time out here")
 		} else {
 			log.Println(e)
@@ -52,13 +52,13 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct conf.RetStruct
+			var retStruct model.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)
@@ -77,13 +77,13 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	respHandler2 := func(resp *cli.Response) {
-		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct conf.RetStruct
+			var retStruct model.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)
@@ -102,13 +102,13 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	respHandler3 := func(resp *cli.Response) {
-		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct conf.RetStruct
+			var retStruct model.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)

@@ -3,7 +3,7 @@ package client
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"sync"
 )
 
@@ -45,11 +45,11 @@ func NewRes() (res *Response) {
 }
 
 func (resp *Response) GetResError() (err error) {
-	if resp.DataType == conf.PDT_ERROR {
+	if resp.DataType == model.PDT_ERROR {
 		return fmt.Errorf("request error")
-	} else if resp.DataType == conf.PDT_CANT_DO {
+	} else if resp.DataType == model.PDT_CANT_DO {
 		return fmt.Errorf("have no job do")
-	} else if resp.DataType == conf.PDT_RATELIMIT {
+	} else if resp.DataType == model.PDT_RATELIMIT {
 		return fmt.Errorf("have ratelimit") //限流
 	}
 
@@ -57,7 +57,7 @@ func (resp *Response) GetResError() (err error) {
 }
 
 func (resp *Response) GetResResult() (data []byte, err error) {
-	if resp.DataType == conf.PDT_S_RETURN_DATA {
+	if resp.DataType == model.PDT_S_RETURN_DATA {
 		return resp.Ret, nil
 	}
 
@@ -81,16 +81,16 @@ func GetConnType(data []byte) (connType uint32) {
 //DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
-	if resLen < conf.MIN_DATA_SIZE {
+	if resLen < model.MIN_DATA_SIZE {
 		err = fmt.Errorf("Invalid data1: %v", data)
 		return
 	}
-	cl := int(binary.BigEndian.Uint32(data[8:conf.MIN_DATA_SIZE]))
-	if resLen < conf.MIN_DATA_SIZE+cl {
+	cl := int(binary.BigEndian.Uint32(data[8:model.MIN_DATA_SIZE]))
+	if resLen < model.MIN_DATA_SIZE+cl {
 		err = fmt.Errorf("Invalid data2: %v", data)
 		return
 	}
-	content := data[conf.MIN_DATA_SIZE : conf.MIN_DATA_SIZE+cl]
+	content := data[model.MIN_DATA_SIZE : model.MIN_DATA_SIZE+cl]
 	if len(content) != cl {
 		err = fmt.Errorf("Invalid data3: %v", data)
 		return
@@ -101,16 +101,16 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resp.DataLen = uint32(cl)
 	resp.Data = content
 
-	if resp.DataType == conf.PDT_S_RETURN_DATA {
+	if resp.DataType == model.PDT_S_RETURN_DATA {
 		//新的解包协议
-		start := conf.MIN_DATA_SIZE
-		end := conf.MIN_DATA_SIZE + conf.UINT32_SIZE
+		start := model.MIN_DATA_SIZE
+		end := model.MIN_DATA_SIZE + model.UINT32_SIZE
 		resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.RetLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
 		end = start + int(resp.HandleLen)
@@ -128,7 +128,7 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 
 func NewResHandlerMap() *RespHandlerMap {
 	return &RespHandlerMap{
-		holder: make(map[string]RespHandler, conf.QUEUE_SIZE),
+		holder: make(map[string]RespHandler, model.QUEUE_SIZE),
 	}
 }
 

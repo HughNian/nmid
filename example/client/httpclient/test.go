@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 )
 
 func main() {
@@ -20,10 +20,10 @@ func main() {
 	}
 
 	h := req.Header
-	h.Set(conf.NRequestType, conf.HTTPDOWORK)
-	h.Set(conf.NParamsType, conf.PARAMSTYPEMSGPACK)
-	h.Set(conf.NParamsHandleType, conf.PARAMSHANDLETYPEENCODE)
-	h.Set(conf.NFunctionName, "ToUpper")
+	h.Set(model.NRequestType, model.HTTPDOWORK)
+	h.Set(model.NParamsType, model.PARAMSTYPEMSGPACK)
+	h.Set(model.NParamsHandleType, model.PARAMSHANDLETYPEENCODE)
+	h.Set(model.NFunctionName, "ToUpper")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

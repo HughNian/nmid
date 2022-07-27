@@ -3,7 +3,8 @@ package worker
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 )
 
 type Response struct {
@@ -29,7 +30,7 @@ type Response struct {
 func NewRes() (res *Response) {
 	res = &Response{
 		Data:       make([]byte, 0),
-		ParamsType: conf.PARAMS_TYPE_MSGPACK,
+		ParamsType: model.PARAMS_TYPE_MSGPACK,
 		Ret:        make([]byte, 0),
 	}
 	return
@@ -38,16 +39,16 @@ func NewRes() (res *Response) {
 //DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
-	if resLen < conf.MIN_DATA_SIZE {
+	if resLen < model.MIN_DATA_SIZE {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
-	cl := int(binary.BigEndian.Uint32(data[8:conf.MIN_DATA_SIZE]))
-	if resLen < conf.MIN_DATA_SIZE+cl {
+	cl := int(binary.BigEndian.Uint32(data[8:model.MIN_DATA_SIZE]))
+	if resLen < model.MIN_DATA_SIZE+cl {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
 	}
-	content := data[conf.MIN_DATA_SIZE : conf.MIN_DATA_SIZE+cl]
+	content := data[model.MIN_DATA_SIZE : model.MIN_DATA_SIZE+cl]
 	if len(content) != cl {
 		err = fmt.Errorf("invalid data: %v", data)
 		return
@@ -58,22 +59,22 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resp.DataLen = uint32(cl)
 	resp.Data = content
 
-	if resp.DataType == conf.PDT_S_GET_DATA {
+	if resp.DataType == model.PDT_S_GET_DATA {
 		//新的解包协议
-		start := conf.MIN_DATA_SIZE
-		end := conf.MIN_DATA_SIZE + conf.UINT32_SIZE
+		start := model.MIN_DATA_SIZE
+		end := model.MIN_DATA_SIZE + model.UINT32_SIZE
 		resp.ParamsType = uint32(binary.BigEndian.Uint32(data[start:end]))
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.ParamsHandleType = uint32(binary.BigEndian.Uint32(data[start:end]))
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.HandleLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.ParamsLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
-		end = start + conf.UINT32_SIZE
+		end = start + model.UINT32_SIZE
 		resp.JobIdLen = binary.BigEndian.Uint32(data[start:end])
 		start = end
 		end = start + int(resp.HandleLen)
@@ -95,10 +96,10 @@ func (resp *Response) GetResponse() *Response {
 
 func (resp *Response) ParseParams(params []byte) {
 	resp.Params = params
-	if resp.ParamsType == conf.PARAMS_TYPE_MSGPACK {
-		resp.ParamsMap = MsgpackParamsMap(params)
-	} else if resp.ParamsType == conf.PARAMS_TYPE_JSON {
-		resp.ParamsMap = JsonParamsMap(params)
+	if resp.ParamsType == model.PARAMS_TYPE_MSGPACK {
+		resp.ParamsMap = utils.MsgpackParamsMap(params)
+	} else if resp.ParamsType == model.PARAMS_TYPE_JSON {
+		resp.ParamsMap = utils.JsonParamsMap(params)
 	}
 }
 

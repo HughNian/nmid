@@ -13,15 +13,13 @@ var listenerMaps = make(map[string]MakeListener)
 
 func init() {
 	listenerMaps["tcp"] = tcpListener("tcp")
-	listenerMaps["tcp4"] = tcpListener("tcp4")
-	listenerMaps["tcp6"] = tcpListener("tcp6")
 	listenerMaps["http"] = tcpListener("tcp")
 	listenerMaps["ws"] = tcpListener("tcp")
 	listenerMaps["wss"] = tcpListener("tcp")
 }
 
-//MakeListener make listener
-func (ser *Server) MakeListener(network, address string) (ln net.Listener, err error) {
+//NewListener make listener
+func (ser *Server) NewListener(network, address string) (ln net.Listener, err error) {
 	ml := listenerMaps[network]
 	if ml == nil {
 		return nil, fmt.Errorf("can not make listener for %s", network)

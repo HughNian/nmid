@@ -1,7 +1,7 @@
 package server
 
 import (
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"sync"
 	"time"
 )
@@ -33,7 +33,7 @@ func NewService(conn *Connect) *Service {
 	}
 
 	return &Service{
-		Timer:   time.NewTimer(conf.CLIENT_ALIVE_TIME),
+		Timer:   time.NewTimer(model.CLIENT_ALIVE_TIME),
 		Connect: conn,
 		Req:     NewReq(),
 		Res:     NewRes(),
@@ -67,7 +67,7 @@ func (sc *Service) AliveTimeOut() {
 			select {
 			case <-t.C:
 				sc.Connect.CloseConnect()
-				t.Reset(conf.CLIENT_ALIVE_TIME)
+				t.Reset(model.CLIENT_ALIVE_TIME)
 			}
 		}
 	}(sc.Timer)

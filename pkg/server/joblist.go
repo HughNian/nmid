@@ -3,7 +3,8 @@ package server
 import (
 	"container/list"
 	"net/http"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 	"sync"
 )
 
@@ -37,8 +38,8 @@ type JobDataList struct {
 func NewJobData(Handle, Params string) (data *JobData) {
 	data = new(JobData)
 
-	data.JobId = GetJobId(Handle, Params)
-	data.status = conf.JOB_STATUS_INIT
+	data.JobId = utils.GetJobId(Handle, Params)
+	data.status = model.JOB_STATUS_INIT
 
 	return data
 }

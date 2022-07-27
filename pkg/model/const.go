@@ -1,4 +1,4 @@
-package conf
+package model
 
 import (
 	"errors"
@@ -64,12 +64,6 @@ const (
 	LOADBLANCE_LRU          = 2
 	LOADBLANCE_ROUND_WEIGHT = 3
 )
-
-type RetStruct struct {
-	Code int
-	Msg  string
-	Data []byte
-}
 
 //ratelimit
 const (

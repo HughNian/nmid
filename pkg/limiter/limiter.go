@@ -1,8 +1,8 @@
-package server
+package limiter
 
 import (
 	"context"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 
 	"github.com/joshbohde/codel"
 	"github.com/juju/ratelimit"
@@ -11,12 +11,12 @@ import (
 func NewCodelLimiter() *codel.Lock {
 	return codel.New(codel.Options{
 		// The maximum number of pending acquires
-		MaxPending: conf.MAXPENDING,
+		MaxPending: model.MAXPENDING,
 		// The maximum number of concurrent acquires
-		MaxOutstanding: conf.MAXOUTSTANDING,
+		MaxOutstanding: model.MAXOUTSTANDING,
 		// The target latency to wait for an acquire.
 		// Acquires that take longer than this can fail.
-		TargetLatency: conf.TARGETLATENCY,
+		TargetLatency: model.TARGETLATENCY,
 	})
 }
 
@@ -38,7 +38,7 @@ func DoCodelLimiter(c *codel.Lock) bool {
 
 //NewBucketLimiter token rate limiter, 令牌桶限流
 func NewBucketLimiter() *ratelimit.Bucket {
-	return ratelimit.NewBucket(conf.FILLINTERVAL, conf.CAPACITY)
+	return ratelimit.NewBucket(model.FILLINTERVAL, model.CAPACITY)
 }
 
 func DoBucketLimiter(b *ratelimit.Bucket) bool {

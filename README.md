@@ -22,7 +22,7 @@ nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的�
 
 ## 建议配置
 
-```
+```shell
 cat /proc/version
 Linux version 3.10.0-957.21.3.el7.x86_64 ...(centos7)
 
@@ -39,7 +39,7 @@ cmake version 3.11.4
 
 ## 编译安装步骤
 
-```
+```shell
 git clone https://github.com/HughNian/nmid.git
 
 1.client
@@ -58,8 +58,8 @@ make
 
 ## 使用
 
-```cpp
-客户端代码
+```go
+//客户端代码
 
 import (
 	"fmt"
@@ -242,8 +242,8 @@ func main() {
 
 ```
 
-```cpp
-服务端代码
+```go
+//服务端代码
 
 package main
 
@@ -304,8 +304,8 @@ func main() {
 
 ```
 
-```cpp
-工作端代码
+```go
+//工作端代码
 
 package main
 
@@ -432,8 +432,8 @@ func main() {
 
 ```
 
-```cpp
-http客户端请求
+```go
+//http客户端请求
 
 func main() {
 	args := make(map[string]interface{})

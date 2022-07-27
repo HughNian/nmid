@@ -7,7 +7,8 @@ import (
 	"io"
 	"log"
 	"net"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 	"sync"
 	"time"
 )
@@ -54,10 +55,10 @@ func NewService(network, addr string) (service *Service, err error) {
 		addr:      addr,
 		SInfo:     &ServiceInfo{},
 		Req:       nil,
-		ResQueue:  make(chan *Response, conf.QUEUE_SIZE),
-		IoTimeOut: conf.DEFAULT_TIME_OUT,
+		ResQueue:  make(chan *Response, model.QUEUE_SIZE),
+		IoTimeOut: model.DEFAULT_TIME_OUT,
 	}
-	service.conn, err = net.DialTimeout(service.net, service.addr, conf.DIAL_TIME_OUT)
+	service.conn, err = net.DialTimeout(service.net, service.addr, model.DIAL_TIME_OUT)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (sc *Service) SetServiceInfo(inflowUrl, outflowUrl string, instance []byte)
 		return nil
 	}
 
-	sc.SInfo.ServiceId = GenServiceId(ins.ServiceName)
+	sc.SInfo.ServiceId = utils.GenServiceId(ins.ServiceName)
 	ins.ServiceId = sc.SInfo.ServiceId
 	sc.SInfo.Instance = &ins
 
@@ -127,13 +128,13 @@ func (sc *Service) Write() (err error) {
 
 func (sc *Service) Read(length int) (data []byte, err error) {
 	n := 0
-	buf := GetBuffer(length)
-	for i := length; i > 0 || len(data) < conf.MIN_DATA_SIZE; i -= n {
+	buf := utils.GetBuffer(length)
+	for i := length; i > 0 || len(data) < model.MIN_DATA_SIZE; i -= n {
 		if n, err = sc.rw.Read(buf); err != nil {
 			return
 		}
 		data = append(data, buf[0:n]...)
-		if n < conf.MIN_DATA_SIZE {
+		if n < model.MIN_DATA_SIZE {
 			break
 		}
 	}
@@ -148,7 +149,7 @@ func (sc *Service) ServiceRead() {
 	var resLen int
 Loop:
 	for sc.conn != nil {
-		if data, err = sc.Read(conf.MIN_DATA_SIZE); err != nil {
+		if data, err = sc.Read(model.MIN_DATA_SIZE); err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
 				if opErr.Timeout() {
 					log.Println(err)
@@ -167,12 +168,12 @@ Loop:
 			//断开重连
 			log.Println("service read error here:" + err.Error())
 			sc.Close()
-			sc.conn, err = net.DialTimeout(sc.net, sc.addr, conf.DIAL_TIME_OUT)
+			sc.conn, err = net.DialTimeout(sc.net, sc.addr, model.DIAL_TIME_OUT)
 			if err != nil {
 				break
 			}
 			sc.rw = bufio.NewReadWriter(bufio.NewReader(sc.conn), bufio.NewWriter(sc.conn))
-			sc.ResQueue = make(chan *Response, conf.QUEUE_SIZE)
+			sc.ResQueue = make(chan *Response, model.QUEUE_SIZE)
 			continue
 		}
 
@@ -183,14 +184,14 @@ Loop:
 
 		for {
 			l := len(data)
-			if l < conf.MIN_DATA_SIZE {
+			if l < model.MIN_DATA_SIZE {
 				leftdata = data
 				continue Loop
 			}
 
 			if len(leftdata) == 0 {
 				connType := GetConnType(data)
-				if connType != conf.CONN_TYPE_SERVER {
+				if connType != model.CONN_TYPE_SERVER {
 					log.Println("read conn type error")
 					break
 				}
@@ -217,13 +218,13 @@ func (sc *Service) ProcessResp() bool {
 	case res := <-sc.ResQueue:
 		if nil != res {
 			switch res.DataType {
-			case conf.PDT_ERROR:
+			case model.PDT_ERROR:
 				log.Println("pdt error")
 				return false
-			case conf.PDT_RATELIMIT:
+			case model.PDT_RATELIMIT:
 				log.Println("pdt rateLimit")
 				return false
-			case conf.PDT_S_REG_SERVICE_OK:
+			case model.PDT_S_REG_SERVICE_OK:
 				return true
 			}
 		}
@@ -252,7 +253,7 @@ func (sc *Service) RegService() (ret bool, err error) {
 		return false, fmt.Errorf("conn fail")
 	}
 
-	NewReq(sc.SInfo).ServiceInfoPack(conf.PDT_SC_REG_SERVICE)
+	NewReq(sc.SInfo).ServiceInfoPack(model.PDT_SC_REG_SERVICE)
 	if err = sc.Write(); err != nil {
 		return false, err
 	}
@@ -269,7 +270,7 @@ func (sc *Service) OffService() (ret bool, err error) {
 		return false, fmt.Errorf("conn fail")
 	}
 
-	NewReq(sc.SInfo).ServiceInfoPack(conf.PDT_SC_OFF_SERVICE)
+	NewReq(sc.SInfo).ServiceInfoPack(model.PDT_SC_OFF_SERVICE)
 	if err = sc.Write(); err != nil {
 		return false, err
 	}

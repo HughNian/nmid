@@ -1,7 +1,8 @@
 package server
 
 import (
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 	"sync"
 )
 
@@ -34,10 +35,10 @@ type JobList struct {
 func NewJob(Handle, Params string) (j *Job) {
 	j = new(Job)
 
-	j.JobId = GetJobId(Handle, Params)
+	j.JobId = utils.GetJobId(Handle, Params)
 	j.ClientId = ``
 	j.WorkerId = ``
-	j.status = conf.JOB_STATUS_INIT
+	j.status = model.JOB_STATUS_INIT
 	j.FuncName = ``
 	j.Params = make([]byte, 0)
 	j.RetData = make([]byte, 0)

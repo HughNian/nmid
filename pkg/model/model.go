@@ -1,4 +1,4 @@
-package conf
+package model
 
 type ServerConfig struct {
 	Server        *ServerCon     `yaml:"Server"`
@@ -60,4 +60,18 @@ type BreakerConfig struct {
 	Btype              int8   `yaml:"btype"`                // 熔断粒度path单个实例下接口级别，host单个实例级别，默认接口级别
 	Timestamp          int64  `yaml:"timestamp"`            // 最后更新时间
 	WorkerName         string `yaml:"worker_name" binding:"required"`
+}
+
+type RetStruct struct {
+	Code int
+	Msg  string
+	Data []byte
+}
+
+func GetRetStruct() *RetStruct {
+	return &RetStruct{
+		Code: 0,
+		Msg:  "",
+		Data: make([]byte, 0),
+	}
 }

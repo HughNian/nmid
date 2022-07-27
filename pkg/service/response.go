@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 )
 
 type Response struct {
@@ -34,16 +34,16 @@ func GetConnType(data []byte) (connType uint32) {
 //DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
-	if resLen < conf.MIN_DATA_SIZE {
+	if resLen < model.MIN_DATA_SIZE {
 		err = fmt.Errorf("InvalidData1: %v", data)
 		return
 	}
-	cl := int(binary.BigEndian.Uint32(data[8:conf.MIN_DATA_SIZE]))
-	if resLen < conf.MIN_DATA_SIZE+cl {
+	cl := int(binary.BigEndian.Uint32(data[8:model.MIN_DATA_SIZE]))
+	if resLen < model.MIN_DATA_SIZE+cl {
 		err = fmt.Errorf("InvalidData2: %v", data)
 		return
 	}
-	content := data[conf.MIN_DATA_SIZE : conf.MIN_DATA_SIZE+cl]
+	content := data[model.MIN_DATA_SIZE : model.MIN_DATA_SIZE+cl]
 	if len(content) != cl {
 		err = fmt.Errorf("InvalidData3: %v", data)
 		return

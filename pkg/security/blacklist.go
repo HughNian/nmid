@@ -1,11 +1,11 @@
-package server
+package security
 
 import (
 	"net"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 )
 
-func DoBlackList(ip string, list *conf.BlackList) bool {
+func DoBlackList(ip string, list *model.BlackList) bool {
 	if !list.Enable {
 		return false
 	}

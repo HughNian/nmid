@@ -2,7 +2,8 @@ package client
 
 import (
 	"encoding/binary"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 )
 
 type Request struct {
@@ -23,8 +24,8 @@ type Request struct {
 func NewReq() (req *Request) {
 	req = &Request{
 		Data:             make([]byte, 0),
-		ParamsType:       conf.PARAMS_TYPE_MSGPACK,
-		ParamsHandleType: conf.PARAMS_HANDLE_TYPE_ENCODE,
+		ParamsType:       model.PARAMS_TYPE_MSGPACK,
+		ParamsHandleType: model.PARAMS_HANDLE_TYPE_ENCODE,
 		Ret:              make([]byte, 0),
 	}
 	return
@@ -37,22 +38,22 @@ func (req *Request) ContentPack(dataType uint32, handle string, params []byte) (
 	req.HandleLen = uint32(len(handle))
 	req.Params = params
 	req.ParamsLen = uint32(len(params))
-	req.DataLen = uint32(conf.UINT32_SIZE + conf.UINT32_SIZE + conf.UINT32_SIZE + req.HandleLen + conf.UINT32_SIZE + req.ParamsLen)
+	req.DataLen = uint32(model.UINT32_SIZE + model.UINT32_SIZE + model.UINT32_SIZE + req.HandleLen + model.UINT32_SIZE + req.ParamsLen)
 	contentLen = req.DataLen
 
 	content = make([]byte, contentLen)
-	binary.BigEndian.PutUint32(content[:conf.UINT32_SIZE], req.ParamsType)
-	start := conf.UINT32_SIZE
-	end := start + conf.UINT32_SIZE
+	binary.BigEndian.PutUint32(content[:model.UINT32_SIZE], req.ParamsType)
+	start := model.UINT32_SIZE
+	end := start + model.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.ParamsHandleType)
 	start = end
-	end = start + conf.UINT32_SIZE
+	end = start + model.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.HandleLen)
 	start = end
 	end = start + int(req.HandleLen)
 	copy(content[start:end], []byte(req.Handle))
 	start = end
-	end = start + conf.UINT32_SIZE
+	end = start + model.UINT32_SIZE
 	binary.BigEndian.PutUint32(content[start:end], req.ParamsLen)
 	start = end
 	end = start + int(req.ParamsLen)
@@ -64,13 +65,13 @@ func (req *Request) ContentPack(dataType uint32, handle string, params []byte) (
 
 //EncodePack 打包
 func (req *Request) EncodePack() (data []byte) {
-	len := conf.MIN_DATA_SIZE + req.DataLen //add 12 bytes head
-	data = GetBuffer(int(len))
+	len := model.MIN_DATA_SIZE + req.DataLen //add 12 bytes head
+	data = utils.GetBuffer(int(len))
 
-	binary.BigEndian.PutUint32(data[:4], conf.CONN_TYPE_CLIENT)
+	binary.BigEndian.PutUint32(data[:4], model.CONN_TYPE_CLIENT)
 	binary.BigEndian.PutUint32(data[4:8], req.DataType)
-	binary.BigEndian.PutUint32(data[8:conf.MIN_DATA_SIZE], req.DataLen)
-	copy(data[conf.MIN_DATA_SIZE:], req.Data)
+	binary.BigEndian.PutUint32(data[8:model.MIN_DATA_SIZE], req.DataLen)
+	copy(data[model.MIN_DATA_SIZE:], req.Data)
 
 	return
 }

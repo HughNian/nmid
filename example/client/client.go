@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 	cli "nmid-v2/pkg/client"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"os"
 
 	"github.com/vmihailenco/msgpack"
@@ -31,7 +31,7 @@ func main() {
 	//defer client.Close()
 
 	client.ErrHandler = func(e error) {
-		if conf.RESTIMEOUT == e {
+		if model.RESTIMEOUT == e {
 			log.Println("time out here")
 		} else {
 			log.Println(e)
@@ -41,13 +41,13 @@ func main() {
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				return
 			}
 
-			var retStruct conf.RetStruct
+			var retStruct model.RetStruct
 			err := msgpack.Unmarshal(resp.Ret, &retStruct)
 			if nil != err {
 				log.Fatalln(err)

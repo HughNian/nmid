@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"nmid-v2/pkg/model"
 	wor "nmid-v2/pkg/worker"
 	"strings"
 
@@ -29,7 +30,7 @@ func ToUpper(job wor.Job) ([]byte, error) {
 	if len(resp.ParamsMap) > 0 {
 		name := resp.ParamsMap["name"].(string)
 
-		retStruct := wor.GetRetStruct()
+		retStruct := model.GetRetStruct()
 		retStruct.Msg = "ok"
 		retStruct.Data = []byte(strings.ToUpper(name))
 		ret, err := msgpack.Marshal(retStruct)
@@ -64,7 +65,7 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 			orderType = int(float64val)
 		}
 
-		retStruct := wor.GetRetStruct()
+		retStruct := model.GetRetStruct()
 		if orderSn == "MBO993889253" && orderType == 4 {
 			retStruct.Msg = "ok"
 			retStruct.Data = []byte("good goods")

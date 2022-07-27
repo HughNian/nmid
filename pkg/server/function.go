@@ -3,7 +3,7 @@ package server
 import (
 	wr "github.com/mroth/weightedrand"
 	"math/rand"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"sync"
 	"time"
 )
@@ -44,7 +44,7 @@ func (fm *FuncMap) AddFunc(worker *SWorker, name string) bool {
 	} else {
 		function = &Func{
 			FuncName:       name,
-			LoadBlanceType: conf.LOADBLANCE_HASH,
+			LoadBlanceType: model.LOADBLANCE_HASH,
 			Workers:        make([]*SWorker, 0),
 		}
 
@@ -134,11 +134,11 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 
 			switch function.LoadBlanceType {
 			//一致性hash
-			case conf.LOADBLANCE_HASH:
+			case model.LOADBLANCE_HASH:
 				best = hashfunc()
 
 			//加权随机
-			case conf.LOADBLANCE_ROUND_WEIGHT:
+			case model.LOADBLANCE_ROUND_WEIGHT:
 				{
 					if function.WorkerNum <= 10 {
 						rand.Seed(time.Now().UTC().UnixNano())
@@ -163,7 +163,7 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 				}
 
 			//lru 最少使用率
-			case conf.LOADBLANCE_LRU:
+			case model.LOADBLANCE_LRU:
 				for _, val := range function.Workers {
 					if val.JobNum < best.JobNum {
 						best = val

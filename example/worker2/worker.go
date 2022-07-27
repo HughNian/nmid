@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 	cli "nmid-v2/pkg/client"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	wor "nmid-v2/pkg/worker"
 	"sync"
 
@@ -49,7 +49,7 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	}
 
 	client.ErrHandler = func(e error) {
-		if conf.RESTIMEOUT == e {
+		if model.RESTIMEOUT == e {
 			log.Println("time out here")
 		} else {
 			log.Println(e)
@@ -57,14 +57,14 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	}
 
 	respHandler := func(resp *cli.Response) {
-		if resp.DataType == conf.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
 				log.Println("ret empty")
 				err = errors.New("ret empty")
 				return
 			}
 
-			var cretStruct conf.RetStruct
+			var cretStruct model.RetStruct
 			uerr := msgpack.Unmarshal(resp.Ret, &cretStruct)
 			if nil != uerr {
 				log.Fatalln(uerr)
@@ -79,7 +79,7 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 			}
 			fmt.Println(string(cretStruct.Data))
 
-			wretStruct := wor.GetRetStruct()
+			wretStruct := model.GetRetStruct()
 			wretStruct.Msg = "ok"
 			wretStruct.Data = cretStruct.Data
 			ret, err = msgpack.Marshal(wretStruct)

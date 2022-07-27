@@ -1,7 +1,8 @@
 package server
 
 import (
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/limiter"
+	"nmid-v2/pkg/model"
 	"sync"
 	"time"
 
@@ -30,13 +31,13 @@ func NewSClient(conn *Connect) *SClient {
 	}
 
 	return &SClient{
-		Timer:         time.NewTimer(conf.CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
+		Timer:         time.NewTimer(model.CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
 		ClientId:      conn.Id,
 		Connect:       conn,
 		Req:           NewReq(),
 		Res:           NewRes(),
-		CodelLimiter:  NewCodelLimiter(),
-		BucketLimiter: NewBucketLimiter(),
+		CodelLimiter:  limiter.NewCodelLimiter(),
+		BucketLimiter: limiter.NewBucketLimiter(),
 	}
 }
 
@@ -46,14 +47,14 @@ func (c *SClient) doJob() {
 	// fmt.Println("######Client Req-", c.Req.DataType)
 
 	if c.Req.HandleLen == 0 || c.Req.Handle == `` {
-		c.Res.DataType = conf.PDT_ERROR
+		c.Res.DataType = model.PDT_ERROR
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
 		return
 	}
 	if c.Req.ParamsLen == 0 || len(c.Req.Params) == 0 {
-		c.Res.DataType = conf.PDT_ERROR
+		c.Res.DataType = model.PDT_ERROR
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
@@ -62,7 +63,7 @@ func (c *SClient) doJob() {
 
 	worker := c.Connect.Ser.Funcs.GetBestWorker(c.Req.Handle)
 	if worker == nil {
-		c.Res.DataType = conf.PDT_CANT_DO
+		c.Res.DataType = model.PDT_CANT_DO
 		resPack := c.Res.ResEncodePack()
 		c.Connect.Write(resPack)
 
@@ -89,20 +90,20 @@ func (c *SClient) doJob() {
 }
 
 func (c *SClient) doLimit() {
-	c.Res.DataType = conf.PDT_RATELIMIT
+	c.Res.DataType = model.PDT_RATELIMIT
 	resPack := c.Res.ResEncodePack()
 	c.Connect.Write(resPack)
 }
 
 //RunClient 此处做限流操作
 func (c *SClient) RunClient() {
-	if !DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
+	if !limiter.DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
 		c.doLimit()
 	} else {
 		dataType := c.Req.GetReqDataType()
 
 		switch dataType {
-		case conf.PDT_C_DO_JOB:
+		case model.PDT_C_DO_JOB:
 			{
 				c.doJob()
 			}
@@ -117,7 +118,7 @@ func (c *SClient) AliveTimeOut() {
 			select {
 			case <-t.C:
 				c.Connect.CloseConnect()
-				t.Reset(conf.CLIENT_ALIVE_TIME)
+				t.Reset(model.CLIENT_ALIVE_TIME)
 			}
 		}
 	}(c.Timer)

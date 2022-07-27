@@ -6,10 +6,13 @@ import (
 	"io"
 	"log"
 	"net"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 	"sync"
 	"time"
 )
+
+//rpc client
 
 type Client struct {
 	sync.Mutex
@@ -32,8 +35,8 @@ func NewClient(network, addr string) (client *Client, err error) {
 		net:          network,
 		addr:         addr,
 		Req:          nil,
-		ResQueue:     make(chan *Response, conf.QUEUE_SIZE),
-		IoTimeOut:    conf.DEFAULT_TIME_OUT,
+		ResQueue:     make(chan *Response, model.QUEUE_SIZE),
+		IoTimeOut:    model.DEFAULT_TIME_OUT,
 		RespHandlers: NewResHandlerMap(),
 	}
 
@@ -50,7 +53,7 @@ func NewClient(network, addr string) (client *Client, err error) {
 func (c *Client) ClientConn() error {
 	var err error
 
-	c.conn, err = net.DialTimeout(c.net, c.addr, conf.DIAL_TIME_OUT)
+	c.conn, err = net.DialTimeout(c.net, c.addr, model.DIAL_TIME_OUT)
 	if err != nil {
 		return err
 	}
@@ -78,13 +81,13 @@ func (c *Client) Write() (err error) {
 
 func (c *Client) Read(length int) (data []byte, err error) {
 	n := 0
-	buf := GetBuffer(length)
-	for i := length; i > 0 || len(data) < conf.MIN_DATA_SIZE; i -= n {
+	buf := utils.GetBuffer(length)
+	for i := length; i > 0 || len(data) < model.MIN_DATA_SIZE; i -= n {
 		if n, err = c.rw.Read(buf); err != nil {
 			return
 		}
 		data = append(data, buf[0:n]...)
-		if n < conf.MIN_DATA_SIZE {
+		if n < model.MIN_DATA_SIZE {
 			break
 		}
 	}
@@ -99,7 +102,7 @@ func (c *Client) ClientRead() {
 	var resLen int
 Loop:
 	for c.conn != nil {
-		if data, err = c.Read(conf.MIN_DATA_SIZE); err != nil {
+		if data, err = c.Read(model.MIN_DATA_SIZE); err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
 				if opErr.Timeout() {
 					log.Println(err)
@@ -122,7 +125,7 @@ Loop:
 			if nil != err {
 				break
 			}
-			c.ResQueue = make(chan *Response, conf.QUEUE_SIZE)
+			c.ResQueue = make(chan *Response, model.QUEUE_SIZE)
 			continue
 		}
 
@@ -133,14 +136,14 @@ Loop:
 
 		for {
 			l := len(data)
-			if l < conf.MIN_DATA_SIZE {
+			if l < model.MIN_DATA_SIZE {
 				leftdata = data
 				continue Loop
 			}
 
 			if len(leftdata) == 0 {
 				connType := GetConnType(data)
-				if connType != conf.CONN_TYPE_SERVER {
+				if connType != model.CONN_TYPE_SERVER {
 					log.Println("read conn type error")
 					break
 				}
@@ -184,30 +187,30 @@ func (c *Client) ProcessResp() {
 	case res := <-c.ResQueue:
 		if nil != res {
 			switch res.DataType {
-			case conf.PDT_ERROR:
+			case model.PDT_ERROR:
 				c.ErrHandler(res.GetResError())
 				return
-			case conf.PDT_CANT_DO:
+			case model.PDT_CANT_DO:
 				c.ErrHandler(res.GetResError())
 				return
-			case conf.PDT_RATELIMIT:
+			case model.PDT_RATELIMIT:
 				c.ErrHandler(res.GetResError())
 				return
-			case conf.PDT_S_RETURN_DATA:
+			case model.PDT_S_RETURN_DATA:
 				c.HandlerResp(res)
 				return
 			}
 		}
 	case <-timer:
 		log.Println("time out")
-		c.ErrHandler(conf.RESTIMEOUT)
+		c.ErrHandler(model.RESTIMEOUT)
 		//c.Close()
 		return
 	}
 }
 
 func (c *Client) SetParamsType(pType uint32) *Client {
-	if pType != conf.PARAMS_TYPE_MSGPACK && pType != conf.PARAMS_TYPE_JSON {
+	if pType != model.PARAMS_TYPE_MSGPACK && pType != model.PARAMS_TYPE_JSON {
 		log.Println("set params type value error not in msgpack or json")
 		return c
 	}
@@ -220,7 +223,7 @@ func (c *Client) SetParamsType(pType uint32) *Client {
 }
 
 func (c *Client) SetParamsHandle(hType uint32) *Client {
-	if hType != conf.PARAMS_HANDLE_TYPE_ENCODE && hType != conf.PARAMS_HANDLE_TYPE_ORIGINAL {
+	if hType != model.PARAMS_HANDLE_TYPE_ENCODE && hType != model.PARAMS_HANDLE_TYPE_ORIGINAL {
 		log.Println("set params handle type value error not in encode or original")
 		return c
 	}
@@ -245,7 +248,7 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 	if c.Req == nil {
 		c.Req = NewReq()
 	}
-	c.Req.ContentPack(conf.PDT_C_DO_JOB, funcName, params)
+	c.Req.ContentPack(model.PDT_C_DO_JOB, funcName, params)
 	if err = c.Write(); err != nil {
 		return err
 	}

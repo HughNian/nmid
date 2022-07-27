@@ -7,9 +7,11 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"nmid-v2/pkg/conf"
+	"nmid-v2/pkg/model"
 	"sync"
 )
+
+//rpc server, can use tcp、http、ws etc
 
 type Server struct {
 	sync.Mutex
@@ -21,7 +23,7 @@ type Server struct {
 	Ln                net.Listener
 	Cm                cmux.CMux
 	HTTPServerGateway *http.Server
-	SConfig           conf.ServerConfig
+	SConfig           model.ServerConfig
 	Cpool             *ConnectPool
 	Funcs             *FuncMap
 	TlsConfig         *tls.Config
@@ -35,7 +37,7 @@ func NewServer() (ser *Server) {
 	return
 }
 
-func (ser *Server) SetSConfig(SConfig conf.ServerConfig) *Server {
+func (ser *Server) SetSConfig(SConfig model.ServerConfig) *Server {
 	ser.SConfig = SConfig
 	ser.Net = SConfig.Server.NETWORK
 	ser.Host = SConfig.Server.HOST
@@ -99,7 +101,7 @@ func (ser *Server) GrpcServerRun() {
 
 func (ser *Server) ServerRun() {
 	var address string = ser.Host + ":" + ser.Port
-	listen, err := ser.MakeListener(ser.Net, address)
+	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {
 		log.Fatalln(err)
 		panic(err)
