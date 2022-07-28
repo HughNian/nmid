@@ -1,66 +1,53 @@
 package breaker
 
 import (
+	"github.com/sony/gobreaker"
 	"nmid-v2/pkg/model"
 	"sync"
 	"time"
-
-	"github.com/sony/gobreaker"
 )
 
-/**
- * 策略1
- * - 连续错误达到阈值熔断
- */
-func readyToTripOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
+//ruleOne 连续错误达到阈值熔断
+func ruleOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
-		return counts.ConsecutiveFailures >= bc.SerialErrorNumbers
+		return counts.ConsecutiveFailures >= bc.ErrorNumbers
 	}
 }
 
-/**
- * 策略2
- * - 错误率达到固定百分比熔断
- */
-func readyToTripTwo(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
+//ruleTwo 错误率达到固定百分比熔断
+func ruleTwo(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
 		return counts.Requests >= 3 && failureRatio >= bc.ErrorPercent
 	}
 }
 
-/**
- * 策略3
- * - 连续错误次数达到阈值 或 错误率达到阈值熔断
- */
-func readyToTripThree(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
+//ruleThree 连续错误次数达到阈值 或 错误率达到阈值熔断
+func ruleThree(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
-		return counts.ConsecutiveFailures >= bc.SerialErrorNumbers || failureRatio >= bc.ErrorPercent
+		return counts.ConsecutiveFailures >= bc.ErrorNumbers || failureRatio >= bc.ErrorPercent
 	}
 }
 
-/**
- * 策略4
- * - 连续错误次数达到阈值 和 错误率同时达到阈值熔断
- */
-func readyToTripFour(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
+//ruleFour 连续错误次数达到阈值 和 错误率同时达到阈值熔断
+func ruleFour(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
-		return counts.ConsecutiveFailures >= bc.SerialErrorNumbers && failureRatio >= bc.ErrorPercent
+		return counts.ConsecutiveFailures >= bc.ErrorNumbers && failureRatio >= bc.ErrorPercent
 	}
 }
 
-func getReadyToTripOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
+func switchOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	switch bc.RuleType {
 	case 2:
-		return readyToTripTwo(bc)
+		return ruleTwo(bc)
 	case 3:
-		return readyToTripThree(bc)
+		return ruleThree(bc)
 	case 4:
-		return readyToTripFour(bc)
+		return ruleFour(bc)
 	default:
-		return readyToTripOne(bc)
+		return ruleOne(bc)
 	}
 }
 
@@ -82,7 +69,7 @@ func NewWorkerBreaker(sconf model.ServerConfig) *gobreaker.TwoStepCircuitBreaker
 	wb.hostname = make(map[string]*gobreaker.TwoStepCircuitBreaker)
 
 	st := gobreaker.Settings{
-		ReadyToTrip: getReadyToTripOne(wb.config),
+		ReadyToTrip: switchOne(wb.config),
 	}
 	breaker := gobreaker.NewTwoStepCircuitBreaker(st)
 	return breaker

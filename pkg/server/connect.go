@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
 	"nmid-v2/pkg/security"
 	"nmid-v2/pkg/utils"
@@ -16,17 +17,16 @@ import (
 type Connect struct {
 	sync.Mutex
 
-	Id         string
-	Addr       string
-	Ip         string
-	Port       string
-	Ser        *Server
-	Conn       net.Conn
-	rw         *bufio.ReadWriter
-	ConnType   uint32
-	RunWorker  *SWorker
-	RunClient  *SClient
-	RunService *Service
+	Id        string
+	Addr      string
+	Ip        string
+	Port      string
+	Ser       *Server
+	Conn      net.Conn
+	rw        *bufio.ReadWriter
+	ConnType  uint32
+	RunWorker *SWorker
+	RunClient *SClient
 
 	isFree uint32
 }
@@ -77,7 +77,6 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.ConnType = model.CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
-	c.RunService = nil
 	c.isFree = 0
 	pool.Lock()
 	pool.CMaps.Store(c.Id, c)
@@ -134,17 +133,6 @@ func (c *Connect) getSCClient() *SClient {
 	return c.RunClient
 }
 
-//getSSCClient server's service client
-func (c *Connect) getSSCClient() *Service {
-	if c.RunService == nil {
-		c.RunService = NewService(c)
-	}
-
-	c.RunService.AliveTimeOut()
-
-	return c.RunService
-}
-
 func (c *Connect) Write(resPack []byte) {
 	var n int
 	var err error
@@ -153,7 +141,7 @@ func (c *Connect) Write(resPack []byte) {
 		for i := 0; i < len(resPack); i += n {
 			n, err = worker.Connect.rw.Write(resPack[i:])
 			if err != nil {
-				log.Println(`write err`, err)
+				logger.Error("write err %s", err.Error())
 				return
 			}
 		}
@@ -161,7 +149,7 @@ func (c *Connect) Write(resPack []byte) {
 	} else if c.ConnType == model.CONN_TYPE_CLIENT {
 		client := c.RunClient
 		if len(resPack) == 0 {
-			log.Println("resPack nil")
+			logger.Info("resPack nil")
 			return
 		}
 
@@ -209,10 +197,6 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 			client := c.getSCClient()
 			client.Req.DataType = dataType
 			client.Req.DataLen = uint32(dataLen)
-		} else if c.ConnType == model.CONN_TYPE_SERVICE {
-			sclient := c.getSSCClient()
-			sclient.Req.DataType = dataType
-			sclient.Req.DataLen = uint32(dataLen)
 		}
 
 		buf.Write(tmp[:n])
@@ -242,7 +226,6 @@ func (c *Connect) DoIO() {
 	var rsize = model.MIN_DATA_SIZE
 	var worker *SWorker
 	var client *SClient
-	var service *Service
 
 	for {
 		if data, err = c.Read(rsize); err != nil {
@@ -291,21 +274,6 @@ func (c *Connect) DoIO() {
 			if client.Req.DataLen == clen {
 				client.Req.Data = content
 				client.RunClient()
-			}
-		} else if c.ConnType == model.CONN_TYPE_SERVICE {
-			service = c.RunService
-
-			allLen := uint32(len(data))
-			if service.Req.DataLen > allLen {
-				continue
-			}
-
-			content = make([]byte, service.Req.DataLen)
-			copy(content, data[model.MIN_DATA_SIZE:allLen])
-			clen := uint32(len(content))
-			if service.Req.DataLen == clen {
-				service.Req.Data = content
-				service.RunService()
 			}
 		} else {
 			continue

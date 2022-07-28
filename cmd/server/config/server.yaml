@@ -1,0 +1,31 @@
+Server:
+  NETWORK: "tcp"
+  HOST: "0.0.0.0"
+  PORT: "6808"
+  HTTPPORT: "6809"
+
+Registry:
+  HOST: "127.0.0.1"
+  PORT: "6810"
+  RENEW: 5
+
+WhiteList:
+  ENABLE: false
+  ALLOWLIST: {"127.0.0.1":true, "127.0.0.2":true}
+  ALLOWLISTMASK: ["172.17.0.0/16", "172.17.0.0/26" ]
+
+BlackList:
+  ENABLE: false
+  NOALLOWLIST: {"127.0.0.1":true, "127.0.0.2":true}
+  NOALLOWLISTMASK: ["172.17.0.0/16", "172.17.0.0/26" ]
+  
+Breaker:
+  SERIAL_ERROR_NUMBERS: 5 # 默认连续错误次数触发熔断
+  ERROR_PERCENT: 1 # 错误数占总请求数的百分比熔断，1-100，10%
+  MAX_REQUEST: 1 # 熔断器半开时允许运行的请求数量 默认设置为：1，请求成功则断路器关闭
+  INTERVAL: 600 # 熔断器处于关闭状态时的清除周期，默认0，如果一直是关闭则不清除请求的次数信息
+  TIMEOUT: 30 # 熔断器处于打开状态时，经过多久触发为半开状态，单位：s
+  RULE_TYPE: 1 # 熔断类型：1连续错误达到阈值熔断，2错误率达到固定百分比熔断，3连续错误次数达到阈值或错误率达到阈值熔断，4连续错误次数达到阈值和错误率同时达到阈值熔断
+  REQUEST_TIMEOUT: 5 # SideCar代理请求超时时间，单位：s
+  BTYPE: 1 #熔断粒度1,path单个实例下接口级别，2,host单个实例级别，默认接口级别
+  CYCLE: 1 # 定时感应配置周期，单位：s

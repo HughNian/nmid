@@ -8,6 +8,8 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"io"
 	"log"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -105,4 +107,12 @@ func JsonParamsMap(params []byte) map[string]interface{} {
 	}
 
 	return paramsMap
+}
+
+func OsPath(path string) string {
+	if runtime.GOOS == "windows" {
+		return "file:////%3F/" + filepath.ToSlash(path)
+	}
+
+	return path
 }

@@ -7,11 +7,14 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"nmid-v2/pkg/model"
 	"nmid-v2/pkg/utils"
 	"sync"
 	"time"
 )
+
+//sidecar client
 
 type (
 	Service struct {
@@ -20,6 +23,7 @@ type (
 		net, addr string
 		conn      net.Conn
 		rw        *bufio.ReadWriter
+		scClient  *http.Client
 
 		SInfo *ServiceInfo
 
@@ -58,6 +62,9 @@ func NewService(network, addr string) (service *Service, err error) {
 		ResQueue:  make(chan *Response, model.QUEUE_SIZE),
 		IoTimeOut: model.DEFAULT_TIME_OUT,
 	}
+
+	service.ScHTTPClient()
+
 	service.conn, err = net.DialTimeout(service.net, service.addr, model.DIAL_TIME_OUT)
 	if err != nil {
 		return nil, err
@@ -244,6 +251,25 @@ func (sc *Service) Close() {
 	}
 }
 
+func (sc *Service) ScHTTPClient() *http.Client {
+	if sc.scClient == nil {
+		sc.scClient = &http.Client{
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 60 * time.Second,
+				}).DialContext,
+				MaxIdleConns:          500,
+				IdleConnTimeout:       60 * time.Second,
+				ExpectContinueTimeout: 30 * time.Second,
+				MaxIdleConnsPerHost:   100,
+			},
+		}
+	}
+
+	return sc.scClient
+}
+
 //RegService register service 服务注册
 func (sc *Service) RegService() (ret bool, err error) {
 	sc.Lock()
@@ -276,4 +302,9 @@ func (sc *Service) OffService() (ret bool, err error) {
 	}
 
 	return sc.ProcessResp(), nil
+}
+
+//CallService call target service, use sidecar outflow addr
+func (sc *Service) CallService() {
+
 }

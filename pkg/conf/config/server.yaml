@@ -3,6 +3,8 @@ Server:
   HOST: "192.168.1.176"
   PORT: "6808"
   HTTPPORT: "6809"
+  INFLOWADDR: "0.0.0.0:6811"
+  OUTFLOWADDR: "0.0.0.0:6812"
 
 Registry:
   HOST: "127.0.0.1"

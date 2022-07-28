@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/binary"
 	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/service"
 	"nmid-v2/pkg/utils"
 )
 
@@ -22,7 +23,7 @@ type Request struct {
 	Ret              []byte
 	RetLen           uint32
 
-	ScInfo ServiceInfo
+	ScInfo service.ServiceInfo
 }
 
 type Response struct {

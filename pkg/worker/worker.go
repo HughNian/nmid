@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-//rpc worker
+//rpc tcp worker
 
 type Worker struct {
 	sync.Mutex

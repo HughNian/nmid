@@ -4,14 +4,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/soheilhy/cmux"
-	"log"
 	"net"
 	"net/http"
+	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
 	"sync"
 )
 
-//rpc server, can use tcp、http、ws etc
+//rpc server
 
 type Server struct {
 	sync.Mutex
@@ -100,10 +100,13 @@ func (ser *Server) GrpcServerRun() {
 }
 
 func (ser *Server) ServerRun() {
+	//new log
+	logger.NewLogger(ser.SConfig.LogConfig)
+
 	var address string = ser.Host + ":" + ser.Port
 	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalf("listener err %s", err.Error())
 		panic(err)
 	}
 	ser.Ln = listen
@@ -111,13 +114,13 @@ func (ser *Server) ServerRun() {
 	for {
 		conn, err := ser.Ln.Accept()
 		if err != nil {
-			log.Fatalln(err)
+			logger.Fatal("accept err %s", err.Error())
 			continue
 		}
 
 		c := ser.Cpool.NewConnect(ser, conn)
 		if nil == c {
-			log.Fatalln(errors.New("connect error"))
+			logger.Fatalf("connect err %s", errors.New("connect error"))
 			continue
 		}
 

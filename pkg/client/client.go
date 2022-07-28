@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//rpc client
+//rpc tcp client
 
 type Client struct {
 	sync.Mutex

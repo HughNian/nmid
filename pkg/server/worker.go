@@ -184,9 +184,6 @@ func (w *SWorker) doLimit() {
 }
 
 func (w *SWorker) RunWorker() {
-	//if !DoBucketLimiter(w.BucketLimiter) { //令牌桶限流
-	//	w.doLimit()
-	//} else {
 	dataType := w.Req.GetReqDataType()
 
 	switch dataType {
@@ -207,7 +204,7 @@ func (w *SWorker) RunWorker() {
 	//worker grab job
 	case model.PDT_W_GRAB_JOB:
 		{
-			//go w.doWork(``)
+			//todo get job list one
 		}
 	//worker return data
 	case model.PDT_W_RETURN_DATA:
@@ -215,5 +212,4 @@ func (w *SWorker) RunWorker() {
 			w.returnData()
 		}
 	}
-	//}
 }
