@@ -1,13 +1,37 @@
 package model
 
 type ServerConfig struct {
-	Server        *ServerCon     `yaml:"Server"`
+	RpcServer     *RpcServer     `yaml:"RpcServer"`
+	SideCar       *SideCar       `yaml:"SideCar"`
 	Registry      *Registry      `yaml:"Registry"`
 	Breaker       *Breaker       `yaml:"Breaker"`
 	WhiteList     *WhiteList     `yaml:"WhiteList"`
 	BlackList     *BlackList     `yaml:"BlackList"`
 	BreakerConfig *BreakerConfig `yaml:"BreakerConfig"`
-	LogConfig     *LogConfig     `yaml:"LogConfig"`
+	LogConfig     *LogConfig     `yaml:"LOGCONFIG"`
+}
+
+type RpcServer struct {
+	NETWORK  string `yaml:"network"`
+	HOST     string `yaml:"host"`
+	PORT     string `yaml:"port"`
+	HTTPPORT string `yaml:"httpport"`
+}
+
+type SideCar struct {
+	InflowAddr  *ProxyServerOption `yaml:"InflowAddr"`
+	OutflowAddr *ProxyServerOption `yaml:"OutflowAddr"`
+}
+
+type Service struct {
+	Address string `yaml:"Address"`
+}
+
+type Registry struct {
+	TYPE  string `yaml:"type"`
+	HOST  string `yaml:"host"`
+	PORT  string `yaml:"port"`
+	RENEW int    `yaml:"renew"`
 }
 
 type LogConfig struct {
@@ -17,44 +41,28 @@ type LogConfig struct {
 	Encoding       string `yaml:"encoding"`
 }
 
-type ServerCon struct {
-	NETWORK     string `yaml:"NETWORK"`
-	HOST        string `yaml:"HOST"`
-	PORT        string `yaml:"PORT"`
-	HTTPPORT    string `yaml:"HTTPPORT"`
-	INFLOWADDR  string `yaml:"INFLOWADDR"`
-	OUTFLOWADDR string `yaml:"OUTFLOWADDR"`
-}
-
-//Registry register center config
-type Registry struct {
-	HOST  string `yaml:"HOST"`
-	PORT  string `yaml:"PORT"`
-	RENEW int    `yaml:"RENEW"`
-}
-
 type WhiteList struct {
-	Enable        bool            `yaml:"ENABLE"`
-	AllowList     map[string]bool `yaml:"ALLOWLIST"`
-	AllowListMask []string        `yaml:"ALLOWLISTMASK"` //net.ParseCIDR("172.17.0.0/16") to get *net.IPNet
+	Enable        bool            `yaml:"enable"`
+	AllowList     map[string]bool `yaml:"allow_list"`
+	AllowListMask []string        `yaml:"allow_list_mask"` //net.ParseCIDR("172.17.0.0/16") to get *net.IPNet
 }
 
 type BlackList struct {
-	Enable          bool            `yaml:"ENABLE"`
-	NoAllowList     map[string]bool `yaml:"NOALLOWLIST"`
-	NoAllowListMask []string        `yaml:"NOALLOWLISTMASK"`
+	Enable          bool            `yaml:"enable"`
+	NoAllowList     map[string]bool `yaml:"no_allow_list"`
+	NoAllowListMask []string        `yaml:"no_allow_list_mask"`
 }
 
 type Breaker struct {
-	SerialErrorNumbers uint32 `yaml:"SERIAL_ERROR_NUMBERS"`
-	ErrorPercent       uint8  `yaml:"ERROR_PERCENT"`
-	MaxRequest         uint32 `yaml:"MAX_REQUEST"`
-	Interval           uint32 `yaml:"INTERVAL"`
-	Timeout            uint32 `yaml:"TIMEOUT"`
-	RuleType           uint8  `yaml:"RULE_TYPE"`
-	Btype              int8   `yaml:"BTYPE"`
-	RequestTimeout     uint32 `yaml:"REQUEST_TIMEOUT"`
-	Cycle              uint32 `yaml:"CYCLE"`
+	SerialErrorNumbers uint32 `yaml:"serial_error_numbers"`
+	ErrorPercent       uint8  `yaml:"error_percent"`
+	MaxRequest         uint32 `yaml:"max_request"`
+	Interval           uint32 `yaml:"interval"`
+	Timeout            uint32 `yaml:"timeout"`
+	RuleType           uint8  `yaml:"rule_type"`
+	Btype              int8   `yaml:"btype"`
+	RequestTimeout     uint32 `yaml:"request_timeout"`
+	Cycle              uint32 `yaml:"cycle"`
 }
 
 //BreakerConfig 默认熔断规则类型

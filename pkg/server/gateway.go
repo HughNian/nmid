@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/vmihailenco/msgpack"
 	"io"
 	"net"
 	"net/http"
+	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
 	"strconv"
 	"strings"
@@ -26,21 +26,23 @@ var (
 //NewHTTPAPIGateway gateway init
 func (ser *Server) NewHTTPAPIGateway(network string) {
 	if network != "http" && network != "ws" && network != "wss" && network != "grpc" {
-		logrus.Println("protocol not supported")
+		logger.Error("protocol not supported")
 		return
 	}
 
 	if len(ser.HttpPort) == 0 {
-		logrus.Println("http gateway empty")
+		logger.Error("http gateway empty")
 		return
 	}
 
 	address := ser.Host + ":" + ser.HttpPort
 	ln, err := ser.NewListener(network, address)
 	if err != nil {
-		logrus.Println("make http listen err", err)
+		logger.Error("make http listen err", err)
 		return
 	}
+
+	logger.Info("rpc http server start ok")
 
 	ser.Cm = cmux.New(ln)
 
@@ -67,9 +69,9 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 
 	if err := ser.HTTPServerGateway.Serve(ln); err != nil {
 		if err == ErrServerClosed || errors.Is(err, cmux.ErrListenerClosed) {
-			logrus.Println("gateway server closed")
+			logger.Error("gateway server closed")
 		} else {
-			logrus.Println("error in gateway serve: %T %s", err, err)
+			logger.Errorf("error in gateway serve: %T %s", err, err)
 		}
 	}
 }
@@ -81,9 +83,6 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 	if requestType == model.HTTPDOWORK {
 		//client do work
 		ser.HTTPDoWorkHandle(w, r, params)
-	} else if requestType == model.HTTPADDSERVICE {
-		//service add service
-		ser.HTTPAddServiceHandle(w, r, params)
 	}
 }
 
@@ -222,10 +221,6 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 		wh.Set(model.NErrorMessage, model.RESTIMEOUT.Error())
 		return
 	}
-}
-
-func (ser *Server) HTTPAddServiceHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-
 }
 
 func nmidPrefixByteMatcher() cmux.Matcher {

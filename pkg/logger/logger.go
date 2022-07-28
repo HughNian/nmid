@@ -3,7 +3,9 @@ package logger
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
 	"nmid-v2/pkg/model"
+	"nmid-v2/pkg/utils"
 	"os"
 	"path/filepath"
 )
@@ -15,8 +17,8 @@ var (
 )
 
 const (
-	defaultLogDir      = "log"
-	defaultLogFileName = "log_file"
+	defaultLogDir      = "./log_dir"
+	defaultLogFileName = "log_file.log"
 )
 
 func init() {
@@ -44,8 +46,10 @@ func NewLogger(logConfig *model.LogConfig) {
 
 	encoderConfig := defaultConfig()
 
+	makeLogEnv(logDir, logFileName)
 	lfile, err := newLogFile(filepath.Join(logDir, logFileName), logMaxCacheCount)
 	if err != nil {
+		log.Fatalln("log file err", err.Error())
 		os.Exit(1)
 	}
 
@@ -76,5 +80,11 @@ func defaultConfig() zapcore.EncoderConfig {
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+}
+
+func makeLogEnv(logDir, logFileName string) {
+	if !utils.PathExist(logDir) {
+		utils.CreateFile(logDir + "/" + logFileName)
 	}
 }

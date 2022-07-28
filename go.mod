@@ -8,6 +8,7 @@ require (
 	github.com/joshbohde/codel v0.1.2 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
+	github.com/labstack/echo/v4 v4.7.2 // indirect
 	github.com/mroth/weightedrand v0.4.1 // indirect
 	github.com/pyroscope-io/client v0.0.0-20211206204731-3fd0a4b8239c // indirect
 	github.com/pyroscope-io/pyroscope v0.7.2 // indirect
@@ -17,6 +18,7 @@ require (
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/valyala/fasthttp v1.31.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
+	go.uber.org/zap v1.17.0
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

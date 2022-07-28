@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"log"
 	"net"
 	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
@@ -156,7 +155,7 @@ func (c *Connect) Write(resPack []byte) {
 		for i := 0; i < len(resPack); i += n {
 			n, err = client.Connect.rw.Write(resPack[i:])
 			if err != nil {
-				log.Println("client write err", err)
+				logger.Info("client write err", err.Error())
 				return
 			}
 		}
@@ -172,7 +171,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	tmp := utils.GetBuffer(size)
 
 	if n, err = c.rw.Read(tmp); err != nil {
-		log.Println("server read error", c.Ip, err)
+		logger.Error("server read error", c.Ip, err.Error())
 		return []byte(``), err
 	}
 
@@ -210,7 +209,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	for buf.Len() < dataLen+model.MIN_DATA_SIZE {
 		tmpcontent := utils.GetBuffer(dataLen)
 		if n, err = c.rw.Read(tmpcontent); err != nil {
-			log.Println("read content error")
+			logger.Error("read content error")
 			return buf.Bytes(), err
 		}
 
@@ -279,8 +278,4 @@ func (c *Connect) DoIO() {
 			continue
 		}
 	}
-}
-
-func (c *Connect) DoRunWorker(worker *SWorker) {
-
 }

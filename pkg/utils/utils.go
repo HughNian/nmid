@@ -8,9 +8,12 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -115,4 +118,47 @@ func OsPath(path string) string {
 	}
 
 	return path
+}
+
+type BufferPool struct {
+	pool sync.Pool
+}
+
+func NewBufferPool() *BufferPool {
+	bp := BufferPool{}
+	bp.pool.New = func() interface{} {
+		b := make([]byte, 32*1024)
+		return b
+	}
+	return &bp
+}
+
+func (bp *BufferPool) Get() []byte {
+	return bp.pool.Get().([]byte)
+}
+
+func (bp *BufferPool) Put(v []byte) {
+	bp.pool.Put(v)
+}
+
+func PathExist(path string) bool {
+	_, err := os.Stat(path)
+
+	if nil != err {
+		if os.IsExist(err) {
+			return true
+		}
+
+		return false
+	}
+
+	return true
+}
+
+func CreateFile(name string) (*os.File, error) {
+	err := os.MkdirAll(string([]rune(name)[0:strings.LastIndex(name, "/")]), 0755)
+	if err != nil {
+		return nil, err
+	}
+	return os.Create(name)
 }

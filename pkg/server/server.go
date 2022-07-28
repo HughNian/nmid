@@ -39,10 +39,10 @@ func NewServer() (ser *Server) {
 
 func (ser *Server) SetSConfig(SConfig model.ServerConfig) *Server {
 	ser.SConfig = SConfig
-	ser.Net = SConfig.Server.NETWORK
-	ser.Host = SConfig.Server.HOST
-	ser.Port = SConfig.Server.PORT
-	ser.HttpPort = SConfig.Server.HTTPPORT
+	ser.Net = SConfig.RpcServer.NETWORK
+	ser.Host = SConfig.RpcServer.HOST
+	ser.Port = SConfig.RpcServer.PORT
+	ser.HttpPort = SConfig.RpcServer.HTTPPORT
 	return ser
 }
 
@@ -110,6 +110,8 @@ func (ser *Server) ServerRun() {
 		panic(err)
 	}
 	ser.Ln = listen
+
+	logger.Info("rpc tcp server start ok")
 
 	for {
 		conn, err := ser.Ln.Accept()
