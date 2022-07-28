@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -43,6 +44,8 @@ func main() {
 
 	_, cancel := context.WithCancel(context.Background())
 
+	showLogo()
+
 	//开启tcp服务
 	go server.ServerRun()
 	//开启http服务
@@ -58,4 +61,18 @@ func main() {
 	server.ServerClose(wg)
 	wg.Wait()
 	os.Exit(0)
+}
+
+func showLogo() {
+	logo := `
+                          /$$      /$$
+                         |__/     | $$
+/$$$$$$$  /$$$$$$/$$$$   /$$  /$$$$$$$
+| $$__  $$| $$_  $$_  $$| $$ /$$__  $$
+| $$  \ $$| $$ \ $$ \ $$| $$| $$  | $$
+| $$  | $$| $$ | $$ | $$| $$| $$  | $$
+| $$  | $$| $$ | $$ | $$| $$|  $$$$$$$
+|__/  |__/|__/ |__/ |__/|__/ \_______/
+`
+	fmt.Println(logo)
 }
