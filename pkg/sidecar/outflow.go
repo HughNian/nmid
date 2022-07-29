@@ -16,7 +16,7 @@ type outflowServer struct {
 	httpProxy  *httpProxy
 }
 
-func NewOutflowServer(config model.ServerConfig) *outflowServer {
+func NewOutflowServer(sc *ScServer, config model.ServerConfig) *outflowServer {
 	opt := config.SideCar.OutflowAddr
 	opt.RequestBodySize = RequestBodyLimit
 	opt.ResponseBodySize = ResponseBodySize
@@ -31,6 +31,7 @@ func NewOutflowServer(config model.ServerConfig) *outflowServer {
 	}
 
 	return &outflowServer{
+		ScServer:  sc,
 		httpProxy: proxy,
 	}
 }

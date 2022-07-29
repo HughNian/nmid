@@ -2,6 +2,7 @@ package sidecar
 
 import (
 	"context"
+	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
 	"nmid-v2/pkg/registry"
 	"sync"
@@ -25,16 +26,22 @@ type ScServer struct {
 	doneCtx context.Context
 }
 
-func NewScServer(config model.ServerConfig) *ScServer {
+func NewScServer(doneCtx context.Context, config model.ServerConfig) *ScServer {
 	sc := &ScServer{
-		inflow:  NewInflowServer(config),
-		outflow: NewOutflowServer(config),
+		doneCtx: doneCtx,
 	}
+	sc.inflow = NewInflowServer(sc, config)
+	sc.outflow = NewOutflowServer(sc, config)
+
+	logger.Info("sidecar inflow address: ", config.SideCar.InflowAddr.BindAddress)
+	logger.Info("sidecar outflow address: ", config.SideCar.OutflowAddr.BindAddress)
 
 	return sc
 }
 
 func (sc *ScServer) StartScServer() {
+	logger.Info("sidecar car start ok")
+
 	go sc.inflow.StartInflow()
 	go sc.outflow.StartOutflow()
 }

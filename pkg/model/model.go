@@ -8,14 +8,14 @@ type ServerConfig struct {
 	WhiteList     *WhiteList     `yaml:"WhiteList"`
 	BlackList     *BlackList     `yaml:"BlackList"`
 	BreakerConfig *BreakerConfig `yaml:"BreakerConfig"`
-	LogConfig     *LogConfig     `yaml:"LOGCONFIG"`
+	LogConfig     *LogConfig     `yaml:"LogConfig"`
 }
 
 type RpcServer struct {
 	NETWORK  string `yaml:"network"`
 	HOST     string `yaml:"host"`
 	PORT     string `yaml:"port"`
-	HTTPPORT string `yaml:"httpport"`
+	HTTPPORT string `yaml:"http_port"`
 }
 
 type SideCar struct {

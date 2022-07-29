@@ -13,6 +13,7 @@ import (
 	_ "net/http/pprof"
 	"nmid-v2/pkg/conf"
 	ser "nmid-v2/pkg/server"
+	"nmid-v2/pkg/sidecar"
 	"os"
 	"os/signal"
 	"sync"
@@ -37,28 +38,35 @@ func main() {
 		ServerAddress:   "http://127.0.0.1:4040",
 	})
 
-	server := ser.NewServer().SetSConfig(sConfig)
-	if nil == server {
+	rpcserver := ser.NewServer().SetSConfig(sConfig)
+	if nil == rpcserver {
 		return
 	}
 
-	_, cancel := context.WithCancel(context.Background())
+	c, cancel := context.WithCancel(context.Background())
 
 	showLogo()
 
-	//开启tcp服务
-	go server.ServerRun()
-	//开启http服务
-	go server.HttpServerRun()
+	//开启rpc tcp服务
+	go rpcserver.ServerRun()
+	//开启rpc http服务
+	go rpcserver.HttpServerRun()
+	//开启sidecar
+	scCtx, scCancel := context.WithCancel(c)
+	sidecar.NewScServer(scCtx, sConfig).StartScServer()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	quits := make(chan os.Signal, 1)
+	signal.Notify(quits, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGUSR1)
+	switch <-quits {
+	case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
+		cancel()
+	case syscall.SIGUSR1:
+		scCancel()
+	}
 
-	cancel()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	server.ServerClose(wg)
+	rpcserver.ServerClose(wg)
 	wg.Wait()
 	os.Exit(0)
 }

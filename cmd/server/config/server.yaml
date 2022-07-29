@@ -2,13 +2,13 @@ RpcServer:
   network: "tcp"
   host: "0.0.0.0"
   port: "6808"
-  httpport: "6809"
+  http_port: "6809"
 
 SideCar:
   InflowAddr:
     protocol_type: "http"
     bind_network: "tcp"
-    bind_address: "0.0.0.0:8080"
+    bind_address: "0.0.0.0:6080"
     bind_ip: ""
     bind_port: ""
     target_protocol_type: "http"
@@ -20,7 +20,7 @@ SideCar:
   OutflowAddr:
     bind_protocol_type: "http"
     bind_network: "tcp"
-    bind_address: "0.0.0.0:8081"
+    bind_address: "0.0.0.0:6081"
     bind_ip: ""
     bind_port: ""
     target_protocol_type: "http"
@@ -30,7 +30,7 @@ SideCar:
     target_idle_conn_timeout: 60
     target_max_idle_conns_per_host: 200
 
-LOGCONFIG:
+LogConfig:
   debug: true
   log_dir: "./log_dir"
   stdout_filename: "log_file.log"

@@ -7,7 +7,7 @@
 ### v2.0.1+建设
 - 增加http的处理，使worker可以同时用tcp以及http进行访问 √
 - nmid可以成为sidecar服务，增加支持service，service为http服务。
-- 增加注册中心
+- 增加注册中心，nmid-registry
 - worker增加心跳机制
 - 创建worker时可以设置worker_label，相同worker_label的worker为同一组，同一组worker连接同一个nmid服务。
 - service与client通过ipfs协议存在调用关系
