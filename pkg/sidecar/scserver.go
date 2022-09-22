@@ -44,10 +44,10 @@ func NewScServer(doneCtx context.Context, config model.ServerConfig) *ScServer {
 }
 
 func (sc *ScServer) StartScServer() {
-	logger.Info("sidecar car start ok")
-
 	go sc.inflow.StartInflow()
 	go sc.outflow.StartOutflow()
+
+	logger.Info("sidecar car start ok")
 }
 
 func InflowOutHttpRequestError(w http.ResponseWriter, req *http.Request, code int, err error) error {

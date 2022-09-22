@@ -110,10 +110,12 @@ func (r *Resolve) Close() error {
 	return nil
 }
 
+// watch every 30 minutes watch etcd
 func (sci *serviceInfo) watch(serviceId string) {
 	if resolve, ok := sci.resolver[serviceId]; ok {
 		ticker := time.NewTicker(time.Minute * 30)
 		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
