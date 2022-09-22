@@ -2,6 +2,10 @@ package sidecar
 
 import (
 	"context"
+	"github.com/labstack/echo/v4"
+	"net/http"
+	"net/http/httputil"
+	"nmid-v2/pkg/errno"
 	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
 	"nmid-v2/pkg/registry"
@@ -44,4 +48,57 @@ func (sc *ScServer) StartScServer() {
 
 	go sc.inflow.StartInflow()
 	go sc.outflow.StartOutflow()
+}
+
+func InflowOutHttpRequestError(w http.ResponseWriter, req *http.Request, code int, err error) error {
+	body := make([]byte, 0)
+	switch err.(type) {
+	case *errno.Errno:
+		body = err.(*errno.Errno).Encode()
+	default:
+		body = model.RequestError.Add(err.Error()).Encode()
+		b, _ := httputil.DumpRequest(req, false)
+		logger.Errorf("request err: %v, package: \n[ %s ] ", err, string(b))
+	}
+	w.Header().Set("Content-Type", "application/json;")
+	w.WriteHeader(code)
+	_, _ = w.Write(body)
+
+	return nil
+}
+
+func OutHttpRequestError(w http.ResponseWriter, code int, err error) error {
+	body := make([]byte, 0)
+	switch err.(type) {
+	case *errno.Errno:
+		body = err.(*errno.Errno).Encode()
+	default:
+		body = model.RequestError.Add(err.Error()).Encode()
+		logger.Errorf("request err ", err)
+	}
+	w.Header().Set("Content-Type", "application/json;")
+	w.WriteHeader(code)
+	_, _ = w.Write(body)
+
+	return nil
+}
+
+func OutHttpResponseError(ctx echo.Context, err error) error {
+	if err != nil {
+		output := make([]byte, 0)
+		switch e := err.(type) {
+		case *errno.Errno:
+			output = e.Encode()
+		default:
+			output = model.ResponseError.Add(err.Error()).Encode()
+		}
+
+		if ctx.Response().Size == 0 {
+			ctx.Response().Header().Set("Content-Type", "application/json;")
+			ctx.Response().WriteHeader(ctx.Response().Status)
+			_, _ = ctx.Response().Write(output)
+		}
+	}
+
+	return nil
 }

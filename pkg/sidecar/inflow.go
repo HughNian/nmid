@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/labstack/echo/v4"
+	"io"
 	"net/http"
 	"nmid-v2/pkg/logger"
 	"nmid-v2/pkg/model"
@@ -75,5 +76,43 @@ func (is *inflowServer) doMiddle(middls ...echo.MiddlewareFunc) []echo.Middlewar
 }
 
 func (is *inflowServer) doInflowProxy(c echo.Context) error {
+	req := c.Request()
+
+	// set proxy scheme host
+	req.URL.Scheme = is.httpProxy.Options.TargetProtocolType
+	req.Host, req.URL.Host = is.httpProxy.Options.TargetAddress, is.httpProxy.Options.TargetAddress
+	// do proxy
+	resp, err := is.httpProxy.Proxy.Transport.RoundTrip(req)
+	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
+			return nil
+		}
+
+		return OutHttpResponseError(c, model.RequestError.Add(err.Error()))
+	}
+
+	defer resp.Body.Close()
+
+	// request body size limit
+	if int(resp.ContentLength) > is.httpProxy.Options.ResponseBodySize {
+		return OutHttpRequestError(c.Response(), http.StatusOK, model.RequestBodyLimitError)
+	}
+
+	// copy header
+	for k, vv := range resp.Header {
+		for _, v := range vv {
+			c.Response().Header().Add(k, v)
+		}
+	}
+
+	// status code
+	c.Response().WriteHeader(resp.StatusCode)
+
+	// copy body
+	_, err = io.Copy(c.Response(), resp.Body)
+	if err != nil {
+		return InflowOutHttpRequestError(c.Response(), c.Request(), http.StatusOK, err)
+	}
+
 	return nil
 }

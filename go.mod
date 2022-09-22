@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/buaazp/fasthttprouter v0.1.1 // indirect
 	github.com/go-kratos/aegis v0.1.1 // indirect
+	github.com/go-kratos/kratos v1.0.1 // indirect
 	github.com/joshbohde/codel v0.1.2 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect

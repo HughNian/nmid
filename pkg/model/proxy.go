@@ -22,3 +22,15 @@ type ProxyServerOption struct {
 	TargetIdleConnTimeout     time.Duration `yaml:"target_idle_conn_timeout"`
 	TargetMaxIdleConnsPerHost int           `yaml:"target_max_idle_conns_per_host"`
 }
+
+type ProxyArgs struct {
+	CurrentServiceId string            // current service_id
+	Host             string            // target service host
+	Hostname         string            // target service hostname
+	Scheme           string            // target service http|https
+	ServiceId        string            // target service serviceId
+	Path             string            // target service route path
+	IsRetry          bool              // retry or not
+	Timeout          time.Duration     // SideCar proxy timeout
+	Header           map[string]string // header data
+}

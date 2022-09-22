@@ -156,6 +156,8 @@ github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=
 github.com/go-kratos/aegis v0.1.1 h1:QnIwUwVMnwIU8hZ+p4LKJnSEd1IE6qBBPTV7fgr3XQI=
 github.com/go-kratos/aegis v0.1.1/go.mod h1:jYeSQ3Gesba478zEnujOiG5QdsyF3Xk/8owFUeKcHxw=
+github.com/go-kratos/kratos v1.0.1 h1:57K5f4LQRWT6MVUX0FvjeTkXRW9YK/Mor9wxlQmQZpI=
+github.com/go-kratos/kratos v1.0.1/go.mod h1:b44Q6u2Yi22wutq+tCGaiWLC0EavGMlBDq4NUM/Tk+s=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-logfmt/logfmt v0.5.0/go.mod h1:wCYkCAKZfumFQihp8CzCvQ3paCTfi41vtzG1KdI/P7A=
