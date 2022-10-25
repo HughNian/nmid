@@ -127,7 +127,8 @@ func (w *SWorker) returnData() {
 	if w.JobNum > 0 {
 		//解包获取数据内容
 		w.Req.ReqDecodePack()
-		job := w.Jobs.GetJobData(w.Req.JobId)
+		//job := w.Jobs.GetJobData(w.Req.JobId)
+		job := w.Jobs.PopJobData()
 		if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
 			//任务完成判断
 			if w.Res.HandleLen == w.Req.HandleLen &&
