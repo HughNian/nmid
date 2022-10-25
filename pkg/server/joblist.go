@@ -16,6 +16,7 @@ type JobData struct {
 
 	JobId       string //funcName + Params + time
 	ClientId    string
+	Client      *Connect
 	HTTPClientR *http.Request
 	WorkerId    string
 

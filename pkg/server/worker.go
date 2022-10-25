@@ -146,7 +146,7 @@ func (w *SWorker) returnData() {
 			paramsLen := len(params)
 			if clientId != `` && functionName != `` && paramsLen != 0 {
 				//tcp client response
-				if client := w.Connect.Ser.Cpool.GetConnect(clientId); client != nil {
+				if client := job.Client; client != nil {
 					w.Res.DataType = model.PDT_S_RETURN_DATA
 					w.Res.Ret = job.RetData
 					w.Res.RetLen = w.Req.RetLen

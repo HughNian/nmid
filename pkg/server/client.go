@@ -73,6 +73,7 @@ func (c *SClient) doJob() {
 	job := NewJobData(c.Req.Handle, string(c.Req.Params))
 	job.Lock()
 	job.WorkerId = worker.WorkerId
+	job.Client = c.Connect
 	job.ClientId = c.ClientId
 	job.Unlock()
 	job.FuncName = c.Req.Handle

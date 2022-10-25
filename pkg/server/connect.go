@@ -76,10 +76,10 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.ConnType = model.CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
-	c.isFree = 0
-	pool.Lock()
-	pool.CMaps.Store(c.Id, c)
-	pool.Unlock()
+	//c.isFree = 0
+	//pool.Lock()
+	//pool.CMaps.Store(c.Id, c)
+	//pool.Unlock()
 
 	return c
 }
