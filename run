@@ -1,0 +1,3 @@
+#!/bin/bash
+# 运行可执行文件，exec方式继承父进程id
+exec /root/nmid
