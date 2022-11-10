@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM docker
 
 WORKDIR /root
 
