@@ -1,6 +1,6 @@
 package model
 
-import "github.com/HughNian/github.com/HughNian/nmid/pkg/errno"
+import "github.com/HughNian/nmid/pkg/errno"
 
 var (
 	//RoteError -100 ~ -300

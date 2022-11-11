@@ -71,28 +71,28 @@ func (ser *Server) SetTlsConfig(tls *tls.Config) *Server {
 	return ser
 }
 
-//HttpServerRun run http server
+// HttpServerRun run http server
 func (ser *Server) HttpServerRun() {
 	if len(ser.HttpPort) > 0 {
 		ser.NewHTTPAPIGateway("http")
 	}
 }
 
-//WsServerRun run ws server
+// WsServerRun run ws server
 func (ser *Server) WsServerRun() {
 	if len(ser.HttpPort) > 0 {
 		ser.NewHTTPAPIGateway("ws")
 	}
 }
 
-//WssServerRun run wss server
+// WssServerRun run wss server
 func (ser *Server) WssServerRun() {
 	if len(ser.HttpPort) > 0 {
 		ser.NewHTTPAPIGateway("wss")
 	}
 }
 
-//GrpcServerRun run grpc server
+// GrpcServerRun run grpc server
 func (ser *Server) GrpcServerRun() {
 	if len(ser.HttpPort) > 0 {
 		ser.NewHTTPAPIGateway("grpc")
@@ -107,7 +107,7 @@ func (ser *Server) ServerRun() {
 	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {
 		logger.Fatalf("listener err %s", err.Error())
-		panic(any(err))
+		panic(err)
 	}
 	ser.Ln = listen
 
