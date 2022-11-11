@@ -5,9 +5,9 @@ package main
 
 import (
 	"fmt"
+	cli "github.com/HughNian/nmid/pkg/client"
+	"github.com/HughNian/nmid/pkg/model"
 	"log"
-	cli "nmid/pkg/client"
-	"nmid/pkg/model"
 	"os"
 
 	"github.com/vmihailenco/msgpack"

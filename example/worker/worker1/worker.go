@@ -7,11 +7,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/HughNian/nmid/pkg/model"
+	wor "github.com/HughNian/nmid/pkg/worker"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"nmid/pkg/model"
-	wor "nmid/pkg/worker"
 	"strings"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

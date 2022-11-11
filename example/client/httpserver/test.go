@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HughNian/nmid/pkg/model"
 	"log"
 	"net/http"
-	"nmid/pkg/model"
 	"sync"
 
+	cli "github.com/HughNian/nmid/pkg/client"
 	_ "net/http/pprof"
-	cli "nmid/pkg/client"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

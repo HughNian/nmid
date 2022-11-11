@@ -1,4 +1,4 @@
-module nmid
+module github.com/HughNian/nmid
 
 go 1.16
 

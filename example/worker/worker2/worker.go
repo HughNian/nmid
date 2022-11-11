@@ -5,11 +5,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	cli "github.com/HughNian/nmid/pkg/client"
+	"github.com/HughNian/nmid/pkg/model"
+	wor "github.com/HughNian/nmid/pkg/worker"
 	"log"
 	"net/http"
-	cli "nmid/pkg/client"
-	"nmid/pkg/model"
-	wor "nmid/pkg/worker"
 	"sync"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

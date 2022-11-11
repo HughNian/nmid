@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/HughNian/nmid/pkg/model"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"nmid/pkg/model"
 )
 
 func main() {
