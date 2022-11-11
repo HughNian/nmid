@@ -9,7 +9,7 @@ require (
 	github.com/joshbohde/codel v0.1.2
 	github.com/juju/ratelimit v1.0.1
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/labstack/echo/v4 v4.7.2
+	github.com/labstack/echo/v4 v4.9.0
 	github.com/mroth/weightedrand v0.4.1
 	github.com/pyroscope-io/pyroscope v0.7.2
 	github.com/soheilhy/cmux v0.1.5
