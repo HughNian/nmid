@@ -4,7 +4,7 @@ import (
 	"errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 	"os"
 )
 

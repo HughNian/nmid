@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 )
 
 func main() {

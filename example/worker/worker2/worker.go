@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	cli "nmid-v2/pkg/client"
-	"nmid-v2/pkg/model"
-	wor "nmid-v2/pkg/worker"
+	cli "nmid/pkg/client"
+	"nmid/pkg/model"
+	wor "nmid/pkg/worker"
 	"sync"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

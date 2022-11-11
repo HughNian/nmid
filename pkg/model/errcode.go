@@ -1,6 +1,6 @@
 package model
 
-import "nmid-v2/pkg/errno"
+import "nmid/pkg/errno"
 
 var (
 	//RoteError -100 ~ -300

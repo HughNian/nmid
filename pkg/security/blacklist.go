@@ -2,7 +2,7 @@ package security
 
 import (
 	"net"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 )
 
 func DoBlackList(ip string, list *model.BlackList) bool {

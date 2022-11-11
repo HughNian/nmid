@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 	"sync"
 
 	_ "net/http/pprof"
-	cli "nmid-v2/pkg/client"
+	cli "nmid/pkg/client"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

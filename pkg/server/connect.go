@@ -6,10 +6,10 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
-	"nmid-v2/pkg/logger"
-	"nmid-v2/pkg/model"
-	"nmid-v2/pkg/security"
-	"nmid-v2/pkg/utils"
+	"nmid/pkg/logger"
+	"nmid/pkg/model"
+	"nmid/pkg/security"
+	"nmid/pkg/utils"
 	"sync"
 )
 

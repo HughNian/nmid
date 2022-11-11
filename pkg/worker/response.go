@@ -3,8 +3,8 @@ package worker
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid-v2/pkg/model"
-	"nmid-v2/pkg/utils"
+	"nmid/pkg/model"
+	"nmid/pkg/utils"
 )
 
 type Response struct {
@@ -36,7 +36,7 @@ func NewRes() (res *Response) {
 	return
 }
 
-//DecodePack 解包
+// DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
 	if resLen < model.MIN_DATA_SIZE {

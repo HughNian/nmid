@@ -1,6 +1,6 @@
 package nmidr
 
-import "nmid-v2/pkg/model"
+import "nmid/pkg/model"
 
 // GetProxyArgs
 // cserviceId is current service serviceId

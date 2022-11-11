@@ -10,8 +10,8 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"nmid-v2/pkg/model"
-	wor "nmid-v2/pkg/worker"
+	"nmid/pkg/model"
+	wor "nmid/pkg/worker"
 	"strings"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"

@@ -6,8 +6,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
-	"nmid-v2/pkg/logger"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/logger"
+	"nmid/pkg/model"
 	"time"
 )
 

@@ -1,4 +1,4 @@
-module nmid-v2
+module nmid
 
 go 1.16
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"nmid-v2/pkg/registry"
+	"nmid/pkg/registry"
 	"os"
 	"strconv"
 	"sync"

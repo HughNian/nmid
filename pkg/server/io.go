@@ -2,9 +2,9 @@ package server
 
 import (
 	"encoding/binary"
-	"nmid-v2/pkg/model"
-	"nmid-v2/pkg/service"
-	"nmid-v2/pkg/utils"
+	"nmid/pkg/model"
+	"nmid/pkg/service"
+	"nmid/pkg/utils"
 )
 
 type Request struct {

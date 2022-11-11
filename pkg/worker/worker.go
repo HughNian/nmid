@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 	"sync"
 	"time"
 )

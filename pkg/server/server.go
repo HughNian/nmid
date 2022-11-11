@@ -6,8 +6,8 @@ import (
 	"github.com/soheilhy/cmux"
 	"net"
 	"net/http"
-	"nmid-v2/pkg/logger"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/logger"
+	"nmid/pkg/model"
 	"sync"
 )
 

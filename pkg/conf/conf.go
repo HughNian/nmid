@@ -2,7 +2,7 @@ package conf
 
 import (
 	"log"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 )
 
 func GetConfig() model.ServerConfig {

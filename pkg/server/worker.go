@@ -1,8 +1,8 @@
 package server
 
 import (
-	"nmid-v2/pkg/limiter"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/limiter"
+	"nmid/pkg/model"
 	"sync"
 
 	"github.com/joshbohde/codel"

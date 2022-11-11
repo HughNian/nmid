@@ -6,8 +6,8 @@ package main
 import (
 	"fmt"
 	"log"
-	cli "nmid-v2/pkg/client"
-	"nmid-v2/pkg/model"
+	cli "nmid/pkg/client"
+	"nmid/pkg/model"
 	"os"
 
 	"github.com/vmihailenco/msgpack"

@@ -3,7 +3,7 @@ package limiter
 import (
 	"context"
 	"github.com/joshbohde/codel"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 )
 
 func NewCodelLimiter() *codel.Lock {

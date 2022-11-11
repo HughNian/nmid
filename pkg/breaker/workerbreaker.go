@@ -2,7 +2,7 @@ package breaker
 
 import (
 	"github.com/sony/gobreaker"
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 	"sync"
 	"time"
 )

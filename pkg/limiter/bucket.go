@@ -1,7 +1,7 @@
 package limiter
 
 import (
-	"nmid-v2/pkg/model"
+	"nmid/pkg/model"
 
 	"github.com/juju/ratelimit"
 )

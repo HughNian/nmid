@@ -6,8 +6,8 @@ import (
 	"io"
 	"log"
 	"net"
-	"nmid-v2/pkg/model"
-	"nmid-v2/pkg/utils"
+	"nmid/pkg/model"
+	"nmid/pkg/utils"
 	"sync"
 	"time"
 )
