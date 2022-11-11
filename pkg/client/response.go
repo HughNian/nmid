@@ -3,7 +3,7 @@ package client
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/model"
 	"sync"
 )
 

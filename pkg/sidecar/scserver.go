@@ -5,10 +5,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"net/http/httputil"
-	"nmid/pkg/errno"
-	"nmid/pkg/logger"
-	"nmid/pkg/model"
-	"nmid/pkg/registry"
+	"github.com/HughNian/nmid/pkg/errno"
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/registry"
 	"sync"
 )
 

@@ -3,8 +3,8 @@ package worker
 import (
 	"encoding/binary"
 	"fmt"
-	"nmid/pkg/model"
-	"nmid/pkg/utils"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 )
 
 type Response struct {

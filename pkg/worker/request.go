@@ -2,8 +2,8 @@ package worker
 
 import (
 	"encoding/binary"
-	"nmid/pkg/model"
-	"nmid/pkg/utils"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 )
 
 type Request struct {

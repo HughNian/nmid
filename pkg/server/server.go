@@ -3,11 +3,11 @@ package server
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
 	"github.com/soheilhy/cmux"
 	"net"
 	"net/http"
-	"nmid/pkg/logger"
-	"nmid/pkg/model"
 	"sync"
 )
 
@@ -107,7 +107,7 @@ func (ser *Server) ServerRun() {
 	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {
 		logger.Fatalf("listener err %s", err.Error())
-		panic(err)
+		panic(any(err))
 	}
 	ser.Ln = listen
 

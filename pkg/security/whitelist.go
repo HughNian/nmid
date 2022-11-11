@@ -2,7 +2,7 @@ package security
 
 import (
 	"net"
-	"nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/model"
 )
 
 func DoWhiteList(ip string, list *model.WhiteList) bool {

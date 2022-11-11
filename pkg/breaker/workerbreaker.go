@@ -1,20 +1,20 @@
 package breaker
 
 import (
+	"github.com/HughNian/nmid/pkg/model"
 	"github.com/sony/gobreaker"
-	"nmid/pkg/model"
 	"sync"
 	"time"
 )
 
-//ruleOne 连续错误达到阈值熔断
+// ruleOne 连续错误达到阈值熔断
 func ruleOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		return counts.ConsecutiveFailures >= bc.ErrorNumbers
 	}
 }
 
-//ruleTwo 错误率达到固定百分比熔断
+// ruleTwo 错误率达到固定百分比熔断
 func ruleTwo(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
@@ -22,7 +22,7 @@ func ruleTwo(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	}
 }
 
-//ruleThree 连续错误次数达到阈值 或 错误率达到阈值熔断
+// ruleThree 连续错误次数达到阈值 或 错误率达到阈值熔断
 func ruleThree(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
@@ -30,7 +30,7 @@ func ruleThree(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	}
 }
 
-//ruleFour 连续错误次数达到阈值 和 错误率同时达到阈值熔断
+// ruleFour 连续错误次数达到阈值 和 错误率同时达到阈值熔断
 func ruleFour(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	return func(counts gobreaker.Counts) bool {
 		failureRatio := uint8(float64(counts.TotalFailures) / float64(counts.Requests) * 100)
@@ -51,7 +51,7 @@ func switchOne(bc *model.BreakerConfig) func(counts gobreaker.Counts) bool {
 	}
 }
 
-//WorkerBreaker worker breaker 熔断
+// WorkerBreaker worker breaker 熔断
 type WorkerBreaker struct {
 	sync.RWMutex
 	requestTimeout time.Duration

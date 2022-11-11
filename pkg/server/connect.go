@@ -6,10 +6,10 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
-	"nmid/pkg/logger"
-	"nmid/pkg/model"
-	"nmid/pkg/security"
-	"nmid/pkg/utils"
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/security"
+	"github.com/HughNian/nmid/pkg/utils"
 	"sync"
 )
 

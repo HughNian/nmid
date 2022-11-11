@@ -3,7 +3,7 @@ package server
 import (
 	wr "github.com/mroth/weightedrand"
 	"math/rand"
-	"nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/model"
 	"sync"
 	"time"
 )

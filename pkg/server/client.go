@@ -1,8 +1,8 @@
 package server
 
 import (
-	"nmid/pkg/limiter"
-	"nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/limiter"
+	"github.com/HughNian/nmid/pkg/model"
 	"sync"
 	"time"
 

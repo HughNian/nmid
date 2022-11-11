@@ -3,8 +3,8 @@ package server
 import (
 	"container/list"
 	"net/http"
-	"nmid/pkg/model"
-	"nmid/pkg/utils"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 	"sync"
 )
 

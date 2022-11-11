@@ -4,8 +4,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
-	"nmid/pkg/model"
-	"nmid/pkg/utils"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 	"os"
 	"path/filepath"
 )

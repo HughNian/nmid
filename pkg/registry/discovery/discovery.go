@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"nmid/pkg/registry"
+	"github.com/HughNian/nmid/pkg/registry"
 	"os"
 	"strconv"
 	"sync"

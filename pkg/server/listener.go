@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/logger"
 )
 
 type MakeListener func(ser *Server, address string) (ln net.Listener, err error)
