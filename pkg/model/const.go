@@ -13,7 +13,7 @@ const (
 	UINT32_SIZE       = 4
 	MAX_NOJOB_NUM     = 10
 	PARAMS_SCOPE      = "::"
-	DEFAULT_TIME_OUT  = 100 * time.Millisecond            //io超时
+	DEFAULT_TIME_OUT  = 3 * time.Second                   //100 * time.Millisecond            //io超时
 	DIAL_TIME_OUT     = 3 * time.Second                   //连接超时
 	CLIENT_ALIVE_TIME = time.Duration(1800) * time.Second //客户端长连接生存周期
 
@@ -42,7 +42,7 @@ const (
 	PDT_S_REG_SERVICE_OK = 21
 )
 
-//connect types & status
+// connect types & status
 const (
 	CONN_TYPE_INIT              = 0
 	CONN_TYPE_SERVER            = 1
@@ -58,14 +58,14 @@ const (
 	PARAMS_HANDLE_TYPE_ORIGINAL = 11
 )
 
-//loadblance type
+// loadblance type
 const (
 	LOADBLANCE_HASH         = 1
 	LOADBLANCE_LRU          = 2
 	LOADBLANCE_ROUND_WEIGHT = 3
 )
 
-//ratelimit
+// ratelimit
 const (
 	MAXPENDING     = 1000
 	MAXOUTSTANDING = 10
@@ -74,7 +74,7 @@ const (
 	CAPACITY       = 1000
 )
 
-//http request
+// http request
 const (
 	NRequestType       = "N-NMID-RequestType"
 	NParamsType        = "N-NMID-ParamsType"

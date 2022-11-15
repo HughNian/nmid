@@ -111,7 +111,7 @@ func (ser *Server) ServerRun() {
 	}
 	ser.Ln = listen
 
-	logger.Info("rpc tcp server start ok")
+	logger.Info("rpc tcp server start ok at port: ", ser.Port)
 
 	for {
 		conn, err := ser.Ln.Accept()

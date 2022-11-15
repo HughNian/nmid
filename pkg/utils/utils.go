@@ -56,7 +56,7 @@ func IsMulParams(params []byte) bool {
 	return false
 }
 
-//GenServiceId generate service id
+// GenServiceId generate service id
 func GenServiceId(salt string) string {
 	md5Ctx := md5.New()
 	timeStr := strconv.FormatInt(int64(time.Now().Nanosecond()), 10)
@@ -105,7 +105,7 @@ func JsonParamsMap(params []byte) map[string]interface{} {
 
 	err := json.Unmarshal(params, &paramsMap)
 	if err != nil {
-		log.Println("msgpack unmarshal error:", err)
+		log.Println("json unmarshal error:", err)
 		return nil
 	}
 

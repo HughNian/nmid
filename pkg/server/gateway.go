@@ -5,14 +5,15 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
 	"github.com/julienschmidt/httprouter"
 	"github.com/soheilhy/cmux"
 	"github.com/vmihailenco/msgpack"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
-	"github.com/HughNian/nmid/pkg/logger"
-	"github.com/HughNian/nmid/pkg/model"
 	"strconv"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ var (
 	ErrReqReachLimit = errors.New("request reached rate limit")
 )
 
-//NewHTTPAPIGateway gateway init
+// NewHTTPAPIGateway gateway init
 func (ser *Server) NewHTTPAPIGateway(network string) {
 	if network != "http" && network != "ws" && network != "wss" && network != "grpc" {
 		logger.Error("protocol not supported")
@@ -42,7 +43,7 @@ func (ser *Server) NewHTTPAPIGateway(network string) {
 		return
 	}
 
-	logger.Info("rpc http server start ok")
+	logger.Info("rpc http server start ok at port: ", ser.HttpPort)
 
 	ser.Cm = cmux.New(ln)
 
@@ -52,7 +53,7 @@ func (ser *Server) NewHTTPAPIGateway(network string) {
 	go ser.Cm.Serve()
 }
 
-//StartHTTPAPIGateway start http api gateway
+// StartHTTPAPIGateway start http api gateway
 func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 	router := httprouter.New()
 	router.POST("/*functionName", ser.HTTPAPIGatewayHandle)
@@ -76,7 +77,7 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 	}
 }
 
-//HTTPAPIGatewayHandle http server router handle
+// HTTPAPIGatewayHandle http server router handle
 func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	requestType := r.Header.Get(model.NRequestType)
 
@@ -86,10 +87,10 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-//HTTPDoWorkHandle http server router handle
-//first get functionName
-//second make nwe job
-//last doWork with job
+// HTTPDoWorkHandle http server router handle
+// first get functionName
+// second make nwe job
+// last doWork with job
 func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	var err error
 	var paramsType uint32
@@ -139,9 +140,9 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 		wh.Set(model.NErrorMessage, err.Error())
 		return
 	}
-	body := make([]byte, clen)
-	r.Body.Read(body)
-	if len(body) == 0 {
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil || len(body) == 0 {
 		wh.Set(model.NMessageStatusType, "READ PARAMS EMPTY")
 		err = errors.New("read params empty")
 		wh.Set(model.NErrorMessage, err.Error())
