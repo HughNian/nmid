@@ -1,5 +1,5 @@
-//nmid worker2
-//this worker do client request anthor worker get result
+// nmid worker2
+// this worker do client request anthor worker get result
 package main
 
 import (
@@ -23,21 +23,103 @@ var once sync.Once
 var client *cli.Client
 var err error
 
+//func getClient() *cli.Client {
+//	if nil == client {
+//		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+//		client, err = cli.NewClient("tcp", serverAddr)
+//		if nil == client || err != nil {
+//			log.Println(err)
+//		}
+//	}
+//
+//	return client
+//}
+
+// 单实列连接，适合长连接
 func getClient() *cli.Client {
-	if nil == client {
+	once.Do(func() {
 		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 		client, err = cli.NewClient("tcp", serverAddr)
 		if nil == client || err != nil {
 			log.Println(err)
 		}
-	}
+	})
 
 	return client
 }
 
-func ToUpper2(job wor.Job) (ret []byte, err error) {
-	client := getClient()
+//func ToUpper2(job wor.Job) (ret []byte, err error) {
+//	client := getClient()
+//
+//	resp := job.GetResponse()
+//	if nil == resp {
+//		return []byte(``), fmt.Errorf("response data error")
+//	}
+//
+//	var name string
+//	if len(resp.ParamsMap) > 0 {
+//		name = resp.ParamsMap["name"].(string)
+//	}
+//
+//	client.ErrHandler = func(e error) {
+//		if model.RESTIMEOUT == e {
+//			log.Println("time out here")
+//		} else {
+//			log.Println(e)
+//		}
+//	}
+//
+//	respHandler := func(resp *cli.Response) {
+//		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+//			if resp.RetLen == 0 {
+//				log.Println("ret empty")
+//				err = errors.New("ret empty")
+//				return
+//			}
+//
+//			var cretStruct model.RetStruct
+//			uerr := msgpack.Unmarshal(resp.Ret, &cretStruct)
+//			if nil != uerr {
+//				log.Fatalln(uerr)
+//				err = uerr
+//				return
+//			}
+//
+//			if cretStruct.Code != 0 {
+//				log.Println(cretStruct.Msg)
+//				err = errors.New(cretStruct.Msg)
+//				return
+//			}
+//			fmt.Println(string(cretStruct.Data))
+//
+//			wretStruct := model.GetRetStruct()
+//			wretStruct.Msg = "ok"
+//			wretStruct.Data = cretStruct.Data
+//			ret, err = msgpack.Marshal(wretStruct)
+//
+//			resp.RetLen = uint32(len(ret))
+//			resp.Ret = ret
+//		}
+//	}
+//
+//	//请求下层worker
+//	funcName := "ToUpper"
+//	resp.SetExitSpan(funcName)
+//	paramsName1 := make(map[string]string)
+//	paramsName1["name"] = name
+//	params1, err := msgpack.Marshal(&paramsName1)
+//	if err != nil {
+//		log.Fatalln("params msgpack error:", err)
+//	}
+//	err = client.Do(funcName, params1, respHandler)
+//	if nil != err {
+//		fmt.Println(`--do err--`, err)
+//	}
+//
+//	return
+//}
 
+func ToUpper2(job wor.Job) (ret []byte, err error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
@@ -46,14 +128,6 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	var name string
 	if len(resp.ParamsMap) > 0 {
 		name = resp.ParamsMap["name"].(string)
-	}
-
-	client.ErrHandler = func(e error) {
-		if model.RESTIMEOUT == e {
-			log.Println("time out here")
-		} else {
-			log.Println(e)
-		}
 	}
 
 	respHandler := func(resp *cli.Response) {
@@ -95,10 +169,10 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 	}
-	err = client.Do("ToUpper", params1, respHandler)
-	if nil != err {
-		fmt.Println(`--do err--`, err)
-	}
+
+	callAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	funcName := "ToUpper"
+	job.ClientCall(callAddr, funcName, params1, respHandler)
 
 	return
 }
@@ -119,6 +193,8 @@ func main() {
 	var err error
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	//var skyReporterUrl = "192.168.64.6:30484"
+	//worker = wor.NewWorker().WithTrace(skyReporterUrl)
 	worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {

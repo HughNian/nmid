@@ -1,10 +1,21 @@
 package worker
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
+	cli "github.com/HughNian/nmid/pkg/client"
+	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/trace"
 	"github.com/HughNian/nmid/pkg/utils"
+	"github.com/SkyAPM/go2sky"
+	"github.com/SkyAPM/go2sky/propagation"
+	"log"
+	"runtime"
+	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	"strconv"
+	"sync"
 )
 
 type Response struct {
@@ -23,8 +34,11 @@ type Response struct {
 	JobIdLen         uint32
 	Ret              []byte
 	RetLen           uint32
+	Sw8              string
+	Sw8Len           uint32
 
-	Agent *Agent
+	Agent         *Agent
+	TraceEntryCtx context.Context
 }
 
 func NewRes() (res *Response) {
@@ -117,4 +131,111 @@ func (resp *Response) GetParamsMap() map[string]interface{} {
 	}
 
 	return resp.ParamsMap
+}
+
+// SetEntrySpan do entry span 入口span
+func (resp *Response) SetEntrySpan() {
+	if !resp.Agent.Worker.useTrace {
+		return
+	}
+
+	workerId := resp.Agent.Worker.WorkerId
+	workerName := resp.Agent.Worker.WorkerName
+
+	tracer := resp.Agent.Worker.Tracer
+	if nil == tracer {
+		return
+	}
+
+	sw8 := resp.Sw8
+	span, entryCtx, err := tracer.CreateEntrySpan(context.TODO(), resp.Handle, func(key string) (string, error) {
+		return sw8, nil
+	})
+	if err != nil {
+		logger.Warnf("inflow trace CreateEntrySpan error sw8:"+sw8, err)
+		return
+	}
+
+	if sw8 == "" {
+		s := span.(go2sky.ReportedSpan)
+		sw8 = (&propagation.SpanContext{
+			TraceID:               s.Context().TraceID,
+			ParentSegmentID:       s.Context().ParentSegmentID,
+			ParentService:         workerName,
+			ParentServiceInstance: workerId,
+			ParentEndpoint:        resp.Handle,
+			ParentSpanID:          -1, // 首层固定
+			Sample:                1,
+		}).EncodeSW8()
+	}
+
+	resp.TraceEntryCtx = entryCtx
+	resp.Sw8Len = uint32(len(sw8))
+	resp.Sw8 = sw8
+
+	span.SetSpanLayer(v3.SpanLayer_RPCFramework)
+	span.SetOperationName(resp.Handle)
+	span.SetComponent(trace.ComponentIDGOHttpServer)
+	span.Tag("go_version", runtime.Version())
+	span.Tag(go2sky.TagStatusCode, strconv.Itoa(200))
+	span.End()
+}
+
+// SetExitSpan do exit span 出口span
+func (resp *Response) SetExitSpan(exitHandle string) {
+	if !resp.Agent.Worker.useTrace {
+		return
+	}
+
+	tracer := resp.Agent.Worker.Tracer
+	if nil == tracer {
+		return
+	}
+
+	span, err := tracer.CreateExitSpan(resp.TraceEntryCtx, exitHandle, exitHandle, func(key, value string) error {
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	span.SetOperationName(exitHandle)
+	span.SetComponent(trace.ComponentIDGOHttpServer)
+	span.Tag(go2sky.TagURL, exitHandle)
+	span.SetSpanLayer(v3.SpanLayer_RPCFramework)
+	span.End()
+}
+
+// ClientCall call next worker
+func (resp *Response) ClientCall(serverAddr, funcName string, params []byte, respHandler func(resp *cli.Response)) {
+	var once sync.Once
+	var client *cli.Client
+	var err error
+
+	once.Do(func() {
+		client, err = cli.NewClient("tcp", serverAddr)
+		if nil == client || err != nil {
+			log.Println(err)
+		}
+	})
+
+	client.ErrHandler = func(e error) {
+		if model.RESTIMEOUT == e {
+			log.Println("time out here")
+		} else {
+			log.Println(e)
+		}
+	}
+
+	//use trace
+	if resp.Agent.Worker.useTrace {
+		//set skywalking exit span
+		resp.SetExitSpan(funcName)
+	}
+
+	//请求下层worker
+	err = client.Do(funcName, params, respHandler)
+	if nil != err {
+		fmt.Println(`--do err--`, err)
+	}
 }

@@ -1,8 +1,6 @@
 // nmid worker
 //
 // author: niansong(hugh.nian@163.com)
-//
-//
 package main
 
 import (

@@ -1,3 +1,5 @@
 /.idea
 /.vscode
 /cmd/server/*log*
+/example/worker/worker1/*log*
+/example/worker/worker2/*log*

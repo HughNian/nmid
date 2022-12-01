@@ -2,9 +2,9 @@ package server
 
 import (
 	"container/list"
-	"net/http"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/utils"
+	"net/http"
 	"sync"
 )
 
@@ -13,6 +13,9 @@ import (
 
 type JobData struct {
 	sync.Mutex
+
+	Sw8    string
+	Sw8Len uint32
 
 	JobId       string //funcName + Params + time
 	ClientId    string

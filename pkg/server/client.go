@@ -96,7 +96,7 @@ func (c *SClient) doLimit() {
 	c.Connect.Write(resPack)
 }
 
-//RunClient 此处做限流操作
+// RunClient 此处做限流操作
 func (c *SClient) RunClient() {
 	if !limiter.DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
 		c.doLimit()
@@ -112,7 +112,7 @@ func (c *SClient) RunClient() {
 	}
 }
 
-//AliveTimeOut 客户端长连接时长限制
+// AliveTimeOut 客户端长连接时长限制
 func (c *SClient) AliveTimeOut() {
 	go func(t *time.Timer) {
 		for {

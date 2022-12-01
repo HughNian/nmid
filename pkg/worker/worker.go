@@ -3,8 +3,10 @@ package worker
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/trace"
+	"github.com/SkyAPM/go2sky"
 	"sync"
 	"time"
 )
@@ -14,24 +16,48 @@ import (
 type Worker struct {
 	sync.Mutex
 
+	WorkerId   string
+	WorkerName string
+
 	Agents   []*Agent
 	Funcs    map[string]*Function
 	FuncsNum int
 	Resps    chan *Response
+	Tracer   *go2sky.Tracer
 
-	ready   bool
-	running bool
+	ready    bool
+	running  bool
+	useTrace bool
 }
 
 func NewWorker() *Worker {
-	return &Worker{
+	wor := &Worker{
 		Agents:   make([]*Agent, 0),
 		Funcs:    make(map[string]*Function),
 		FuncsNum: 0,
 		Resps:    make(chan *Response, model.QUEUE_SIZE),
 		ready:    false,
 		running:  false,
+		useTrace: false,
 	}
+
+	return wor
+}
+
+func (w *Worker) SetWorkerId(wid string) *Worker {
+	w.WorkerId = wid
+	return w
+}
+
+func (w *Worker) SetWorkerName(wname string) *Worker {
+	w.WorkerName = wname
+	return w
+}
+
+func (w *Worker) WithTrace(reporterUrl string) *Worker {
+	w.useTrace = true
+	w.Tracer = trace.NewReporter(reporterUrl)
+	return w
 }
 
 func (w *Worker) AddServer(net, addr string) (err error) {
@@ -129,7 +155,6 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 				resp.Agent.Unlock()
 			}
 		}
-
 	}
 
 	return nil
@@ -178,7 +203,7 @@ func (w *Worker) WorkerDo() {
 	if !w.ready {
 		err := w.WorkerReady()
 		if err != nil {
-			panic(err)
+			logger.Fatal(err)
 		}
 	}
 
@@ -199,7 +224,7 @@ func (w *Worker) WorkerDo() {
 			//fallthrough
 		case model.PDT_S_GET_DATA:
 			if err := w.DoFunction(resp); err != nil {
-				log.Println(err)
+				logger.Error(err)
 			}
 			//fallthrough
 		case model.PDT_NO_JOB:

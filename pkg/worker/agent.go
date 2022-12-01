@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 	"io"
 	"log"
 	"net"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 	"sync"
 )
 
@@ -128,7 +128,14 @@ func (a *Agent) Work() {
 			continue
 		} else {
 			leftData = nil
+
 			resp.Agent = a
+			
+			//set entry span
+			if a.Worker.useTrace {
+				resp.SetEntrySpan()
+			}
+
 			a.Worker.Resps <- resp
 		}
 	}

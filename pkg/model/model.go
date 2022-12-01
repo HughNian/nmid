@@ -9,6 +9,7 @@ type ServerConfig struct {
 	BlackList     *BlackList     `yaml:"BlackList"`
 	BreakerConfig *BreakerConfig `yaml:"BreakerConfig"`
 	LogConfig     *LogConfig     `yaml:"LogConfig"`
+	TraceConfig   *TraceConfig   `yaml:"TraceConfig"`
 }
 
 type RpcServer struct {
@@ -65,7 +66,7 @@ type Breaker struct {
 	Cycle              uint32 `yaml:"cycle"`
 }
 
-//BreakerConfig 默认熔断规则类型
+// BreakerConfig 默认熔断规则类型
 type BreakerConfig struct {
 	MaxRequests    uint32 `yaml:"max_requests"`    // 熔断器半开时允许运行的请求数量 默认设置为：1，请求成功则断路器关闭
 	Interval       uint32 `yaml:"interval"`        // 熔断器处于关闭状态时的清除周期，默认0，如果一直是关闭则不清除请求的次数信息
@@ -78,6 +79,12 @@ type BreakerConfig struct {
 	Btype          int8   `yaml:"btype"`           // 熔断粒度path单个实例下接口级别，host单个实例级别，默认接口级别
 	Timestamp      int64  `yaml:"timestamp"`       // 最后更新时间
 	WorkerName     string `yaml:"worker_name" binding:"required"`
+}
+
+// TraceConfig trace config
+type TraceConfig struct {
+	TraceType   string `yaml:"trace_type"`
+	ReporterUrl string `yaml:"reporter_url"`
 }
 
 type RetStruct struct {

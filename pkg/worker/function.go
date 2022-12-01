@@ -1,10 +1,13 @@
 package worker
 
+import cli "github.com/HughNian/nmid/pkg/client"
+
 type Job interface {
 	GetResponse() *Response
 	ParseParams(params []byte)
 	GetParams() []byte
 	GetParamsMap() map[string]interface{}
+	ClientCall(serverAddr, funcName string, params []byte, respHandler func(resp *cli.Response))
 }
 
 type JobFunc func(Job) ([]byte, error)

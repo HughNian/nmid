@@ -107,7 +107,6 @@ func (ser *Server) ServerRun() {
 	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {
 		logger.Fatalf("listener err %s", err.Error())
-		panic(err)
 	}
 	ser.Ln = listen
 

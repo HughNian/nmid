@@ -66,3 +66,7 @@ Breaker:
   request_timeout: 5 # SideCar代理请求超时时间，单位：s
   btype: 1 #熔断粒度1,path单个实例下接口级别，2,host单个实例级别，默认接口级别
   cycle: 1 # 定时感应配置周期，单位：s
+
+TraceConfig:
+  trace_type: "skywalking"
+  reporter_url: "192.168.64.6:30484"
