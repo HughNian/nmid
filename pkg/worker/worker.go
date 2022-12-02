@@ -141,8 +141,9 @@ func (w *Worker) GetFunction(funcName string) (function *Function, err error) {
 
 func (w *Worker) DoFunction(resp *Response) (err error) {
 	if resp.DataType == model.PDT_S_GET_DATA {
-		//set entry span
+		////use trace
 		if w.useTrace {
+			//set entry span
 			resp.SetEntrySpan()
 		}
 
@@ -262,5 +263,9 @@ func (w *Worker) WorkerClose() {
 
 		w.running = false
 		close(w.Resps)
+
+		if w.useTrace {
+			w.Reporter.Close()
+		}
 	}
 }

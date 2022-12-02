@@ -11,11 +11,12 @@ import (
 	"github.com/HughNian/nmid/pkg/utils"
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/propagation"
-	"log"
+	"github.com/vmihailenco/msgpack"
 	"runtime"
 	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Response struct {
@@ -139,6 +140,12 @@ func (resp *Response) SetEntrySpan() {
 		return
 	}
 
+	//operator sw8 code
+	if val, exist := resp.ParamsMap["sw8"]; exist {
+		resp.Sw8 = val.(string)
+		resp.Sw8Len = uint32(len(resp.Sw8))
+	}
+
 	workerId := resp.Agent.Worker.WorkerId
 	workerName := resp.Agent.Worker.WorkerName
 
@@ -147,8 +154,11 @@ func (resp *Response) SetEntrySpan() {
 		return
 	}
 
-	sw8 := resp.Sw8
+	var sw8 string
 	span, entryCtx, err := tracer.CreateEntrySpan(context.TODO(), resp.Handle, func(key string) (string, error) {
+		if val, exist := resp.ParamsMap[key]; exist {
+			sw8 = val.(string)
+		}
 		return sw8, nil
 	})
 	if err != nil {
@@ -178,11 +188,12 @@ func (resp *Response) SetEntrySpan() {
 	span.SetComponent(trace.ComponentIDGOHttpServer)
 	span.Tag("go_version", runtime.Version())
 	span.Tag(go2sky.TagStatusCode, strconv.Itoa(200))
+	span.Log(time.Now(), "[nmid rpc]", fmt.Sprintf("start request, workerid:%s, workername:%s, function:%s", workerId, workerName, resp.Handle))
 	span.End()
 }
 
 // SetExitSpan do exit span 出口span
-func (resp *Response) SetExitSpan(exitHandle string) {
+func (resp *Response) SetExitSpan(exitHandle string, params *map[string]interface{}) {
 	if !resp.Agent.Worker.useTrace {
 		return
 	}
@@ -193,6 +204,8 @@ func (resp *Response) SetExitSpan(exitHandle string) {
 	}
 
 	span, err := tracer.CreateExitSpan(resp.TraceEntryCtx, exitHandle, exitHandle, func(key, value string) error {
+		//(*params)[propagation.Header] = resp.Sw8
+		(*params)[key] = value
 		return nil
 	})
 	if err != nil {
@@ -207,7 +220,7 @@ func (resp *Response) SetExitSpan(exitHandle string) {
 }
 
 // ClientCall call next worker
-func (resp *Response) ClientCall(serverAddr, funcName string, params []byte, respHandler func(resp *cli.Response)) {
+func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]interface{}, respHandler func(resp *cli.Response)) {
 	var once sync.Once
 	var client *cli.Client
 	var err error
@@ -215,27 +228,31 @@ func (resp *Response) ClientCall(serverAddr, funcName string, params []byte, res
 	once.Do(func() {
 		client, err = cli.NewClient("tcp", serverAddr)
 		if nil == client || err != nil {
-			log.Println(err)
+			logger.Error(err)
 		}
 	})
 
 	client.ErrHandler = func(e error) {
 		if model.RESTIMEOUT == e {
-			log.Println("time out here")
+			logger.Info("time out here")
 		} else {
-			log.Println(e)
+			logger.Error(e)
 		}
 	}
 
 	//use trace
 	if resp.Agent.Worker.useTrace {
 		//set skywalking exit span
-		resp.SetExitSpan(funcName)
+		resp.SetExitSpan(funcName, &params)
 	}
 
 	//请求下层worker
-	err = client.Do(funcName, params, respHandler)
+	cparams, err := msgpack.Marshal(&params)
+	if err != nil {
+		logger.Error("params msgpack error:", err)
+	}
+	err = client.Do(funcName, cparams, respHandler)
 	if nil != err {
-		fmt.Println(`--do err--`, err)
+		logger.Error(`--do err--`, err)
 	}
 }

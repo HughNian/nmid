@@ -7,7 +7,7 @@ type Job interface {
 	ParseParams(params []byte)
 	GetParams() []byte
 	GetParamsMap() map[string]interface{}
-	ClientCall(serverAddr, funcName string, params []byte, respHandler func(resp *cli.Response))
+	ClientCall(serverAddr, funcName string, params map[string]interface{}, respHandler func(resp *cli.Response))
 }
 
 type JobFunc func(Job) ([]byte, error)

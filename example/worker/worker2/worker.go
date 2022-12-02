@@ -163,16 +163,11 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 		}
 	}
 
-	paramsName1 := make(map[string]string)
-	paramsName1["name"] = name
-	params1, err := msgpack.Marshal(&paramsName1)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-	}
-
 	callAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	funcName := "ToUpper"
-	job.ClientCall(callAddr, funcName, params1, respHandler)
+	paramsName1 := make(map[string]interface{})
+	paramsName1["name"] = name
+	job.ClientCall(callAddr, funcName, paramsName1, respHandler)
 
 	return
 }
