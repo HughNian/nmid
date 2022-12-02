@@ -6,6 +6,7 @@ import (
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/trace"
+	"github.com/HughNian/nmid/pkg/utils"
 	"github.com/SkyAPM/go2sky"
 	"sync"
 	"time"
@@ -23,6 +24,8 @@ type Worker struct {
 	Funcs    map[string]*Function
 	FuncsNum int
 	Resps    chan *Response
+
+	Reporter go2sky.Reporter
 	Tracer   *go2sky.Tracer
 
 	ready    bool
@@ -45,18 +48,27 @@ func NewWorker() *Worker {
 }
 
 func (w *Worker) SetWorkerId(wid string) *Worker {
-	w.WorkerId = wid
+	if len(wid) == 0 {
+		w.WorkerId = utils.GetId()
+	} else {
+		w.WorkerId = wid
+	}
 	return w
 }
 
 func (w *Worker) SetWorkerName(wname string) *Worker {
-	w.WorkerName = wname
+	if len(wname) == 0 {
+		w.WorkerName = utils.GetId()
+	} else {
+		w.WorkerName = wname
+	}
+
 	return w
 }
 
 func (w *Worker) WithTrace(reporterUrl string) *Worker {
 	w.useTrace = true
-	w.Tracer = trace.NewReporter(reporterUrl)
+	w.Reporter, w.Tracer = trace.NewReporter(reporterUrl, w.WorkerName)
 	return w
 }
 
@@ -129,6 +141,11 @@ func (w *Worker) GetFunction(funcName string) (function *Function, err error) {
 
 func (w *Worker) DoFunction(resp *Response) (err error) {
 	if resp.DataType == model.PDT_S_GET_DATA {
+		//set entry span
+		if w.useTrace {
+			resp.SetEntrySpan()
+		}
+
 		funcName := resp.Handle
 		if function, err := w.GetFunction(funcName); err != nil {
 			return err

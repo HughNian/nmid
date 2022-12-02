@@ -18,19 +18,19 @@ type SkySpan struct {
 	entryCtx context.Context
 }
 
-func NewReporter(reporterUrl string) (tracer *go2sky.Tracer) {
+func NewReporter(reporterUrl, serviceName string) (rp go2sky.Reporter, tracer *go2sky.Tracer) {
 	rp, err := reporter.NewGRPCReporter(reporterUrl, reporter.WithCheckInterval(time.Second))
 	if nil != err {
 		logger.Error("create gosky reporter failed!", err)
-		return nil
+		return nil, nil
 	}
-	defer rp.Close()
+	//defer rp.Close()
 
-	tracer, err = go2sky.NewTracer("test-demo1", go2sky.WithReporter(rp))
+	tracer, err = go2sky.NewTracer(serviceName, go2sky.WithReporter(rp))
 	if nil != err {
 		logger.Error("new gosky tracer failed!", err)
-		return nil
+		return nil, nil
 	}
 
-	return tracer
+	return rp, tracer
 }

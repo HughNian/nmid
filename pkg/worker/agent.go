@@ -130,12 +130,6 @@ func (a *Agent) Work() {
 			leftData = nil
 
 			resp.Agent = a
-			
-			//set entry span
-			if a.Worker.useTrace {
-				resp.SetEntrySpan()
-			}
-
 			a.Worker.Resps <- resp
 		}
 	}

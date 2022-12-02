@@ -88,6 +88,8 @@ func GetOrderInfo(job wor.Job) ([]byte, error) {
 }
 
 func main() {
+	wname := "Worker1"
+
 	//pprof
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6062", nil))
@@ -101,9 +103,11 @@ func main() {
 
 	var worker *wor.Worker
 	var err error
+	var skyReporterUrl = "192.168.64.6:30484"
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	worker = wor.NewWorker()
+	worker = wor.NewWorker().SetWorkerName(wname).WithTrace(skyReporterUrl)
+	//worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
 		log.Fatalln(err)

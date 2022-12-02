@@ -178,6 +178,8 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 }
 
 func main() {
+	wname := "Worker2"
+
 	//pprof
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6063", nil))
@@ -191,11 +193,11 @@ func main() {
 
 	var worker *wor.Worker
 	var err error
+	var skyReporterUrl = "192.168.64.6:30484"
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	//var skyReporterUrl = "192.168.64.6:30484"
-	//worker = wor.NewWorker().WithTrace(skyReporterUrl)
-	worker = wor.NewWorker()
+	worker = wor.NewWorker().SetWorkerName(wname).WithTrace(skyReporterUrl)
+	//worker = wor.NewWorker()
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
 		log.Fatalln(err)
