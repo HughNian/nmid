@@ -3,3 +3,9 @@
 /cmd/server/*log*
 /example/worker/worker1/*log*
 /example/worker/worker2/*log*
+/example/client/httpclient/http-client
+/example/client/httpserver/http-test
+/example/client/httpserver2/http-test2
+/example/client/testclient/nmid-client
+/example/worker/worker1/nmid-worker
+/example/worker/worker2/nmid-worker2
