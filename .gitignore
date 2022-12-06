@@ -1,6 +1,7 @@
 /.idea
 /.vscode
 /cmd/server/*log*
+/cmd/server/nmid
 /example/worker/worker1/*log*
 /example/worker/worker2/*log*
 /example/client/httpclient/http-client
