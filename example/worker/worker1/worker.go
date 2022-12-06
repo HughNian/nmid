@@ -107,7 +107,7 @@ func main() {
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	worker = wor.NewWorker().SetWorkerName(wname).WithTrace(skyReporterUrl)
-	//worker = wor.NewWorker()
+	//worker = wor.NewWorker().SetWorkerName(wname)
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
 		log.Fatalln(err)

@@ -9,9 +9,11 @@ import (
 )
 
 const (
-	ComponentIDGOHttpServer = 5004
-	ComponentIDGOHttpClient = 5005
-	SpanContextKey          = "span"
+	ComponentIDGOHttpServer  = 5004
+	ComponentIDGOHttpClient  = 5005
+	ComponentIDGoMicroClient = 5008
+	ComponentIDGoMicroServer = 5009
+	SpanContextKey           = "span"
 )
 
 type SkySpan struct {

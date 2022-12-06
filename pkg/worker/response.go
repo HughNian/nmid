@@ -185,7 +185,7 @@ func (resp *Response) SetEntrySpan() {
 
 	span.SetSpanLayer(v3.SpanLayer_RPCFramework)
 	span.SetOperationName(resp.Handle)
-	span.SetComponent(trace.ComponentIDGOHttpServer)
+	span.SetComponent(trace.ComponentIDGoMicroServer)
 	span.Tag("go_version", runtime.Version())
 	span.Tag(go2sky.TagStatusCode, strconv.Itoa(200))
 	span.Log(time.Now(), "[nmid rpc]", fmt.Sprintf("start request, workerid:%s, workername:%s, function:%s", workerId, workerName, resp.Handle))
@@ -193,7 +193,7 @@ func (resp *Response) SetEntrySpan() {
 }
 
 // SetExitSpan do exit span 出口span
-func (resp *Response) SetExitSpan(exitHandle string, params *map[string]interface{}) {
+func (resp *Response) SetExitSpan(serverAddr, exitHandle string, params *map[string]interface{}) {
 	if !resp.Agent.Worker.useTrace {
 		return
 	}
@@ -203,7 +203,8 @@ func (resp *Response) SetExitSpan(exitHandle string, params *map[string]interfac
 		return
 	}
 
-	span, err := tracer.CreateExitSpan(resp.TraceEntryCtx, exitHandle, exitHandle, func(key, value string) error {
+	operationName := serverAddr + "@" + exitHandle
+	span, err := tracer.CreateExitSpan(resp.TraceEntryCtx, operationName, serverAddr, func(key, value string) error {
 		//(*params)[propagation.Header] = resp.Sw8
 		(*params)[key] = value
 		return nil
@@ -212,15 +213,23 @@ func (resp *Response) SetExitSpan(exitHandle string, params *map[string]interfac
 		return
 	}
 
-	span.SetOperationName(exitHandle)
-	span.SetComponent(trace.ComponentIDGOHttpServer)
-	span.Tag(go2sky.TagURL, exitHandle)
+	span.SetOperationName(operationName)
+	span.SetComponent(trace.ComponentIDGoMicroClient)
+	span.Tag(go2sky.TagURL, serverAddr)
 	span.SetSpanLayer(v3.SpanLayer_RPCFramework)
 	span.End()
 }
 
 // ClientCall call next worker
 func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]interface{}, respHandler func(resp *cli.Response)) {
+	if len(serverAddr) == 0 {
+		logger.Fatal("serverAddr must be have")
+	}
+
+	if len(funcName) == 0 {
+		logger.Fatal("funcName must be have")
+	}
+
 	var once sync.Once
 	var client *cli.Client
 	var err error
@@ -243,7 +252,7 @@ func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]
 	//use trace
 	if resp.Agent.Worker.useTrace {
 		//set skywalking exit span
-		resp.SetExitSpan(funcName, &params)
+		resp.SetExitSpan(serverAddr, funcName, &params)
 	}
 
 	//请求下层worker
