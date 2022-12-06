@@ -140,12 +140,6 @@ func (resp *Response) SetEntrySpan() {
 		return
 	}
 
-	//operator sw8 code
-	if val, exist := resp.ParamsMap["sw8"]; exist {
-		resp.Sw8 = val.(string)
-		resp.Sw8Len = uint32(len(resp.Sw8))
-	}
-
 	workerId := resp.Agent.Worker.WorkerId
 	workerName := resp.Agent.Worker.WorkerName
 
