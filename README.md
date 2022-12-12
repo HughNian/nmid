@@ -20,6 +20,13 @@ nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的�
 
 7.支持http请求nmid服务
 
+## what can do  
+1.作为rpc微服务使用
+
+2.作为http微服务使用   
+
+2.作为k8s微服务的sidecar使用
+
 ## 建议配置
 
 ```shell
