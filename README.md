@@ -2,6 +2,9 @@
     <a href="http://www.niansong.top"><img src="https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo.png" alt="nmid Logo" width="160"></a>
 </div>
 
+[![nmid](https://img.shields.io/badge/nmid-v1.0.7-red)](https://github.com/hughnian/nmid)
+[![blog](https://img.shields.io/badge/hughnian-blog-yellow)](http://www.niansong.top/)
+
 ## nmid介绍
 
 nmid意思为中场指挥官，足球场上的中场就是统领进攻防守的核心。咱们这里是服务程序的调度核心。是一个轻量级分布式微服务RPC框架。
