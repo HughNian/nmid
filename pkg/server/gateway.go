@@ -5,11 +5,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"github.com/HughNian/nmid/pkg/logger"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/julienschmidt/httprouter"
-	"github.com/soheilhy/cmux"
-	"github.com/vmihailenco/msgpack"
 	"io"
 	"io/ioutil"
 	"net"
@@ -17,6 +12,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/julienschmidt/httprouter"
+	"github.com/soheilhy/cmux"
+	"github.com/vmihailenco/msgpack"
+	"golang.org/x/net/websocket"
 )
 
 var (
@@ -26,7 +28,7 @@ var (
 
 // NewHTTPAPIGateway gateway init
 func (ser *Server) NewHTTPAPIGateway(network string) {
-	if network != "http" && network != "ws" && network != "wss" && network != "grpc" {
+	if network != "http" && network != "grpc" {
 		logger.Error("protocol not supported")
 		return
 	}
@@ -230,4 +232,39 @@ func nmidPrefixByteMatcher() cmux.Matcher {
 		n, _ := r.Read(buf)
 		return n == 1 && buf[0] == 0
 	}
+}
+
+// NewWSAPIGateway gateway init
+func (ser *Server) NewWSAPIGateway(network string) {
+	if network != "ws" && network != "wss" && network != "grpc" {
+		logger.Error("protocol not supported")
+		return
+	}
+
+	if len(ser.WSPort) == 0 {
+		logger.Error("ws port empty")
+		return
+	}
+
+	wsPath := "/nmidws"
+
+	address := ser.Host + ":" + ser.WSPort
+	ln, err := ser.NewListener(network, address)
+	if err != nil {
+		logger.Error("make ws listen err", err)
+		return
+	}
+
+	logger.Info("rpc ws server start ok at port: ", ser.WSPort)
+
+	mux := http.NewServeMux()
+	mux.Handle(wsPath, websocket.Handler(ser.WSDoWorkHandle))
+	srv := &http.Server{Handler: mux}
+
+	go srv.Serve(ln)
+}
+
+func (s *Server) WSDoWorkHandle(conn *websocket.Conn) {
+	//todo ws's read and write
+	// s.serveConn(conn)
 }

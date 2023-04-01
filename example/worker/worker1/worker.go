@@ -5,12 +5,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/HughNian/nmid/pkg/model"
-	wor "github.com/HughNian/nmid/pkg/worker"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+
+	"github.com/HughNian/nmid/pkg/model"
+	wor "github.com/HughNian/nmid/pkg/worker"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/vmihailenco/msgpack"
@@ -103,11 +107,11 @@ func main() {
 
 	var worker *wor.Worker
 	var err error
-	var skyReporterUrl = "192.168.64.6:30484"
+	//var skyReporterUrl = "192.168.64.6:30484"
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	worker = wor.NewWorker().SetWorkerName(wname).WithTrace(skyReporterUrl)
-	//worker = wor.NewWorker().SetWorkerName(wname)
+	//worker = wor.NewWorker().SetWorkerName(wname).WithTrace(skyReporterUrl)
+	worker = wor.NewWorker().SetWorkerName(wname)
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
 		log.Fatalln(err)
@@ -124,5 +128,12 @@ func main() {
 		return
 	}
 
-	worker.WorkerDo()
+	go worker.WorkerDo()
+
+	quits := make(chan os.Signal, 1)
+	signal.Notify(quits, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT /*syscall.SIGUSR1*/)
+	switch <-quits {
+	case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
+		worker.WorkerClose()
+	}
 }

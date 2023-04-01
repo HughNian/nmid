@@ -1,9 +1,10 @@
 package server
 
 import (
+	"sync"
+
 	"github.com/HughNian/nmid/pkg/limiter"
 	"github.com/HughNian/nmid/pkg/model"
-	"sync"
 
 	"github.com/joshbohde/codel"
 	"github.com/juju/ratelimit"
@@ -184,6 +185,13 @@ func (w *SWorker) doLimit() {
 	w.Connect.Write(resPack)
 }
 
+func (w *SWorker) heartBeatPong() {
+	// logger.Infof("server worker heartbeat pong")
+	w.Res.DataType = model.PDT_S_HEARTBEAT_PONG
+	resPack := w.Res.ResEncodePack()
+	w.Connect.Write(resPack)
+}
+
 func (w *SWorker) RunWorker() {
 	dataType := w.Req.GetReqDataType()
 
@@ -211,6 +219,11 @@ func (w *SWorker) RunWorker() {
 	case model.PDT_W_RETURN_DATA:
 		{
 			w.returnData()
+		}
+	//heartbeat
+	case model.PDT_W_HEARTBEAT_PING:
+		{
+			w.heartBeatPong()
 		}
 	}
 }

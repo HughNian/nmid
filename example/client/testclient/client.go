@@ -5,10 +5,11 @@ package main
 
 import (
 	"fmt"
-	cli "github.com/HughNian/nmid/pkg/client"
-	"github.com/HughNian/nmid/pkg/model"
 	"log"
 	"os"
+
+	cli "github.com/HughNian/nmid/pkg/client"
+	"github.com/HughNian/nmid/pkg/model"
 
 	"github.com/vmihailenco/msgpack"
 )
@@ -62,13 +63,14 @@ func main() {
 	}
 
 	paramsName1 := make(map[string]interface{})
-	paramsName1["name"] = "niansong"
+	paramsName1["src"] = "N7h63U+zToveiwbdJF+EAg=="
+	paramsName1["key"] = "Nanjing88Company"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 		os.Exit(1)
 	}
-	err = client.Do("ToUpper", params1, respHandler)
+	err = client.Do("gateway/FuncParseToken", params1, respHandler)
 	if nil != err {
 		fmt.Println(err)
 	}

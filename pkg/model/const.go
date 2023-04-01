@@ -6,16 +6,17 @@ import (
 )
 
 const (
-	MAX_POOL_SIZE     = 128
-	QUEUE_SIZE        = 1
-	BUFFER_SIZE       = 512
-	MIN_DATA_SIZE     = 12
-	UINT32_SIZE       = 4
-	MAX_NOJOB_NUM     = 10
-	PARAMS_SCOPE      = "::"
-	DEFAULT_TIME_OUT  = 3 * time.Second                   //100 * time.Millisecond            //io超时
-	DIAL_TIME_OUT     = 3 * time.Second                   //连接超时
-	CLIENT_ALIVE_TIME = time.Duration(1800) * time.Second //客户端长连接生存周期
+	MAX_POOL_SIZE        = 128
+	QUEUE_SIZE           = 1
+	BUFFER_SIZE          = 512
+	MIN_DATA_SIZE        = 12
+	UINT32_SIZE          = 4
+	MAX_NOJOB_NUM        = 10
+	PARAMS_SCOPE         = "::"
+	DEFAULT_TIME_OUT     = 6 * time.Second                   //100 * time.Millisecond            //io超时
+	DIAL_TIME_OUT        = 6 * time.Second                   //连接超时
+	CLIENT_ALIVE_TIME    = time.Duration(1800) * time.Second //客户端长连接生存周期
+	DEFAULTHEARTBEATTIME = 10 * time.Second
 
 	//package data type
 	PDT_OK               = 1
@@ -29,10 +30,12 @@ const (
 	PDT_WAKEUPED         = 9
 	PDT_S_GET_DATA       = 10
 	PDT_S_RETURN_DATA    = 11
+	PDT_S_HEARTBEAT_PONG = 23
 	PDT_W_GRAB_JOB       = 12
 	PDT_W_ADD_FUNC       = 13
 	PDT_W_DEL_FUNC       = 14
 	PDT_W_RETURN_DATA    = 15
+	PDT_W_HEARTBEAT_PING = 22
 	PDT_C_DO_JOB         = 16
 	PDT_C_GET_DATA       = 17
 	PDT_RATELIMIT        = 18

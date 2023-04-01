@@ -6,9 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/HughNian/nmid/pkg/conf"
-	ser "github.com/HughNian/nmid/pkg/server"
-	"github.com/HughNian/nmid/pkg/sidecar"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -16,6 +13,9 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/HughNian/nmid/pkg/conf"
+	ser "github.com/HughNian/nmid/pkg/server"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
@@ -41,25 +41,26 @@ func main() {
 		return
 	}
 
-	c, cancel := context.WithCancel(context.Background())
+	//c, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 
 	showLogo()
 
 	//开启rpc tcp服务
 	go rpcserver.ServerRun()
 	//开启rpc http服务
-	go rpcserver.HttpServerRun()
+	// go rpcserver.HttpServerRun()
 	//开启sidecar
-	scCtx, scCancel := context.WithCancel(c)
-	sidecar.NewScServer(scCtx, sConfig).StartScServer()
+	// scCtx, scCancel := context.WithCancel(c)
+	// sidecar.NewScServer(scCtx, sConfig).StartScServer()
 
 	quits := make(chan os.Signal, 1)
-	signal.Notify(quits, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGUSR1)
+	signal.Notify(quits, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT /*syscall.SIGUSR1*/)
 	switch <-quits {
 	case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 		cancel()
-	case syscall.SIGUSR1:
-		scCancel()
+		// case syscall.SIGUSR1:
+		//scCancel()
 	}
 
 	wg := &sync.WaitGroup{}

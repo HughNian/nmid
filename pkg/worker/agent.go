@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 	"io"
 	"log"
 	"net"
 	"sync"
+
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 )
 
 type Agent struct {
@@ -133,6 +134,14 @@ func (a *Agent) Work() {
 			a.Worker.Resps <- resp
 		}
 	}
+}
+
+func (a *Agent) HeartBeatPing() {
+	// logger.Infof("worker heartbeat ping")
+	a.Lock()
+	a.Req.HeartBeatPack()
+	a.Write()
+	a.Unlock()
 }
 
 func (a *Agent) Grab() {

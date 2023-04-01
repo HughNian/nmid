@@ -6,11 +6,12 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"sync"
+
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/security"
 	"github.com/HughNian/nmid/pkg/utils"
-	"sync"
 )
 
 type Connect struct {
@@ -171,7 +172,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	tmp := utils.GetBuffer(size)
 
 	if n, err = c.rw.Read(tmp); err != nil {
-		logger.Error("server read error", c.Ip, err.Error())
+		logger.Errorf("server read error conntype:%d, ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
 		return []byte(``), err
 	}
 

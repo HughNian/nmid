@@ -3,12 +3,13 @@ package server
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/HughNian/nmid/pkg/logger"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/soheilhy/cmux"
 	"net"
 	"net/http"
 	"sync"
+
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/soheilhy/cmux"
 )
 
 //rpc server
@@ -19,6 +20,7 @@ type Server struct {
 	Host              string
 	Port              string
 	HttpPort          string
+	WSPort            string
 	Net               string
 	Ln                net.Listener
 	Cm                cmux.CMux
@@ -132,7 +134,10 @@ func (ser *Server) ServerRun() {
 func (ser *Server) ServerClose(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	ser.Cm.Close()
-	ser.HTTPServerGateway.Close()
 	ser.Ln.Close()
+
+	if ser.HTTPServerGateway != nil {
+		ser.Cm.Close()
+		ser.HTTPServerGateway.Close()
+	}
 }

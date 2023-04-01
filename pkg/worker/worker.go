@@ -3,13 +3,14 @@ package worker
 import (
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/trace"
 	"github.com/HughNian/nmid/pkg/utils"
 	"github.com/SkyAPM/go2sky"
-	"sync"
-	"time"
 )
 
 //rpc tcp worker
@@ -229,9 +230,19 @@ func (w *Worker) WorkerDo() {
 	w.running = true
 	w.Unlock()
 
-	for _, a := range w.Agents {
-		go a.Grab()
-	}
+	//send heartbeat ping & grab job
+	go func() {
+		for w.running {
+			duration := model.DEFAULTHEARTBEATTIME
+			timer := time.NewTimer(duration)
+			<-timer.C
+
+			for _, a := range w.Agents {
+				a.HeartBeatPing()
+				a.Grab()
+			}
+		}
+	}()
 
 	for resp := range w.Resps {
 		switch resp.DataType {
@@ -257,6 +268,12 @@ func (w *Worker) WorkerDo() {
 
 func (w *Worker) WorkerClose() {
 	if w.running {
+		logger.Info("worker close")
+
+		for fn := range w.Funcs {
+			w.FuncBroadcast(fn, model.PDT_W_DEL_FUNC)
+		}
+
 		for _, a := range w.Agents {
 			a.Close()
 		}

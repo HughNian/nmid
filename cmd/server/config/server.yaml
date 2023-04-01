@@ -43,7 +43,7 @@ Registry:
   renew: 5
 
 WhiteList:
-  enable: false
+  enable: true
   allow_list:
     127.0.0.1: true
     127.0.0.2: true

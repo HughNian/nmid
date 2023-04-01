@@ -5,12 +5,16 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
 	cli "github.com/HughNian/nmid/pkg/client"
 	"github.com/HughNian/nmid/pkg/model"
 	wor "github.com/HughNian/nmid/pkg/worker"
-	"log"
-	"net/http"
-	"sync"
 
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/vmihailenco/msgpack"
@@ -208,5 +212,12 @@ func main() {
 		return
 	}
 
-	worker.WorkerDo()
+	go worker.WorkerDo()
+
+	quits := make(chan os.Signal, 1)
+	signal.Notify(quits, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT /*syscall.SIGUSR1*/)
+	switch <-quits {
+	case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
+		worker.WorkerClose()
+	}
 }

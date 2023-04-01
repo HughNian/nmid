@@ -23,6 +23,7 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.2.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	skywalking.apache.org/repo/goapi v0.0.0-20221123034834-51b3101f6c9f // indirect
 )
