@@ -117,13 +117,13 @@ func (ser *Server) ServerRun() {
 	for {
 		conn, err := ser.Ln.Accept()
 		if err != nil {
-			logger.Fatal("accept err %s", err.Error())
+			logger.Errorf("accept err %s", err.Error())
 			continue
 		}
 
 		c := ser.Cpool.NewConnect(ser, conn)
 		if nil == c {
-			logger.Fatalf("connect err %s", errors.New("connect error"))
+			logger.Errorf("connect err %s", errors.New("connect error or forbidden"))
 			continue
 		}
 

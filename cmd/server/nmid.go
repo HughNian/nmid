@@ -6,8 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -16,8 +14,6 @@ import (
 
 	"github.com/HughNian/nmid/pkg/conf"
 	ser "github.com/HughNian/nmid/pkg/server"
-
-	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 
 var (
@@ -26,15 +22,15 @@ var (
 
 func main() {
 	//pprof
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
-	}()
+	// go func() {
+	// 	log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+	// }()
 
 	//pyroscope, this is pyroscope push mode. also use pull mode better
-	profiler.Start(profiler.Config{
-		ApplicationName: "nmid.server",
-		ServerAddress:   "http://127.0.0.1:4040",
-	})
+	// profiler.Start(profiler.Config{
+	// 	ApplicationName: "nmid.server",
+	// 	ServerAddress:   "http://127.0.0.1:4040",
+	// })
 
 	rpcserver := ser.NewServer().SetSConfig(sConfig)
 	if nil == rpcserver {

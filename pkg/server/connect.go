@@ -54,11 +54,13 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	}
 	//DoWhiteList do whitelist
 	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip, ser.SConfig.WhiteList) {
+		logger.Infof("not in whitelist ip %s", ip)
 		conn.Close()
 		return nil
 	}
 	//DoBlackList do blacklist
 	if ser.SConfig.BlackList.Enable && security.DoBlackList(ip, ser.SConfig.BlackList) {
+		logger.Infof("blacklist ip %s", ip)
 		conn.Close()
 		return nil
 	}
