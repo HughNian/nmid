@@ -74,7 +74,7 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 		if err == ErrServerClosed || errors.Is(err, cmux.ErrListenerClosed) {
 			logger.Error("gateway server closed")
 		} else {
-			logger.Errorf("error in gateway serve: %T %s", err, err)
+			logger.Error("error in gateway serve:", err)
 		}
 	}
 }

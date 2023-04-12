@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/HughNian/nmid/pkg/alert"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/soheilhy/cmux"
@@ -104,6 +105,11 @@ func (ser *Server) GrpcServerRun() {
 func (ser *Server) ServerRun() {
 	//new log
 	logger.NewLogger(ser.SConfig.LogConfig)
+
+	//new dingtalk
+	if ser.SConfig.DingTalkConfig.Enable {
+		alert.NewDingTalk(ser.SConfig.DingTalkConfig)
+	}
 
 	var address string = ser.Host + ":" + ser.Port
 	listen, err := ser.NewListener(ser.Net, address)

@@ -1,15 +1,16 @@
 package model
 
 type ServerConfig struct {
-	RpcServer     *RpcServer     `yaml:"RpcServer"`
-	SideCar       *SideCar       `yaml:"SideCar"`
-	Registry      *Registry      `yaml:"Registry"`
-	Breaker       *Breaker       `yaml:"Breaker"`
-	WhiteList     *WhiteList     `yaml:"WhiteList"`
-	BlackList     *BlackList     `yaml:"BlackList"`
-	BreakerConfig *BreakerConfig `yaml:"BreakerConfig"`
-	LogConfig     *LogConfig     `yaml:"LogConfig"`
-	TraceConfig   *TraceConfig   `yaml:"TraceConfig"`
+	RpcServer      *RpcServer      `yaml:"RpcServer"`
+	SideCar        *SideCar        `yaml:"SideCar"`
+	Registry       *Registry       `yaml:"Registry"`
+	Breaker        *Breaker        `yaml:"Breaker"`
+	WhiteList      *WhiteList      `yaml:"WhiteList"`
+	BlackList      *BlackList      `yaml:"BlackList"`
+	BreakerConfig  *BreakerConfig  `yaml:"BreakerConfig"`
+	LogConfig      *LogConfig      `yaml:"LogConfig"`
+	TraceConfig    *TraceConfig    `yaml:"TraceConfig"`
+	DingTalkConfig *DingTalkConfig `yaml:"DingTalkConfig"`
 }
 
 type RpcServer struct {
@@ -85,6 +86,12 @@ type BreakerConfig struct {
 type TraceConfig struct {
 	TraceType   string `yaml:"trace_type"`
 	ReporterUrl string `yaml:"reporter_url"`
+}
+
+type DingTalkConfig struct {
+	Enable bool   `yaml:"enable"`
+	Tokens string `yaml:"tokens"`
+	Secret string `yaml:"secret"`
 }
 
 type RetStruct struct {

@@ -70,3 +70,8 @@ Breaker:
 TraceConfig:
   trace_type: "skywalking"
   reporter_url: "192.168.64.6:30484"
+
+DingTalkConfig:
+  enable: true
+  tokens: "264a82cac2e8bb0c1a23f3d320961d7d55b94f3e3f917b1eb479e5b8e0444a3e"
+  secret: "SECa2d3c6fdab75eacc83ea49d9370830b57198a4bb5002f9bd9fe47f9866a9d4f7"

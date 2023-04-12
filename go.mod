@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/SkyAPM/go2sky v1.5.0 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/blinkbean/dingtalk v0.0.0-20210905093040-7d935c0f7e19 // indirect
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/go-kratos/kratos v1.0.1
 	github.com/joshbohde/codel v0.1.2

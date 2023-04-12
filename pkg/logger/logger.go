@@ -1,22 +1,27 @@
 package logger
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"fmt"
 	"log"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
+	logger       *log.Logger
 	nLogger      *zap.SugaredLogger
 	stderrLogger *zap.SugaredLogger
 	fileLogger   *zap.SugaredLogger
 )
 
 const (
+	TIME_FORMAT        = "20060102"
 	defaultLogDir      = "./log_dir"
 	defaultLogFileName = "log_file.log"
 )
@@ -35,19 +40,20 @@ func NewLogger(logConfig *model.LogConfig) {
 	}
 
 	var logDir string
-	var logFileName string
+	var logFileConstName, logFileName string
 	if logConfig == nil {
 		logDir = defaultLogDir
-		logFileName = defaultLogFileName
+		logFileConstName = defaultLogFileName
 	} else {
 		logDir = logConfig.LogDir
-		logFileName = logConfig.StdoutFilename
+		logFileConstName = logConfig.StdoutFilename
 	}
+	logFileName = fmt.Sprintf("%s_%s", time.Now().Format(TIME_FORMAT), logFileConstName)
 
 	encoderConfig := defaultConfig()
 
 	makeLogEnv(logDir, logFileName)
-	lfile, err := newLogFile(filepath.Join(logDir, logFileName), logMaxCacheCount)
+	logger, err := newLogFile(filepath.Join(logDir, logFileName), logMaxCacheCount)
 	if err != nil {
 		log.Fatalln("log file err", err.Error())
 		os.Exit(1)
@@ -59,12 +65,44 @@ func NewLogger(logConfig *model.LogConfig) {
 	stderrCore := zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), stderrSyncer, level)
 	stderrLogger = zap.New(stderrCore, opts...).Sugar()
 
-	gatewaySyncer := zapcore.AddSync(lfile)
+	gatewaySyncer := zapcore.AddSync(logger)
 	gatewayCore := zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), gatewaySyncer, level)
 	fileLogger = zap.New(gatewayCore, opts...).Sugar()
 
 	defaultCore := zapcore.NewTee(gatewayCore, stderrCore)
 	nLogger = zap.New(defaultCore, opts...).Sugar()
+
+	//建立不同日期日志
+	go func() {
+		for {
+			last := time.Now().Format(TIME_FORMAT)
+			time.Sleep(1 * time.Second)
+			now := time.Now().Format(TIME_FORMAT)
+
+			if last != now {
+				logFileName = fmt.Sprintf("%s_%s", time.Now().Format(TIME_FORMAT), logFileConstName)
+				makeLogEnv(logDir, logFileName)
+				logger, err = newLogFile(filepath.Join(logDir, logFileName), logMaxCacheCount)
+				if err != nil {
+					log.Fatalln("log file err", err.Error())
+					os.Exit(1)
+				}
+
+				opts := []zap.Option{zap.AddCaller(), zap.AddCallerSkip(1)}
+
+				stderrSyncer := zapcore.AddSync(os.Stderr)
+				stderrCore := zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), stderrSyncer, level)
+				stderrLogger = zap.New(stderrCore, opts...).Sugar()
+
+				gatewaySyncer := zapcore.AddSync(logger)
+				gatewayCore := zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), gatewaySyncer, level)
+				fileLogger = zap.New(gatewayCore, opts...).Sugar()
+
+				defaultCore := zapcore.NewTee(gatewayCore, stderrCore)
+				nLogger = zap.New(defaultCore, opts...).Sugar()
+			}
+		}
+	}()
 }
 
 func defaultConfig() zapcore.EncoderConfig {

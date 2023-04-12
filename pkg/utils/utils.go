@@ -5,9 +5,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/vmihailenco/msgpack"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,6 +18,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/vmihailenco/msgpack"
 )
 
 func GetBuffer(n int) (buf []byte) {
@@ -161,4 +165,51 @@ func CreateFile(name string) (*os.File, error) {
 		return nil, err
 	}
 	return os.Create(name)
+}
+
+type IpInfo struct {
+	Resultcode string `json:"resultcode"`
+	Reason     string `json:"reason"`
+	Result     struct {
+		Country  string `json:"Country"`
+		Province string `json:"Province"`
+		City     string `json:"City"`
+		District string `json:"District"`
+		Isp      string `json:"Isp"`
+	} `json:"result"`
+	Error_code int `json:"error_code"`
+}
+
+func GetIPInfo(ip string) (info []byte) {
+	parseurl := "http://apis.juhe.cn/ip/ipNewV3?ip="
+	geturl := fmt.Sprintf("%s%s&key=5d2f25c4640a02b44d6a2fe56209ed57", parseurl, ip)
+	resp, err := http.Get(geturl)
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	info = body
+
+	return
+}
+
+func GetIPZone(ip string) (zone string) {
+	ret := GetIPInfo(ip)
+	if len(ret) > 0 {
+		var info IpInfo
+		err := json.Unmarshal(ret, &info)
+		if nil == err {
+			if info.Resultcode == "200" {
+				zone = fmt.Sprintf("%s-%s", info.Result.Country, info.Result.Province)
+			}
+		}
+	}
+
+	return
 }
