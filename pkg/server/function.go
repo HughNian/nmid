@@ -1,11 +1,12 @@
 package server
 
 import (
-	wr "github.com/mroth/weightedrand"
 	"math/rand"
-	"github.com/HughNian/nmid/pkg/model"
 	"sync"
 	"time"
+
+	"github.com/HughNian/nmid/pkg/model"
+	wr "github.com/mroth/weightedrand"
 )
 
 type Func struct {
@@ -165,7 +166,7 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 			//lru 最少使用率
 			case model.LOADBLANCE_LRU:
 				for _, val := range function.Workers {
-					if val.JobNum < best.JobNum {
+					if val.Jobs.GetJobNum() < best.Jobs.GetJobNum() {
 						best = val
 					}
 				}

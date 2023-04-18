@@ -167,6 +167,15 @@ func CreateFile(name string) (*os.File, error) {
 	return os.Create(name)
 }
 
+func getMilliSec() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func GetNowSecond() int64 {
+	milliSec := getMilliSec()
+	return atomic.LoadInt64(&milliSec)
+}
+
 type IpInfo struct {
 	Resultcode string `json:"resultcode"`
 	Reason     string `json:"reason"`

@@ -8,6 +8,8 @@ require (
 	github.com/blinkbean/dingtalk v0.0.0-20210905093040-7d935c0f7e19 // indirect
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/go-kratos/kratos v1.0.1
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/joshbohde/codel v0.1.2
 	github.com/juju/ratelimit v1.0.1
 	github.com/julienschmidt/httprouter v1.3.0
@@ -17,6 +19,7 @@ require (
 	github.com/pyroscope-io/pyroscope v0.7.2
 	github.com/soheilhy/cmux v0.1.5
 	github.com/sony/gobreaker v0.5.0
+	github.com/sony/sonyflake v1.1.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/valyala/fasthttp v1.31.0

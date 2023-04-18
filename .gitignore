@@ -10,3 +10,4 @@
 /example/client/testclient/nmid-client
 /example/worker/worker1/nmid-worker
 /example/worker/worker2/nmid-worker2
+/example/client/httpserver/log_dir

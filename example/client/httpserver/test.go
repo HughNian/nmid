@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 
 	_ "net/http/pprof"
@@ -26,28 +27,32 @@ var once sync.Once
 var client *cli.Client
 var err error
 
-// 单实列连接，适合长连接
 func getClient() *cli.Client {
-	once.Do(func() {
-		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-		client, err = cli.NewClient("tcp", serverAddr)
-		if nil == client || err != nil {
-			log.Println(err)
-		}
-	})
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	client, err = cli.NewClient("tcp", serverAddr)
+	if nil == client || err != nil {
+		logger.Error(err)
+	}
 
 	return client
 }
 
 func Test(ctx *fasthttp.RequestCtx) {
 	client := getClient()
+	defer client.Close()
+
+	if nil == client {
+		fmt.Fprint(ctx, "nmid client error")
+		return
+	}
+
 	client.SetParamsType(model.PARAMS_TYPE_JSON)
 
 	client.ErrHandler = func(e error) {
 		if model.RESTIMEOUT == e {
-			log.Println("time out here")
+			logger.Warn("time out here")
 		} else {
-			log.Println(e)
+			logger.Error(e)
 		}
 
 		fmt.Fprint(ctx, e.Error())
@@ -56,7 +61,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 	respHandler := func(resp *cli.Response) {
 		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
-				log.Println("ret empty")
+				logger.Info("ret empty")
 				return
 			}
 
@@ -78,10 +83,29 @@ func Test(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	// respHandler2 := func(resp *cli.Response) {
+	paramsName := make(map[string]interface{})
+	paramsName["name"] = "niansong1"
+	//params, err := msgpack.Marshal(&paramsName)
+	params1, err := json.Marshal(&paramsName)
+	if err != nil {
+		logger.Fatal("params msgpack error:", err)
+	}
+	err = client.Do("ToUpper", params1, respHandler)
+	if nil != err {
+		logger.Error(`do err`, err)
+	}
+
+	// paramsName2 := make(map[string]interface{})
+	// paramsName2["name"] = "niansong2"
+	// //params, err := msgpack.Marshal(&paramsName)
+	// params2, err := json.Marshal(&paramsName2)
+	// if err != nil {
+	// 	logger.Fatal("params msgpack error:", err)
+	// }
+	// err = client.Do("ToUpper", params2, func(resp *cli.Response) {
 	// 	if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 	// 		if resp.RetLen == 0 {
-	// 			log.Println("ret empty")
+	// 			logger.Info("ret empty")
 	// 			return
 	// 		}
 
@@ -101,69 +125,10 @@ func Test(ctx *fasthttp.RequestCtx) {
 
 	// 		fmt.Fprint(ctx, string(retStruct.Data))
 	// 	}
-	// }
-
-	respHandler3 := func(resp *cli.Response) {
-		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
-			if resp.RetLen == 0 {
-				log.Println("ret empty")
-				return
-			}
-
-			var retStruct model.RetStruct
-			err := msgpack.Unmarshal(resp.Ret, &retStruct)
-			if nil != err {
-				log.Fatalln(err)
-				return
-			}
-
-			if retStruct.Code != 0 {
-				log.Println(retStruct.Msg)
-				return
-			}
-
-			fmt.Println(string(retStruct.Data))
-
-			fmt.Fprint(ctx, string(retStruct.Data))
-		}
-	}
-
-	paramsName1 := make(map[string]interface{})
-	paramsName1["name"] = "niansong"
-	//params1, err := msgpack.Marshal(&paramsName1)
-	params1, err := json.Marshal(&paramsName1)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-	}
-	err = client.Do("ToUpper", params1, respHandler)
-	if nil != err {
-		fmt.Println(`--do err--`, err)
-	}
-
-	// paramsName2 := make(map[string]interface{})
-	// paramsName2["name"] = "niansong2"
-	// //params2, err := msgpack.Marshal(&paramsName2)
-	// params2, err := json.Marshal(&paramsName2)
-	// if err != nil {
-	// 	log.Fatalln("params msgpack error:", err)
-	// }
-	// err = client.Do("ToUpper2", params2, respHandler2)
+	// })
 	// if nil != err {
-	// 	fmt.Println(`--do2 err--`, err)
+	// 	logger.Error(`do err`, err)
 	// }
-
-	paramsName3 := make(map[string]interface{})
-	paramsName3["order_sn"] = "MBO993889253"
-	paramsName3["order_type"] = 4
-	//params3, err := msgpack.Marshal(&paramsName3)
-	params3, err := json.Marshal(&paramsName3)
-	if err != nil {
-		log.Fatalln("params msgpack error:", err)
-	}
-	err = client.Do("GetOrderInfo", params3, respHandler3)
-	if nil != err {
-		fmt.Println(`--do3 err--`, err)
-	}
 }
 
 func main() {

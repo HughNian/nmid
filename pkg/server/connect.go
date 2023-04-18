@@ -17,7 +17,7 @@ import (
 )
 
 type Connect struct {
-	sync.Mutex
+	sync.RWMutex
 
 	Id        string
 	Addr      string
@@ -72,8 +72,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	}
 
 	c = &Connect{}
-
-	c.Id = utils.GetId()
+	c.Id = utils.GetId() //uuid.Must(uuid.NewRandom()).String()
 	c.Addr = addr
 	c.Ip = ip
 	c.Port = port
@@ -85,10 +84,6 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.ConnType = model.CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
-	//c.isFree = 0
-	//pool.Lock()
-	//pool.CMaps.Store(c.Id, c)
-	//pool.Unlock()
 
 	return c
 }
@@ -153,13 +148,16 @@ func (c *Connect) Write(resPack []byte) {
 				return
 			}
 		}
+
 		worker.Connect.rw.Flush()
+
+		// _, err = worker.Connect.Conn.Write(resPack[:])
+		// if err != nil {
+		// 	logger.Info("worker write err", err.Error())
+		// 	return
+		// }
 	} else if c.ConnType == model.CONN_TYPE_CLIENT {
 		client := c.RunClient
-		if len(resPack) == 0 {
-			logger.Info("resPack nil")
-			return
-		}
 
 		for i := 0; i < len(resPack); i += n {
 			n, err = client.Connect.rw.Write(resPack[i:])
@@ -168,7 +166,14 @@ func (c *Connect) Write(resPack []byte) {
 				return
 			}
 		}
+
 		client.Connect.rw.Flush()
+
+		// n, err = client.Connect.Conn.Write(resPack[:])
+		// if err != nil {
+		// 	logger.Info("client write err", err.Error())
+		// 	return
+		// }
 	}
 }
 
@@ -179,8 +184,10 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	var dataLen int
 	tmp := utils.GetBuffer(size)
 
-	if n, err = c.rw.Read(tmp); err != nil {
-		logger.Errorf("server read error conntype:%d, ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
+	if n, err = c.Conn.Read(tmp); err != nil {
+		if c.ConnType == model.CONN_TYPE_WORKER {
+			logger.Errorf("server read worker error conntype:%d, worker ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
+		}
 		return []byte(``), err
 	}
 
@@ -217,7 +224,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	//读取所有内容
 	for buf.Len() < dataLen+model.MIN_DATA_SIZE {
 		tmpcontent := utils.GetBuffer(dataLen)
-		if n, err = c.rw.Read(tmpcontent); err != nil {
+		if n, err = c.Conn.Read(tmpcontent); err != nil {
 			logger.Error("read content error")
 			return buf.Bytes(), err
 		}
@@ -241,14 +248,14 @@ func (c *Connect) DoIO() {
 				if opErr.Temporary() {
 					continue
 				} else {
-					c.Ser.Cpool.DelConnect(c.Id)
+					//c.Ser.Cpool.DelConnect(c.Id)
 					break
 				}
 			} else if err == io.EOF {
 				if c.ConnType == model.CONN_TYPE_WORKER {
 					c.Ser.Funcs.DelWorker(c.Id)
 				}
-				c.Ser.Cpool.DelConnect(c.Id)
+				//c.Ser.Cpool.DelConnect(c.Id)
 				break
 			}
 		}

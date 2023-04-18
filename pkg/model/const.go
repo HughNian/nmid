@@ -13,10 +13,11 @@ const (
 	UINT32_SIZE          = 4
 	MAX_NOJOB_NUM        = 10
 	PARAMS_SCOPE         = "::"
-	DEFAULT_TIME_OUT     = 6 * time.Second                   //100 * time.Millisecond            //io超时
+	DEFAULT_TIME_OUT     = 30 * time.Millisecond             //io超时
 	DIAL_TIME_OUT        = 6 * time.Second                   //连接超时
 	CLIENT_ALIVE_TIME    = time.Duration(1800) * time.Second //客户端长连接生存周期
 	DEFAULTHEARTBEATTIME = 10 * time.Second
+	NMID_SERVER_TIMEOUT  = 20000 //20s //nmid server 超时时间
 
 	//package data type
 	PDT_OK               = 1

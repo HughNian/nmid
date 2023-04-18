@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HughNian/nmid/pkg/alert"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/trace"
@@ -25,6 +26,7 @@ type Worker struct {
 	Funcs    map[string]*Function
 	FuncsNum int
 	Resps    chan *Response
+	stop     chan struct{}
 
 	Reporter go2sky.Reporter
 	Tracer   *go2sky.Tracer
@@ -43,6 +45,7 @@ func NewWorker() *Worker {
 		ready:    false,
 		running:  false,
 		useTrace: false,
+		stop:     make(chan struct{}),
 	}
 
 	return wor
@@ -230,16 +233,48 @@ func (w *Worker) WorkerDo() {
 	w.running = true
 	w.Unlock()
 
+	//nmid server timeout/close and reconnect
+	go func() {
+		for w.running {
+			for _, a := range w.Agents {
+				select {
+				case <-w.stop:
+					return
+				default:
+					diffTime := utils.GetNowSecond() - a.lastTime
+					if diffTime > model.NMID_SERVER_TIMEOUT {
+						logger.Error(fmt.Sprintf("nmid server connect timeout or close, nmid server@address:%s, @worker:%s", a.addr, w.WorkerName))
+						alert.SendMarkDownAtAll(alert.DERROR, "nmid server error", fmt.Sprintf("nmid server connect timeout or close, nmid server@address:%s, @worker:%s", a.addr, w.WorkerName))
+
+						//reconnect
+						a.ReConnect()
+						//re send add function msg
+						for fname := range w.Funcs {
+							a.ReAddFuncMsg(fname)
+						}
+					}
+				}
+			}
+
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	//send heartbeat ping & grab job
 	go func() {
 		for w.running {
-			duration := model.DEFAULTHEARTBEATTIME
-			timer := time.NewTimer(duration)
-			<-timer.C
+			select {
+			case <-w.stop:
+				return
+			default:
+				duration := model.DEFAULTHEARTBEATTIME
+				timer := time.NewTimer(duration)
+				<-timer.C
 
-			for _, a := range w.Agents {
-				a.HeartBeatPing()
-				a.Grab()
+				for _, a := range w.Agents {
+					a.HeartBeatPing()
+					a.Grab()
+				}
 			}
 		}
 	}()
@@ -258,7 +293,8 @@ func (w *Worker) WorkerDo() {
 			//fallthrough
 		case model.PDT_NO_JOB:
 			go resp.Agent.Grab()
-
+		case model.PDT_S_HEARTBEAT_PONG:
+			resp.Agent.lastTime = utils.GetNowSecond()
 		case model.PDT_WAKEUPED:
 		default:
 			go resp.Agent.Grab()
@@ -278,6 +314,7 @@ func (w *Worker) WorkerClose() {
 			a.Close()
 		}
 
+		w.stop <- struct{}{}
 		w.running = false
 		close(w.Resps)
 

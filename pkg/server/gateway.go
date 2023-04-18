@@ -182,11 +182,7 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 	job.ParamsHandleType = paramsHandleType
 	job.Unlock()
 
-	if ok := worker.Jobs.PushJobData(job); ok {
-		worker.Lock()
-		worker.JobNum++
-		worker.Unlock()
-	} else {
+	if ok := worker.Jobs.PushJobData(job); !ok {
 		wh.Set(model.NMessageStatusType, "WORKER JOB PUSH JOBLIST ERROR")
 		err = errors.New("worker job push jobList error")
 		wh.Set(model.NErrorMessage, err.Error())

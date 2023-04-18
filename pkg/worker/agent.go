@@ -3,6 +3,7 @@ package worker
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"io"
 	"log"
@@ -20,19 +21,26 @@ type Agent struct {
 	conn      net.Conn
 	rw        *bufio.ReadWriter
 
-	Worker *Worker
-	Req    *Request
-	Res    *Response
+	Worker   *Worker
+	Req      *Request
+	Res      *Response
+	ctx      context.Context
+	cancel   context.CancelFunc
+	lastTime int64
 }
 
 func NewAgent(net, adrr string, w *Worker) *Agent {
-	return &Agent{
-		net:    net,
-		addr:   adrr,
-		Worker: w,
-		Req:    NewReq(),
-		Res:    NewRes(),
+	agent := &Agent{
+		net:      net,
+		addr:     adrr,
+		Worker:   w,
+		Req:      NewReq(),
+		Res:      NewRes(),
+		lastTime: utils.GetNowSecond(),
 	}
+	agent.ctx, agent.cancel = context.WithCancel(context.Background())
+
+	return agent
 }
 
 func (a *Agent) Connect() (err error) {
@@ -55,8 +63,14 @@ func (a *Agent) ReConnect() error {
 	}
 	a.conn = conn
 	a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
+	a.lastTime = utils.GetNowSecond()
 
 	return nil
+}
+
+func (a *Agent) ReAddFuncMsg(funcName string) {
+	a.Req.AddFunctionPack(funcName)
+	a.Write()
 }
 
 func (a *Agent) Read() (data []byte, err error) {
@@ -88,7 +102,7 @@ func (a *Agent) Write() (err error) {
 	buf := a.Req.EncodePack()
 
 	for i := 0; i < len(buf); i += n {
-		if n, err = a.rw.Write(buf); err != nil {
+		if n, err = a.rw.Write(buf[i:]); err != nil {
 			return err
 		}
 	}
@@ -100,38 +114,43 @@ func (a *Agent) Work() {
 	var err error
 	var data, leftData []byte
 	for {
-		if data, err = a.Read(); err != nil {
-			if opErr, ok := err.(*net.OpError); ok {
-				if opErr.Temporary() {
-					continue
-				} else {
+		select {
+		case <-a.ctx.Done():
+			return
+		default:
+			if data, err = a.Read(); err != nil {
+				if opErr, ok := err.(*net.OpError); ok {
+					if opErr.Temporary() {
+						continue
+					} else {
+						break
+					}
+				} else if err == io.EOF {
 					break
 				}
-			} else if err == io.EOF {
-				break
 			}
-		}
 
-		if len(leftData) > 0 {
-			data = append(leftData, data...)
-		}
+			if len(leftData) > 0 {
+				data = append(leftData, data...)
+			}
 
-		if len(data) < model.MIN_DATA_SIZE {
-			leftData = data
-			continue
-		}
+			if len(data) < model.MIN_DATA_SIZE {
+				leftData = data
+				continue
+			}
 
-		if resp, l, err := DecodePack(data); err != nil {
-			leftData = data
-			continue
-		} else if l != len(data) {
-			leftData = data
-			continue
-		} else {
-			leftData = nil
+			if resp, l, err := DecodePack(data); err != nil {
+				leftData = data
+				continue
+			} else if l != len(data) {
+				leftData = data
+				continue
+			} else {
+				leftData = nil
 
-			resp.Agent = a
-			a.Worker.Resps <- resp
+				resp.Agent = a
+				a.Worker.Resps <- resp
+			}
 		}
 	}
 }
@@ -149,6 +168,8 @@ func (a *Agent) Grab() {
 	a.Req.GrabDataPack()
 	a.Write()
 	a.Unlock()
+
+	return
 }
 
 func (a *Agent) Wakeup() {
@@ -156,6 +177,8 @@ func (a *Agent) Wakeup() {
 	a.Req.WakeupPack()
 	a.Write()
 	a.Unlock()
+
+	return
 }
 
 func (a *Agent) LimitExceed() {
@@ -169,5 +192,6 @@ func (a *Agent) Close() {
 	if a.conn != nil {
 		a.conn.Close()
 		a.conn = nil
+		a.cancel()
 	}
 }

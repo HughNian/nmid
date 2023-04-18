@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/binary"
+
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/service"
 	"github.com/HughNian/nmid/pkg/utils"
@@ -87,7 +88,7 @@ func (res *Response) GetResHandle() string {
 	return res.Handle
 }
 
-//GetResContent 打包内容
+// GetResContent 打包内容
 func (res *Response) GetResContent() (content []byte, contentLen int) {
 	if res.DataType == model.PDT_S_GET_DATA {
 		contentLen = int(model.UINT32_SIZE + model.UINT32_SIZE + model.UINT32_SIZE + res.HandleLen + model.UINT32_SIZE + res.ParamsLen + model.UINT32_SIZE + res.JobIdLen)
@@ -143,7 +144,7 @@ func (res *Response) GetResContent() (content []byte, contentLen int) {
 	return
 }
 
-//ReqDecodePack 解包
+// ReqDecodePack 解包
 func (req *Request) ReqDecodePack() {
 	if req.DataLen > 0 && len(req.Data) > 0 && req.DataLen == uint32(len(req.Data)) {
 		if req.DataType == model.PDT_W_RETURN_DATA {
@@ -219,13 +220,11 @@ func (req *Request) ReqDecodePack() {
 			start = end
 			copy(params, req.Data[start:])
 			req.Params = params //append(req.Params, params...)
-		} else if req.DataType == model.PDT_SC_REG_SERVICE {
-
 		}
 	}
 }
 
-//ResEncodePack 打包
+// ResEncodePack 打包
 func (res *Response) ResEncodePack() (resData []byte) {
 	content, contentLen := res.GetResContent()
 	// fmt.Println("######content-", content)
@@ -242,7 +241,7 @@ func (res *Response) ResEncodePack() (resData []byte) {
 
 	if contentLen > 0 {
 		copy(resData[model.MIN_DATA_SIZE:], content)
-		res.Data = resData //append(res.Data, resData...)
+		res.Data = resData[:] //append(res.Data, resData...)
 	}
 
 	return

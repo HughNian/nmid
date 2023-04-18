@@ -2,10 +2,11 @@ package server
 
 import (
 	"container/list"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 	"net/http"
 	"sync"
+
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/google/uuid"
 )
 
 //**joblist file use golang package container/list**//
@@ -42,7 +43,7 @@ type JobDataList struct {
 func NewJobData(Handle, Params string) (data *JobData) {
 	data = new(JobData)
 
-	data.JobId = utils.GetJobId(Handle, Params)
+	data.JobId = uuid.Must(uuid.NewRandom()).String() //utils.GetJobId(Handle, Params)
 	data.status = model.JOB_STATUS_INIT
 
 	return data
@@ -70,28 +71,63 @@ func (data *JobData) SetJobDataWorker(id string) {
 	data.WorkerId = id
 }
 
+func (jlist *JobDataList) GetJobNum() int {
+	jlist.Lock()
+	defer jlist.Unlock()
+
+	return jlist.JList.Len()
+}
+
 func (jlist *JobDataList) PushJobData(data *JobData) bool {
 	if data == nil {
 		return false
 	}
 
 	jlist.Lock()
-	defer jlist.Unlock()
 	jlist.JList.PushBack(data)
+	jlist.Unlock()
 
 	return true
 }
 
 func (jlist *JobDataList) PopJobData() (data *JobData) {
 	jlist.Lock()
-	defer jlist.Unlock()
-
-	item := jlist.JList.Front()
+	item := jlist.JList.Back()
 	if item == nil {
+		jlist.Unlock()
 		return nil
 	}
 
 	data = item.Value.(*JobData)
+	jlist.JList.Remove(item)
+	jlist.Unlock()
+
+	return data
+}
+
+func (jlist *JobDataList) UnShiftJobData(data *JobData) bool {
+	if data == nil {
+		return false
+	}
+
+	jlist.Lock()
+	jlist.JList.PushFront(data)
+	jlist.Unlock()
+
+	return true
+}
+
+func (jlist *JobDataList) ShiftJobData() (data *JobData) {
+	jlist.Lock()
+	item := jlist.JList.Front()
+	if item == nil {
+		jlist.Unlock()
+		return nil
+	}
+
+	data = item.Value.(*JobData)
+	jlist.JList.Remove(item)
+	jlist.Unlock()
 
 	return data
 }

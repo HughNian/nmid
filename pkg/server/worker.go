@@ -16,18 +16,18 @@ type SWorker struct {
 	WorkerId string
 	Connect  *Connect
 
-	JobNum int
 	Weight uint
 
 	Jobs     *JobDataList
 	DingJobs *JobDataList
 	DoneJobs *JobDataList
 
+	JobsMap sync.Map
+
 	Req *Request
 	Res *Response
 
-	NoJobNums int
-	Sleep     bool
+	Sleep bool
 
 	CodelLimiter  *codel.Lock
 	BucketLimiter *ratelimit.Bucket
@@ -46,7 +46,6 @@ func NewSWorker(conn *Connect) *SWorker {
 		Jobs:          NewJobDataList(),
 		Req:           NewReq(),
 		Res:           NewRes(),
-		NoJobNums:     0,
 		Sleep:         false,
 		CodelLimiter:  limiter.NewCodelLimiter(),
 		BucketLimiter: limiter.NewBucketLimiter(),
@@ -78,105 +77,87 @@ func (w *SWorker) delFunction() {
 	}
 }
 
-func (w *SWorker) delWorkerJob(status uint32) {
-	if w.JobNum > 0 {
-		w.Jobs.DelJobDataStats(status)
-		w.Lock()
-		w.JobNum--
-		w.Unlock()
-	}
-}
-
-func (w *SWorker) delWorkerJobV2(jobId string) {
-	if w.JobNum > 0 {
-		w.Jobs.DelJobData(jobId)
-		w.Lock()
-		w.JobNum--
-		w.Unlock()
-	}
-}
-
 func (w *SWorker) doWork(job *JobData) {
-	if w.JobNum > 0 {
-		if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_INIT {
-			job.status = model.JOB_STATUS_DOING
+	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_INIT {
+		job.status = model.JOB_STATUS_DOING
 
-			functionName := job.FuncName
-			params := job.Params
-			paramsLen := uint32(len(params))
-			if functionName != `` && paramsLen != 0 {
-				w.Res.DataType = model.PDT_S_GET_DATA
-				w.Res.Handle = functionName
-				w.Res.HandleLen = uint32(len(functionName))
-				w.Res.ParamsType = job.ParamsType
-				w.Res.ParamsHandleType = job.ParamsHandleType
-				w.Res.ParamsLen = paramsLen
-				w.Res.Params = params //append(w.Res.Params, params...)
-				w.Res.JobId = job.JobId
-				w.Res.JobIdLen = uint32(len(job.JobId))
+		functionName := job.FuncName
+		params := job.Params
+		paramsLen := uint32(len(params))
+		if functionName != `` && paramsLen != 0 {
+			w.Res.DataType = model.PDT_S_GET_DATA
+			w.Res.Handle = functionName
+			w.Res.HandleLen = uint32(len(functionName))
+			w.Res.ParamsType = job.ParamsType
+			w.Res.ParamsHandleType = job.ParamsHandleType
+			w.Res.ParamsLen = paramsLen
+			w.Res.Params = params //append(w.Res.Params, params...)
+			w.Res.JobId = job.JobId
+			w.Res.JobIdLen = uint32(len(job.JobId))
 
-				resPack := w.Res.ResEncodePack()
-				w.Connect.Lock()
-				w.Connect.Write(resPack)
-				w.Connect.Unlock()
-			}
+			resPack := w.Res.ResEncodePack()
+			w.Connect.Lock()
+			w.Connect.Write(resPack)
+			w.Connect.Unlock()
 		}
 	}
 }
 
 func (w *SWorker) returnData() {
-	if w.JobNum > 0 {
+	job := w.Jobs.PopJobData()
+	// var job *JobData
+	// ret, ok := w.JobsMap.Load(w.Req.JobId)
+	// if ok {
+	// 	job = ret.(*JobData)
+	// 	w.JobsMap.Delete(w.Req.JobId)
+	// }
+
+	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
 		//解包获取数据内容
 		w.Req.ReqDecodePack()
-		//job := w.Jobs.GetJobData(w.Req.JobId)
-		job := w.Jobs.PopJobData()
-		if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
-			//任务完成判断
-			if w.Res.HandleLen == w.Req.HandleLen &&
-				w.Res.Handle == w.Req.Handle &&
-				w.Res.ParamsLen == w.Req.ParamsLen &&
-				string(w.Res.Params) == string(w.Req.Params) {
-				job.RetData = append(job.RetData, w.Req.Ret...)
-				job.status = model.JOB_STATUS_DONE
-			} else {
-				return
-			}
 
-			clientId := job.ClientId
-			functionName := job.FuncName
-			params := job.Params
-			paramsLen := len(params)
-			if clientId != `` && functionName != `` && paramsLen != 0 {
-				//tcp client response
-				if client := job.Client; client != nil {
-					w.Res.DataType = model.PDT_S_RETURN_DATA
-					w.Res.Ret = job.RetData
-					w.Res.RetLen = w.Req.RetLen
+		//任务完成判断
+		if w.Res.HandleLen == w.Req.HandleLen &&
+			w.Res.Handle == w.Req.Handle &&
+			w.Res.ParamsLen == w.Req.ParamsLen &&
+			string(w.Res.Params) == string(w.Req.Params) {
+			job.RetData = append(job.RetData, w.Req.Ret...)
+			job.status = model.JOB_STATUS_DONE
+		} else {
+			return
+		}
 
-					if client.ConnType == model.CONN_TYPE_CLIENT {
-						client.Lock()
-						resPack := w.Res.ResEncodePack()
-						client.Write(resPack)
-						client.Unlock()
-					}
-				}
-			} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
-				//http client response data
+		clientId := job.ClientId
+		functionName := job.FuncName
+		params := job.Params
+		paramsLen := len(params)
+		if clientId != `` && functionName != `` && paramsLen != 0 {
+			//tcp client response
+			if client := job.Client; client != nil {
 				w.Res.DataType = model.PDT_S_RETURN_DATA
 				w.Res.Ret = job.RetData
 				w.Res.RetLen = w.Req.RetLen
 
-				w.HttpResTag <- struct{}{}
+				if client.ConnType == model.CONN_TYPE_CLIENT {
+					client.Lock()
+					resPack := w.Res.ResEncodePack()
+					client.Write(resPack)
+					client.Unlock()
+				}
 			}
-		}
+		} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
+			//http client response data
+			w.Res.DataType = model.PDT_S_RETURN_DATA
+			w.Res.Ret = job.RetData
+			w.Res.RetLen = w.Req.RetLen
 
-		w.delWorkerJobV2(w.Req.JobId)
+			w.HttpResTag <- struct{}{}
+		}
 	}
 }
 
 func (w *SWorker) workerWakeup() {
 	w.Sleep = false
-	w.NoJobNums = 0
 }
 
 func (w *SWorker) doLimit() {

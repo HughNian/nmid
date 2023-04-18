@@ -1,10 +1,11 @@
 package server
 
 import (
-	"github.com/HughNian/nmid/pkg/limiter"
-	"github.com/HughNian/nmid/pkg/model"
 	"sync"
 	"time"
+
+	"github.com/HughNian/nmid/pkg/limiter"
+	"github.com/HughNian/nmid/pkg/model"
 
 	"github.com/joshbohde/codel"
 	"github.com/juju/ratelimit"
@@ -75,19 +76,17 @@ func (c *SClient) doJob() {
 	job.WorkerId = worker.WorkerId
 	job.Client = c.Connect
 	job.ClientId = c.ClientId
-	job.Unlock()
 	job.FuncName = c.Req.Handle
 	job.Params = c.Req.Params
 	job.ParamsType = c.Req.ParamsType
 	job.ParamsHandleType = c.Req.ParamsHandleType
+	job.Unlock()
 
-	if ok := worker.Jobs.PushJobData(job); ok {
-		worker.Lock()
-		worker.JobNum++
-		worker.Unlock()
-	}
-
+	worker.Lock()
+	worker.Jobs.PushJobData(job)
+	//w.JobsMap.Store(job.JobId, job)
 	worker.doWork(job)
+	worker.Unlock()
 }
 
 func (c *SClient) doLimit() {

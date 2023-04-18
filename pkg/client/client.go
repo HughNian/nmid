@@ -6,10 +6,12 @@ import (
 	"io"
 	"log"
 	"net"
-	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 	"sync"
 	"time"
+
+	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/model"
+	"github.com/HughNian/nmid/pkg/utils"
 )
 
 //rpc tcp client
@@ -51,6 +53,9 @@ func NewClient(network, addr string) (client *Client, err error) {
 }
 
 func (c *Client) ClientConn() error {
+	c.Lock()
+	defer c.Unlock()
+
 	var err error
 
 	c.conn, err = net.DialTimeout(c.net, c.addr, model.DIAL_TIME_OUT)
@@ -67,23 +72,27 @@ func (c *Client) ClientConn() error {
 }
 
 func (c *Client) Write() (err error) {
+	c.Lock()
+	defer c.Unlock()
+
 	var n int
 	buf := c.Req.EncodePack()
 	for i := 0; i < len(buf); i += n {
-		n, err = c.rw.Write(buf)
+		n, err = c.conn.Write(buf[i:])
 		if err != nil {
 			return err
 		}
 	}
 
-	return c.rw.Flush()
+	// return c.rw.Flush()
+	return nil
 }
 
 func (c *Client) Read(length int) (data []byte, err error) {
 	n := 0
 	buf := utils.GetBuffer(length)
 	for i := length; i > 0 || len(data) < model.MIN_DATA_SIZE; i -= n {
-		if n, err = c.rw.Read(buf); err != nil {
+		if n, err = c.conn.Read(buf); err != nil {
 			return
 		}
 		data = append(data, buf[0:n]...)
@@ -119,7 +128,7 @@ Loop:
 			}
 
 			//断开重连
-			log.Println("client read error here:" + err.Error())
+			logger.Info("client read error here:" + err.Error())
 			c.Close()
 			err = c.ClientConn()
 			if nil != err {
@@ -143,8 +152,8 @@ Loop:
 
 			if len(leftdata) == 0 {
 				connType := GetConnType(data)
+				// fmt.Println("read conn type", connType)
 				if connType != model.CONN_TYPE_SERVER {
-					log.Println("read conn type error")
 					break
 				}
 			}
@@ -202,7 +211,6 @@ func (c *Client) ProcessResp() {
 			}
 		}
 	case <-timer:
-		log.Println("time out")
 		c.ErrHandler(model.RESTIMEOUT)
 		//c.Close()
 		return
@@ -210,6 +218,10 @@ func (c *Client) ProcessResp() {
 }
 
 func (c *Client) SetParamsType(pType uint32) *Client {
+	if nil == c {
+		return c
+	}
+
 	if pType != model.PARAMS_TYPE_MSGPACK && pType != model.PARAMS_TYPE_JSON {
 		log.Println("set params type value error not in msgpack or json")
 		return c
@@ -236,9 +248,6 @@ func (c *Client) SetParamsHandle(hType uint32) *Client {
 }
 
 func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err error) {
-	c.Lock()
-	defer c.Unlock()
-
 	if c.conn == nil {
 		return fmt.Errorf("conn fail")
 	}
@@ -259,9 +268,16 @@ func (c *Client) Do(funcName string, params []byte, callback RespHandler) (err e
 }
 
 func (c *Client) Close() {
+	if nil == c {
+		return
+	}
+
+	c.Lock()
+	defer c.Unlock()
+
 	if c.conn != nil {
 		c.conn.Close()
-		close(c.ResQueue)
 		c.conn = nil
+		close(c.ResQueue)
 	}
 }
