@@ -42,14 +42,12 @@ func NewClient(network, addr string) (client *Client, err error) {
 		RespHandlers: NewResHandlerMap(),
 	}
 
-	err = client.ClientConn()
-	if nil != err {
-		return nil, err
-	}
-
-	go client.ClientRead()
-
 	return client, nil
+}
+
+func (c *Client) SetIoTimeOut(t time.Duration) *Client {
+	c.IoTimeOut = t
+	return c
 }
 
 func (c *Client) ClientConn() error {
@@ -69,6 +67,15 @@ func (c *Client) ClientConn() error {
 	c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
 
 	return nil
+}
+
+func (c *Client) Start() {
+	err := c.ClientConn()
+	if nil != err {
+		return
+	}
+
+	go c.ClientRead()
 }
 
 func (c *Client) Write() (err error) {
@@ -211,6 +218,7 @@ func (c *Client) ProcessResp() {
 			}
 		}
 	case <-timer:
+		fmt.Println("time out here")
 		c.ErrHandler(model.RESTIMEOUT)
 		//c.Close()
 		return

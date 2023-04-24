@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/HughNian/nmid/pkg/model"
 	"log"
 	"net/http"
-	"sync"
+
+	"github.com/HughNian/nmid/pkg/model"
+
+	_ "net/http/pprof"
 
 	cli "github.com/HughNian/nmid/pkg/client"
-	_ "net/http/pprof"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
@@ -20,25 +21,29 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-var once sync.Once
 var client *cli.Client
 var err error
 
-//单实列连接，适合长连接
 func getClient() *cli.Client {
-	once.Do(func() {
-		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-		client, err = cli.NewClient("tcp", serverAddr)
-		if nil == client || err != nil {
-			log.Println(err)
-		}
-	})
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	client, err = cli.NewClient("tcp", serverAddr)
+	if nil == client || err != nil {
+		log.Println(err)
+	}
+	client.Start()
 
 	return client
 }
 
 func Test(ctx *fasthttp.RequestCtx) {
 	client := getClient()
+	defer client.Close()
+
+	if nil == client {
+		fmt.Fprint(ctx, "nmid client error")
+		return
+	}
+
 	client.SetParamsType(model.PARAMS_TYPE_JSON)
 
 	client.ErrHandler = func(e error) {

@@ -27,7 +27,8 @@ func main() {
 		log.Println(err)
 		return
 	}
-	//defer client.Close()
+	client.Start()
+	defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if model.RESTIMEOUT == e {
@@ -36,7 +37,6 @@ func main() {
 			log.Println(e)
 		}
 		fmt.Println("client err here")
-		//client.Close()
 	}
 
 	respHandler := func(resp *cli.Response) {

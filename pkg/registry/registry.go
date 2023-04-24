@@ -12,7 +12,7 @@ const (
 	StatusNotReceive = 2
 )
 
-//Config registry config
+// Config registry config
 type Config struct {
 	Nodes  []string //registry cluster nodes addr / ectd master nodes addr
 	Region string

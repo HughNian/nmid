@@ -6,9 +6,11 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
+	"github.com/vmihailenco/msgpack"
 
 	_ "net/http/pprof"
 
@@ -17,7 +19,6 @@ import (
 	"github.com/buaazp/fasthttprouter"
 	"github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 	"github.com/valyala/fasthttp"
-	"github.com/vmihailenco/msgpack"
 )
 
 const NMIDSERVERHOST = "127.0.0.1"
@@ -33,6 +34,7 @@ func getClient() *cli.Client {
 	if nil == client || err != nil {
 		logger.Error(err)
 	}
+	client.SetIoTimeOut(30 * time.Second).Start()
 
 	return client
 }
@@ -94,41 +96,6 @@ func Test(ctx *fasthttp.RequestCtx) {
 	if nil != err {
 		logger.Error(`do err`, err)
 	}
-
-	// paramsName2 := make(map[string]interface{})
-	// paramsName2["name"] = "niansong2"
-	// //params, err := msgpack.Marshal(&paramsName)
-	// params2, err := json.Marshal(&paramsName2)
-	// if err != nil {
-	// 	logger.Fatal("params msgpack error:", err)
-	// }
-	// err = client.Do("ToUpper", params2, func(resp *cli.Response) {
-	// 	if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
-	// 		if resp.RetLen == 0 {
-	// 			logger.Info("ret empty")
-	// 			return
-	// 		}
-
-	// 		var retStruct model.RetStruct
-	// 		err := msgpack.Unmarshal(resp.Ret, &retStruct)
-	// 		if nil != err {
-	// 			log.Fatalln(err)
-	// 			return
-	// 		}
-
-	// 		if retStruct.Code != 0 {
-	// 			log.Println(retStruct.Msg)
-	// 			return
-	// 		}
-
-	// 		fmt.Println(string(retStruct.Data))
-
-	// 		fmt.Fprint(ctx, string(retStruct.Data))
-	// 	}
-	// })
-	// if nil != err {
-	// 	logger.Error(`do err`, err)
-	// }
 }
 
 func main() {
