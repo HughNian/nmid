@@ -22,12 +22,11 @@ func main() {
 	var err error
 
 	serverAddr := SERVERHOST + ":" + SERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr)
+	client, err = cli.NewClient("tcp", serverAddr).Start()
 	if nil == client || err != nil {
 		log.Println(err)
 		return
 	}
-	client.Start()
 	defer client.Close()
 
 	client.ErrHandler = func(e error) {

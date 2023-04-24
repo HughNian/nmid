@@ -30,11 +30,10 @@ var err error
 
 func getClient() *cli.Client {
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr)
+	client, err := cli.NewClient("tcp", serverAddr).SetIoTimeOut(30 * time.Second).Start()
 	if nil == client || err != nil {
 		logger.Error(err)
 	}
-	client.SetIoTimeOut(30 * time.Second).Start()
 
 	return client
 }

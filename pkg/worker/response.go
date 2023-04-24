@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"runtime"
+	"strconv"
+	"time"
+
 	cli "github.com/HughNian/nmid/pkg/client"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
@@ -12,11 +16,7 @@ import (
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/propagation"
 	"github.com/vmihailenco/msgpack"
-	"runtime"
 	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type Response struct {
@@ -224,16 +224,14 @@ func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]
 		logger.Fatal("funcName must be have")
 	}
 
-	var once sync.Once
 	var client *cli.Client
 	var err error
 
-	once.Do(func() {
-		client, err = cli.NewClient("tcp", serverAddr)
-		if nil == client || err != nil {
-			logger.Error(err)
-		}
-	})
+	client, err = cli.NewClient("tcp", serverAddr).Start()
+	if nil == client || err != nil {
+		logger.Error(err)
+	}
+	defer client.Close()
 
 	client.ErrHandler = func(e error) {
 		if model.RESTIMEOUT == e {

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	cli "github.com/HughNian/nmid/pkg/client"
@@ -23,37 +22,22 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-var once sync.Once
 var client *cli.Client
 var err error
 
-//func getClient() *cli.Client {
-//	if nil == client {
-//		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-//		client, err = cli.NewClient("tcp", serverAddr)
-//		if nil == client || err != nil {
-//			log.Println(err)
-//		}
-//	}
-//
-//	return client
-//}
-
-// 单实列连接，适合长连接
 func getClient() *cli.Client {
-	once.Do(func() {
-		serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-		client, err = cli.NewClient("tcp", serverAddr)
-		if nil == client || err != nil {
-			log.Println(err)
-		}
-	})
+	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
+	client, err = cli.NewClient("tcp", serverAddr).Start()
+	if nil == client || err != nil {
+		log.Println(err)
+	}
 
 	return client
 }
 
 //func ToUpper2(job wor.Job) (ret []byte, err error) {
 //	client := getClient()
+//  defer client.Close()
 //
 //	resp := job.GetResponse()
 //	if nil == resp {

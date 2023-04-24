@@ -32,7 +32,7 @@ type Client struct {
 	RespHandlers *RespHandlerMap
 }
 
-func NewClient(network, addr string) (client *Client, err error) {
+func NewClient(network, addr string) (client *Client) {
 	client = &Client{
 		net:          network,
 		addr:         addr,
@@ -42,7 +42,7 @@ func NewClient(network, addr string) (client *Client, err error) {
 		RespHandlers: NewResHandlerMap(),
 	}
 
-	return client, nil
+	return client
 }
 
 func (c *Client) SetIoTimeOut(t time.Duration) *Client {
@@ -69,13 +69,15 @@ func (c *Client) ClientConn() error {
 	return nil
 }
 
-func (c *Client) Start() {
-	err := c.ClientConn()
+func (c *Client) Start() (client *Client, err error) {
+	err = c.ClientConn()
 	if nil != err {
 		return
 	}
 
 	go c.ClientRead()
+
+	return c, err
 }
 
 func (c *Client) Write() (err error) {
