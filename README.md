@@ -1,8 +1,8 @@
 <div align="center">
-    <a href="http://www.niansong.top"><img src="https://raw.githubusercontent.com/HughNian/nmid/master/logo/nmidlogo.png" alt="nmid Logo" width="160"></a>
+    <a href="https://nmid.site"><img src="https://nmid.site/logo-removebg.png" alt="nmid new Logo" width="250" height="250"></a>
 </div>
 
-[![nmid](https://img.shields.io/badge/nmid-v1.0.7-red)](https://github.com/hughnian/nmid)
+[![nmid](https://img.shields.io/badge/nmid-v1.0.11-red)](https://github.com/hughnian/nmid)
 [![blog](https://img.shields.io/badge/hughnian-blog-yellow)](http://www.niansong.top/)
 
 ## nmid介绍
@@ -479,6 +479,7 @@ func main() {
 }
 ```
         
-## 交流博客
+## 官网 & 交流博客
+https://nmid.site 
 
-http://www.niansong.top
+http://www.niansong.top 
