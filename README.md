@@ -1,5 +1,5 @@
 <div align="center">
-    <a href="https://nmid.site"><img src="https://nmid.site/logo-removebg.png" alt="nmid new Logo" width="250" height="250"></a>
+    <a href="https://nmid.site"><img src="https://nmid.site/logo-removebg.png" alt="nmid new Logo" width="350" height="350"></a>
 </div>
 
 [![nmid](https://img.shields.io/badge/nmid-v1.0.11-red)](https://github.com/hughnian/nmid)
