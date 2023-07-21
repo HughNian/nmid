@@ -208,3 +208,10 @@ func (w *SWorker) RunWorker() {
 		}
 	}
 }
+
+func (w *SWorker) CloseSelfWorker() {
+	w.Connect.Ser.Funcs.CleanWorkerFunc(w.WorkerId)
+	if w.Connect.Conn != nil {
+		w.Connect.Conn.Close()
+	}
+}

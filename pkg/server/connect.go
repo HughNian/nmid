@@ -144,6 +144,7 @@ func (c *Connect) Write(resPack []byte) {
 		for i := 0; i < len(resPack); i += n {
 			n, err = worker.Connect.rw.Write(resPack[i:])
 			if err != nil {
+				//worker.CloseSelfWorker()
 				logger.Error("write err %s", err.Error())
 				return
 			}

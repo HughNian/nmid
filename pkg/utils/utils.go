@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,6 +22,10 @@ import (
 
 	"github.com/vmihailenco/msgpack"
 )
+
+func init() {
+	godotenv.Load("./.env")
+}
 
 func GetBuffer(n int) (buf []byte) {
 	buf = make([]byte, n)
@@ -177,29 +182,38 @@ func GetNowSecond() int64 {
 }
 
 type IpInfo struct {
-	Resultcode string `json:"resultcode"`
-	Reason     string `json:"reason"`
-	Result     struct {
-		Country  string `json:"Country"`
-		Province string `json:"Province"`
-		City     string `json:"City"`
-		District string `json:"District"`
-		Isp      string `json:"Isp"`
-	} `json:"result"`
-	Error_code int `json:"error_code"`
+	Status      string  `json:"status"`
+	Country     string  `json:"Country"`
+	CountryCode string  `json:"countryCode"`
+	Region      string  `json:"region"`
+	RegionName  string  `json:"regionName"`
+	City        string  `json:"city"`
+	Lat         float64 `json:"lat"`
+	Lon         float64 `json:"lon"`
+	Timezone    string  `json:"timezone"`
+	Isp         string  `json:"isp"`
+	Org         string  `json:"org"`
+	As          string  `json:"as"`
+	Query       string  `json:"query"`
 }
 
 func GetIPInfo(ip string) (info []byte) {
-	parseurl := "http://apis.juhe.cn/ip/ipNewV3?ip="
-	geturl := fmt.Sprintf("%s%s&key=5d2f25c4640a02b44d6a2fe56209ed57", parseurl, ip)
-	resp, err := http.Get(geturl)
+	url := fmt.Sprintf("http://ip-api.com/json/%s?lang=zh-CN", ip)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		fmt.Println("Error:", err)
 		return
 	}
-
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println("Error:", err)
 		return
 	}
 
@@ -208,14 +222,65 @@ func GetIPInfo(ip string) (info []byte) {
 	return
 }
 
+type LocationInfo struct {
+	Status    int `json:"status"`
+	Message   int `json:"message"`
+	RequestId int `json:"request_id"`
+	Result    struct {
+		Address            string `json:"address"`
+		FormattedAddresses struct {
+			Recommend string `json:"recommend"`
+			Rough     string `json:"rough"`
+		} `json:"formatted_addresses"`
+	} `json:"result"`
+}
+
+func GetLocation(lat, lon float64) *LocationInfo {
+	var loca = &LocationInfo{}
+	mapkey := os.Getenv("QQ_LBS_KEY")
+
+	url := fmt.Sprintf("https://apis.map.qq.com/ws/geocoder/v1/?location=%.4f,%.4f&key=%s&get_poi=1", lat, lon, mapkey)
+	// fmt.Println("location url", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return loca
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return loca
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Println("Error:", err)
+		return loca
+	}
+
+	// fmt.Println("loca ret", string(body))
+
+	json.Unmarshal(body, loca)
+
+	return loca
+}
+
 func GetIPZone(ip string) (zone string) {
 	ret := GetIPInfo(ip)
 	if len(ret) > 0 {
 		var info IpInfo
 		err := json.Unmarshal(ret, &info)
 		if nil == err {
-			if info.Resultcode == "200" {
-				zone = fmt.Sprintf("%s-%s", info.Result.Country, info.Result.Province)
+			if info.Status == "success" {
+				location := GetLocation(info.Lat, info.Lon)
+				var address string
+				if location.Status == 0 {
+					address = fmt.Sprintf("%s, %s", location.Result.Address, location.Result.FormattedAddresses.Recommend)
+				}
+				zone = fmt.Sprintf("%s-%s-%s-%s", info.Country, info.City, info.Org, address)
 			}
 		}
 	}

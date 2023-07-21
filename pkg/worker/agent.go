@@ -68,6 +68,11 @@ func (a *Agent) ReConnect() error {
 	return nil
 }
 
+func (a *Agent) DelOldFuncMsg(funcName string) {
+	a.Req.DelFunctionPack(funcName)
+	a.Write()
+}
+
 func (a *Agent) ReAddFuncMsg(funcName string) {
 	a.Req.AddFunctionPack(funcName)
 	a.Write()

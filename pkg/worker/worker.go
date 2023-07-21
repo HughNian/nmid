@@ -246,12 +246,7 @@ func (w *Worker) WorkerDo() {
 						logger.Error(fmt.Sprintf("nmid server connect timeout or close, nmid server@address:%s, @worker:%s", a.addr, w.WorkerName))
 						alert.SendMarkDownAtAll(alert.DERROR, "nmid server error", fmt.Sprintf("nmid server connect timeout or close, nmid server@address:%s, @worker:%s", a.addr, w.WorkerName))
 
-						//reconnect
-						a.ReConnect()
-						//re send add function msg
-						for fname := range w.Funcs {
-							a.ReAddFuncMsg(fname)
-						}
+						w.WorkerReConnect(a)
 					}
 				}
 			}
@@ -321,5 +316,23 @@ func (w *Worker) WorkerClose() {
 		if w.useTrace {
 			w.Reporter.Close()
 		}
+	}
+}
+
+func (w *Worker) WorkerReConnect(a *Agent) {
+	//del function msg
+	for fname := range w.Funcs {
+		a.DelOldFuncMsg(fname)
+	}
+	//disconnect old
+	if a.conn != nil {
+		a.conn.Close()
+	}
+
+	//reconnect
+	a.ReConnect()
+	//resend add function msg
+	for fname := range w.Funcs {
+		a.ReAddFuncMsg(fname)
 	}
 }

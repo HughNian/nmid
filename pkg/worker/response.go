@@ -215,7 +215,7 @@ func (resp *Response) SetExitSpan(serverAddr, exitHandle string, params *map[str
 }
 
 // ClientCall call next worker
-func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]interface{}, respHandler func(resp *cli.Response)) {
+func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]interface{}, respHandler func(resp *cli.Response), errHandler func(e error)) {
 	if len(serverAddr) == 0 {
 		logger.Fatal("serverAddr must be have")
 	}
@@ -233,13 +233,7 @@ func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]
 	}
 	defer client.Close()
 
-	client.ErrHandler = func(e error) {
-		if model.RESTIMEOUT == e {
-			logger.Info("time out here")
-		} else {
-			logger.Error(e)
-		}
-	}
+	client.ErrHandler = errHandler
 
 	//use trace
 	if resp.Agent.Worker.useTrace {

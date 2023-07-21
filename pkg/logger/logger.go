@@ -9,6 +9,7 @@ import (
 
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/utils"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -21,12 +22,11 @@ var (
 )
 
 const (
-	TIME_FORMAT        = "20060102"
-	defaultLogDir      = "./log_dir"
-	defaultLogFileName = "log_file.log"
+	TIME_FORMAT = "20060102"
 )
 
 func init() {
+	godotenv.Load("./.env")
 	NewLogger(nil)
 }
 
@@ -42,8 +42,8 @@ func NewLogger(logConfig *model.LogConfig) {
 	var logDir string
 	var logFileConstName, logFileName string
 	if logConfig == nil {
-		logDir = defaultLogDir
-		logFileConstName = defaultLogFileName
+		logDir = os.Getenv("LOG_DIR")
+		logFileConstName = os.Getenv("LOGFILENAME")
 	} else {
 		logDir = logConfig.LogDir
 		logFileConstName = logConfig.StdoutFilename

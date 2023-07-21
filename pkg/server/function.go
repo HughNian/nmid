@@ -122,6 +122,16 @@ func (fm *FuncMap) DelWorkerFunc(workerId, name string) bool {
 	return true
 }
 
+func (fm *FuncMap) CleanWorkerFunc(workerId string) bool {
+	fm.Funcs.Range(func(key, item interface{}) bool {
+		function := item.(*Func)
+		fm.DelWorkerFunc(workerId, function.FuncName)
+		return true
+	})
+
+	return true
+}
+
 func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 	if item, exist := fm.Funcs.Load(name); exist {
 		function := item.(*Func)
@@ -179,9 +189,11 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 			worker = best
 			return worker
 		}
+
+		return
 	}
 
-	return nil
+	return
 }
 
 func (fm *FuncMap) DelWorker(workerId string) bool {
