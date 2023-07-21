@@ -118,6 +118,14 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 		name = resp.ParamsMap["name"].(string)
 	}
 
+	errHandler := func(e error) {
+		if model.RESTIMEOUT == e {
+			log.Println("time out here")
+		} else {
+			log.Println(e)
+		}
+	}
+
 	respHandler := func(resp *cli.Response) {
 		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
 			if resp.RetLen == 0 {
@@ -155,7 +163,7 @@ func ToUpper2(job wor.Job) (ret []byte, err error) {
 	funcName := "ToUpper"
 	paramsName1 := make(map[string]interface{})
 	paramsName1["name"] = name
-	job.ClientCall(callAddr, funcName, paramsName1, respHandler)
+	job.ClientCall(callAddr, funcName, paramsName1, respHandler, errHandler)
 
 	return
 }
