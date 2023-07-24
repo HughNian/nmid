@@ -4,6 +4,7 @@
 
 [![nmid](https://img.shields.io/badge/nmid-v1.0.11-red)](https://github.com/hughnian/nmid)
 [![blog](https://img.shields.io/badge/hughnian-blog-yellow)](http://www.niansong.top/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/HughNian/nmid.svg)](https://pkg.go.dev/github.com/HughNian/nmid)
 
 ## nmid介绍
 
