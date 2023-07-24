@@ -4,7 +4,7 @@
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/HughNian/nmid)
 [![Go Reference](https://pkg.go.dev/badge/github.com/HughNian/nmid.svg)](https://pkg.go.dev/github.com/HughNian/nmid)
-[![nmidsite](https://img.shields.io/badge/hughnian-blog-yellow)](https://nmid.site/)
+![Website](https://img.shields.io/website?up_message=nmid.site&url=https%3A%2F%2Fnmid.site&logo=go)
 
 ## nmid介绍
 
