@@ -2,9 +2,9 @@
     <a href="https://nmid.site"><img src="https://nmid.site/logo-removebg.png" alt="nmid new Logo" width="350" height="350"></a>
 </div>
 
-[![nmid](https://img.shields.io/badge/nmid-v1.0.11-red)](https://github.com/hughnian/nmid)
-[![blog](https://img.shields.io/badge/hughnian-blog-yellow)](http://www.niansong.top/)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/HughNian/nmid)
 [![Go Reference](https://pkg.go.dev/badge/github.com/HughNian/nmid.svg)](https://pkg.go.dev/github.com/HughNian/nmid)
+[![nmidsite](https://img.shields.io/badge/hughnian-blog-yellow)](https://nmid.site/)
 
 ## nmid介绍
 
