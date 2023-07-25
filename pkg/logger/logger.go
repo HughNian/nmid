@@ -22,7 +22,9 @@ var (
 )
 
 const (
-	TIME_FORMAT = "20060102"
+	DEFAULT_LOG_DIR      = "./nmid_log_dir"
+	DEFAULT_LOG_FILENAME = "log_file.log"
+	TIME_FORMAT          = "20060102"
 )
 
 func init() {
@@ -43,7 +45,13 @@ func NewLogger(logConfig *model.LogConfig) {
 	var logFileConstName, logFileName string
 	if logConfig == nil {
 		logDir = os.Getenv("LOG_DIR")
+		if logDir == "" {
+			logDir = DEFAULT_LOG_DIR
+		}
 		logFileConstName = os.Getenv("LOGFILENAME")
+		if logFileConstName == "" {
+			logFileConstName = DEFAULT_LOG_FILENAME
+		}
 	} else {
 		logDir = logConfig.LogDir
 		logFileConstName = logConfig.StdoutFilename
