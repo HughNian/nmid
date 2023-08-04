@@ -6,6 +6,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -22,9 +24,11 @@ var (
 
 func main() {
 	//pprof
-	// go func() {
-	// 	log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
-	// }()
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+	}()
+
+	// godotenv.Load("./.env")
 
 	//pyroscope, this is pyroscope push mode. also use pull mode better
 	// profiler.Start(profiler.Config{

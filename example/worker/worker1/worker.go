@@ -23,6 +23,8 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
+var discoverys = []string{"localhost:2379"}
+
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
@@ -121,6 +123,8 @@ func main() {
 
 	worker.AddFunction("ToUpper", ToUpper)
 	worker.AddFunction("GetOrderInfo", GetOrderInfo)
+	//register to discovery server
+	worker.Register(discoverys)
 
 	if err = worker.WorkerReady(); err != nil {
 		log.Fatalln(err)

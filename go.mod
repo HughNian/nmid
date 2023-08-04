@@ -25,6 +25,7 @@ require (
 	github.com/valyala/fasthttp v1.31.0
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
+	go.etcd.io/etcd/client/v3 v3.5.9 // indirect
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/net v0.2.0 // indirect

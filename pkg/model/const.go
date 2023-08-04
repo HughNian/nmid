@@ -89,6 +89,10 @@ const (
 	NFunctionName      = "N-NMID-FunctionName"
 )
 
+const (
+	EtcdBaseKey = "/provider/"
+)
+
 var (
 	RESTIMEOUT               = errors.New("RESTIMEOUT")
 	HTTPDOWORK               = "HTTP_DO_WORK"

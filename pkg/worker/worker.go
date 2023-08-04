@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -12,6 +14,7 @@ import (
 	"github.com/HughNian/nmid/pkg/trace"
 	"github.com/HughNian/nmid/pkg/utils"
 	"github.com/SkyAPM/go2sky"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 //rpc tcp worker
@@ -85,6 +88,37 @@ func (w *Worker) AddServer(net, addr string) (err error) {
 	w.Agents = append(w.Agents, agent)
 
 	return nil
+}
+
+func (w *Worker) Register(addrs []string) {
+	etcdcli := EtcdClient(addrs)
+	if etcdcli == nil {
+		return
+	}
+	defer etcdcli.Close()
+
+	var nmidAddrs []string
+	for _, val := range w.Agents {
+		nmidAddrs = append(nmidAddrs, val.addr)
+	}
+
+	workerIns := make(map[string][]string)
+	for _, val := range w.Funcs {
+		workerIns[val.FuncName] = nmidAddrs
+	}
+
+	jret, err := json.Marshal(workerIns)
+	if err != nil {
+		return
+	}
+	workerVal := string(jret)
+	workerKey := fmt.Sprintf("%s%s", model.EtcdBaseKey, w.WorkerId)
+
+	kv := clientv3.NewKV(etcdcli)
+	_, err = kv.Put(context.TODO(), workerKey, workerVal)
+	if err != nil {
+		logger.Error("register err", err)
+	}
 }
 
 func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {

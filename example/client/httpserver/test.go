@@ -28,6 +28,9 @@ var once sync.Once
 var client *cli.Client
 var err error
 
+var discoverys = []string{"localhost:2379"}
+var consumer *cli.Consumer
+
 func getClient() *cli.Client {
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
 	client, err := cli.NewClient("tcp", serverAddr).SetIoTimeOut(30 * time.Second).Start()
@@ -38,8 +41,25 @@ func getClient() *cli.Client {
 	return client
 }
 
+func discovery(funcName string) *cli.Client {
+	client := consumer.Discovery(funcName)
+	if client != nil {
+		client, err := client.SetIoTimeOut(30 * time.Second).Start()
+		if nil == client || err != nil {
+			logger.Error(err)
+		}
+	} else {
+		client = getClient()
+	}
+
+	return client
+}
+
 func Test(ctx *fasthttp.RequestCtx) {
-	client := getClient()
+	funcName := "ToUpper"
+
+	//client := getClient()
+	client := discovery(funcName)
 	defer client.Close()
 
 	if nil == client {
@@ -91,7 +111,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 	if err != nil {
 		logger.Fatal("params msgpack error:", err)
 	}
-	err = client.Do("ToUpper", params1, respHandler)
+	err = client.Do(funcName, params1, respHandler)
 	if nil != err {
 		logger.Error(`do err`, err)
 	}
@@ -108,6 +128,12 @@ func main() {
 		ApplicationName: "nmid.httpclient",
 		ServerAddress:   "http://127.0.0.1:4040",
 	})
+
+	consumer = &cli.Consumer{
+		EtcdAddrs: discoverys,
+	}
+	consumer.EtcdCli = consumer.EtcdClient()
+	consumer.EtcdWatch()
 
 	router := fasthttprouter.New()
 	router.GET("/test", Test)
