@@ -13,15 +13,23 @@ import (
 
 type Consumer struct {
 	EtcdAddrs []string
+	Username  string
+	Password  string
 	EtcdCli   *clientv3.Client
 	Workers   map[string][]string
 }
 
 func (c *Consumer) EtcdClient() *clientv3.Client {
-	cli, err := clientv3.New(clientv3.Config{
+	v3Config := clientv3.Config{
 		Endpoints:   c.EtcdAddrs,
 		DialTimeout: 5 * time.Second,
-	})
+	}
+	if c.Username != "" && c.Password != "" {
+		v3Config.Username = c.Username
+		v3Config.Password = c.Password
+	}
+
+	cli, err := clientv3.New(v3Config)
 
 	if err != nil {
 		// handle error!

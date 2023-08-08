@@ -7,11 +7,23 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-func EtcdClient(addrs []string) *clientv3.Client {
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   addrs,
+type EtcdConfig struct {
+	Addrs    []string
+	Username string
+	Password string
+}
+
+func EtcdClient(config EtcdConfig) *clientv3.Client {
+	v3Config := clientv3.Config{
+		Endpoints:   config.Addrs,
 		DialTimeout: 5 * time.Second,
-	})
+	}
+	if config.Username != "" && config.Password != "" {
+		v3Config.Username = config.Username
+		v3Config.Password = config.Password
+	}
+
+	cli, err := clientv3.New(v3Config)
 
 	if err != nil {
 		// handle error!

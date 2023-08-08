@@ -90,8 +90,8 @@ func (w *Worker) AddServer(net, addr string) (err error) {
 	return nil
 }
 
-func (w *Worker) Register(addrs []string) {
-	etcdcli := EtcdClient(addrs)
+func (w *Worker) Register(config EtcdConfig) {
+	etcdcli := EtcdClient(config)
 	if etcdcli == nil {
 		return
 	}

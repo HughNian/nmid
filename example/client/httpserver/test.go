@@ -29,6 +29,8 @@ var client *cli.Client
 var err error
 
 var discoverys = []string{"localhost:2379"}
+var disUsername = "root"
+var disPassword = "123456"
 var consumer *cli.Consumer
 
 func getClient() *cli.Client {
@@ -131,6 +133,8 @@ func main() {
 
 	consumer = &cli.Consumer{
 		EtcdAddrs: discoverys,
+		Username:  disUsername,
+		Password:  disPassword,
 	}
 	consumer.EtcdCli = consumer.EtcdClient()
 	consumer.EtcdWatch()
