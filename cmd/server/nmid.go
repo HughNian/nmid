@@ -6,8 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -24,16 +22,14 @@ var (
 
 func main() {
 	//pprof
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
-	}()
+	// go func() {
+	// 	log.Println(http.ListenAndServe("0.0.0.0:6061", nil))
+	// }()
 
-	// godotenv.Load("./.env")
-
-	//pyroscope, this is pyroscope push mode. also use pull mode better
+	// pyroscope, this is pyroscope push mode. also use pull mode better
 	// profiler.Start(profiler.Config{
 	// 	ApplicationName: "nmid.server",
-	// 	ServerAddress:   "http://127.0.0.1:4040",
+	// 	ServerAddress:   "http://192.168.10.176:4040",
 	// })
 
 	rpcserver := ser.NewServer().SetSConfig(sConfig)

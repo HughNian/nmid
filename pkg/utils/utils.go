@@ -20,14 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/joho/godotenv"
-
 	"github.com/vmihailenco/msgpack"
 )
-
-func init() {
-	godotenv.Load("./.env")
-}
 
 func GetBuffer(n int) (buf []byte) {
 	buf = make([]byte, n)

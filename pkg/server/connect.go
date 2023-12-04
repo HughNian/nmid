@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -19,13 +17,14 @@ import (
 type Connect struct {
 	sync.RWMutex
 
-	Id        string
-	Addr      string
-	Ip        string
-	Port      string
-	Ser       *Server
-	Conn      net.Conn
-	rw        *bufio.ReadWriter
+	Id   string
+	Addr string
+	Ip   string
+	Port string
+	Ser  *Server
+	Conn net.Conn
+	// buf  bytes.Buffer
+	// rw        *bufio.ReadWriter
 	ConnType  uint32
 	RunWorker *SWorker
 	RunClient *SClient
@@ -57,7 +56,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	//DoWhiteList do whitelist
 	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip, ser.SConfig.WhiteList) {
 		ipzone := utils.GetIPZone(ip)
-		logger.Infof("not in whitelist ip %s, ip zone %s", ip, ipzone)
+		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, ipzone)
 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, ipzone))
 		conn.Close()
 		return nil
@@ -79,7 +78,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.Ser = ser
 	pool.Lock()
 	c.Conn = conn
-	c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+	// c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	pool.Unlock()
 	c.ConnType = model.CONN_TYPE_INIT
 	c.RunWorker = nil
@@ -117,6 +116,23 @@ func (c *Connect) CloseConnect() {
 	}
 }
 
+func (c *Connect) CloseWorkerConnect() {
+	if c.Conn != nil {
+		c.Conn.Close()
+		c.Conn = nil
+		c.RunWorker = nil
+	}
+}
+
+func (c *Connect) CloseClientConnect() {
+	if c.Conn != nil {
+		c.Conn.Close()
+		c.Conn = nil
+		c.RunClient.Timer.Stop()
+		c.RunClient = nil
+	}
+}
+
 func (c *Connect) getSWClinet() *SWorker {
 	if c.RunWorker == nil {
 		c.RunWorker = NewSWorker(c)
@@ -130,7 +146,6 @@ func (c *Connect) getSCClient() *SClient {
 		c.RunClient = NewSClient(c)
 	}
 
-	c.RunClient.AliveTimeOut()
 	//c.Conn.SetDeadline(time.Now().Add(conf.CLIENT_ALIVE_TIME))
 
 	return c.RunClient
@@ -142,15 +157,16 @@ func (c *Connect) Write(resPack []byte) {
 	if c.ConnType == model.CONN_TYPE_WORKER {
 		worker := c.RunWorker
 		for i := 0; i < len(resPack); i += n {
-			n, err = worker.Connect.rw.Write(resPack[i:])
+			// n, err = worker.Connect.rw.Write(resPack[i:])
+			n, err = worker.Connect.Conn.Write(resPack[:])
 			if err != nil {
 				//worker.CloseSelfWorker()
-				logger.Error("write err %s", err.Error())
+				logger.Error("write err", err.Error())
 				return
 			}
 		}
 
-		worker.Connect.rw.Flush()
+		// worker.Connect.rw.Flush()
 
 		// _, err = worker.Connect.Conn.Write(resPack[:])
 		// if err != nil {
@@ -161,14 +177,15 @@ func (c *Connect) Write(resPack []byte) {
 		client := c.RunClient
 
 		for i := 0; i < len(resPack); i += n {
-			n, err = client.Connect.rw.Write(resPack[i:])
+			// n, err = client.Connect.rw.Write(resPack[i:])
+			n, err = client.Connect.Conn.Write(resPack[:])
 			if err != nil {
 				logger.Info("client write err", err.Error())
 				return
 			}
 		}
 
-		client.Connect.rw.Flush()
+		// client.Connect.rw.Flush()
 
 		// n, err = client.Connect.Conn.Write(resPack[:])
 		// if err != nil {
@@ -180,15 +197,22 @@ func (c *Connect) Write(resPack []byte) {
 
 func (c *Connect) Read(size int) (data []byte, err error) {
 	n := 0
-	var buf bytes.Buffer
 	var connType, dataType uint32
 	var dataLen int
 	tmp := utils.GetBuffer(size)
 
 	if n, err = c.Conn.Read(tmp); err != nil {
 		if c.ConnType == model.CONN_TYPE_WORKER {
+			c.CloseWorkerConnect()
+
 			logger.Errorf("server read worker error conntype:%d, worker ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
+			alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip %s", c.Ip))
 		}
+
+		if c.ConnType == model.CONN_TYPE_CLIENT {
+			c.CloseClientConnect()
+		}
+
 		return []byte(``), err
 	}
 
@@ -215,25 +239,25 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 			client.Req.DataLen = uint32(dataLen)
 		}
 
-		buf.Write(tmp[:n])
+		data = append(data, tmp[:n]...)
 	} else {
-		buf.Write(tmp[:n])
+		data = append(data, tmp[:n]...)
 
-		return buf.Bytes(), nil
+		return data, nil
 	}
 
 	//读取所有内容
-	for buf.Len() < dataLen+model.MIN_DATA_SIZE {
+	for len(data) < dataLen+model.MIN_DATA_SIZE {
 		tmpcontent := utils.GetBuffer(dataLen)
 		if n, err = c.Conn.Read(tmpcontent); err != nil {
 			logger.Error("read content error")
-			return buf.Bytes(), err
+			return data, err
 		}
 
-		buf.Write(tmpcontent[:n])
+		data = append(data, tmpcontent[:n]...)
 	}
 
-	return buf.Bytes(), err
+	return data, err
 }
 
 func (c *Connect) DoIO() {
@@ -269,12 +293,15 @@ func (c *Connect) DoIO() {
 				continue
 			}
 
-			content = make([]byte, worker.Req.DataLen)
-			copy(content, data[model.MIN_DATA_SIZE:allLen])
+			// content = make([]byte, worker.Req.DataLen)
+			// copy(content, data[model.MIN_DATA_SIZE:allLen])
+			content = append(content, data[model.MIN_DATA_SIZE:allLen]...)
 			clen := uint32(len(content))
 			if worker.Req.DataLen == clen {
 				worker.Req.Data = content
 				worker.RunWorker()
+				content = nil
+				data = nil
 			}
 		} else if c.ConnType == model.CONN_TYPE_CLIENT {
 			client = c.RunClient
@@ -284,12 +311,15 @@ func (c *Connect) DoIO() {
 				continue
 			}
 
-			content = make([]byte, client.Req.DataLen)
-			copy(content, data[model.MIN_DATA_SIZE:allLen])
+			// content = make([]byte, client.Req.DataLen)
+			// copy(content, data[model.MIN_DATA_SIZE:allLen])
+			content = append(content, data[model.MIN_DATA_SIZE:allLen]...)
 			clen := uint32(len(content))
 			if client.Req.DataLen == clen {
 				client.Req.Data = content
 				client.RunClient()
+				content = nil
+				data = nil
 			}
 		} else {
 			continue

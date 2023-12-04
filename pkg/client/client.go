@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -21,7 +20,6 @@ type Client struct {
 
 	net, addr string
 	conn      net.Conn
-	rw        *bufio.ReadWriter
 
 	Req      *Request
 	ResQueue chan *Response
@@ -37,7 +35,7 @@ func NewClient(network, addr string) (client *Client) {
 		net:          network,
 		addr:         addr,
 		Req:          nil,
-		ResQueue:     make(chan *Response, model.QUEUE_SIZE),
+		ResQueue:     make(chan *Response),
 		IoTimeOut:    model.DEFAULT_TIME_OUT,
 		RespHandlers: NewResHandlerMap(),
 	}
@@ -63,8 +61,6 @@ func (c *Client) ClientConn() error {
 	//if tcpCon, ok := c.conn.(*net.TCPConn); ok {
 	//	tcpCon.SetLinger(0)
 	//}
-
-	c.rw = bufio.NewReadWriter(bufio.NewReader(c.conn), bufio.NewWriter(c.conn))
 
 	return nil
 }
@@ -93,7 +89,6 @@ func (c *Client) Write() (err error) {
 		}
 	}
 
-	// return c.rw.Flush()
 	return nil
 }
 
@@ -143,7 +138,7 @@ Loop:
 			if nil != err {
 				break
 			}
-			c.ResQueue = make(chan *Response, model.QUEUE_SIZE)
+			c.ResQueue = make(chan *Response)
 			continue
 		}
 
@@ -289,5 +284,8 @@ func (c *Client) Close() {
 		c.conn.Close()
 		c.conn = nil
 		close(c.ResQueue)
+		c.RespHandlers.holder = nil
+		c.RespHandlers = nil
+		c = nil
 	}
 }

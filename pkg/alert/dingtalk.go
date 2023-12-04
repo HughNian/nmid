@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/blinkbean/dingtalk"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 var ding *dingtalk.DingTalk
@@ -26,8 +26,6 @@ var messageType = map[string]dingtalk.MarkType{
 }
 
 func init() {
-	godotenv.Load("./.env")
-
 	if os.Getenv("DINGTAKL_ENABLE") == "true" {
 		NewDingTalk(os.Getenv("DINGTAKL_TOKENS"), os.Getenv("DINGTAKL_SECRET"))
 	}

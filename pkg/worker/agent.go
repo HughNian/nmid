@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/binary"
@@ -19,7 +18,7 @@ type Agent struct {
 
 	net, addr string
 	conn      net.Conn
-	rw        *bufio.ReadWriter
+	// rw        *bufio.ReadWriter
 
 	Worker   *Worker
 	Req      *Request
@@ -49,7 +48,7 @@ func (a *Agent) Connect() (err error) {
 		log.Println("dial error:", err)
 		return err
 	}
-	a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
+	// a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
 
 	go a.Work()
 
@@ -62,7 +61,7 @@ func (a *Agent) ReConnect() error {
 		return err
 	}
 	a.conn = conn
-	a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
+	// a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
 	a.lastTime = utils.GetNowSecond()
 
 	return nil
@@ -83,7 +82,11 @@ func (a *Agent) Read() (data []byte, err error) {
 	temp := utils.GetBuffer(model.MIN_DATA_SIZE)
 	var buf bytes.Buffer
 
-	if n, err = a.rw.Read(temp); err != nil {
+	// if n, err = a.rw.Read(temp); err != nil {
+	// 	return []byte(``), err
+	// }
+
+	if n, err = a.conn.Read(temp); err != nil {
 		return []byte(``), err
 	}
 
@@ -92,7 +95,10 @@ func (a *Agent) Read() (data []byte, err error) {
 
 	for buf.Len() < model.MIN_DATA_SIZE+dataLen {
 		tmpcontent := utils.GetBuffer(dataLen)
-		if n, err = a.rw.Read(tmpcontent); err != nil {
+		// if n, err = a.rw.Read(tmpcontent); err != nil {
+		// 	return buf.Bytes(), err
+		// }
+		if n, err = a.conn.Read(tmpcontent); err != nil {
 			return buf.Bytes(), err
 		}
 
@@ -107,12 +113,16 @@ func (a *Agent) Write() (err error) {
 	buf := a.Req.EncodePack()
 
 	for i := 0; i < len(buf); i += n {
-		if n, err = a.rw.Write(buf[i:]); err != nil {
+		// if n, err = a.rw.Write(buf[i:]); err != nil {
+		// 	return err
+		// }
+		if n, err = a.conn.Write(buf[i:]); err != nil {
 			return err
 		}
 	}
 
-	return a.rw.Flush()
+	// return a.rw.Flush()
+	return nil
 }
 
 func (a *Agent) Work() {

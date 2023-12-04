@@ -9,7 +9,7 @@ import (
 
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/utils"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -28,7 +28,6 @@ const (
 )
 
 func init() {
-	godotenv.Load("./.env")
 	NewLogger(nil)
 }
 

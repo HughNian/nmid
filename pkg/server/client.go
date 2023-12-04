@@ -4,11 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HughNian/nmid/pkg/limiter"
 	"github.com/HughNian/nmid/pkg/model"
-
-	"github.com/joshbohde/codel"
-	"github.com/juju/ratelimit"
 )
 
 type SClient struct {
@@ -22,8 +18,8 @@ type SClient struct {
 	Req *Request
 	Res *Response
 
-	CodelLimiter  *codel.Lock
-	BucketLimiter *ratelimit.Bucket
+	// CodelLimiter  *codel.Lock
+	// BucketLimiter *ratelimit.Bucket
 }
 
 func NewSClient(conn *Connect) *SClient {
@@ -32,20 +28,18 @@ func NewSClient(conn *Connect) *SClient {
 	}
 
 	return &SClient{
-		Timer:         time.NewTimer(model.CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
-		ClientId:      conn.Id,
-		Connect:       conn,
-		Req:           NewReq(),
-		Res:           NewRes(),
-		CodelLimiter:  limiter.NewCodelLimiter(),
-		BucketLimiter: limiter.NewBucketLimiter(),
+		Timer:    time.NewTimer(model.CLIENT_ALIVE_TIME), //todo 后期设置成配置文件
+		ClientId: conn.Id,
+		Connect:  conn,
+		Req:      NewReq(),
+		Res:      NewRes(),
+		// CodelLimiter:  limiter.NewCodelLimiter(), //todo 由于client大部分是用完即close，所以限流做在worker中
+		// BucketLimiter: limiter.NewBucketLimiter(),//todo 由于client大部分是用完即close，所以限流做在worker中
 	}
 }
 
 func (c *SClient) doJob() {
 	c.Req.ReqDecodePack()
-
-	// fmt.Println("######Client Req-", c.Req.DataType)
 
 	if c.Req.HandleLen == 0 || c.Req.Handle == `` {
 		c.Res.DataType = model.PDT_ERROR
@@ -97,18 +91,18 @@ func (c *SClient) doLimit() {
 
 // RunClient 此处做限流操作
 func (c *SClient) RunClient() {
-	if !limiter.DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
-		c.doLimit()
-	} else {
-		dataType := c.Req.GetReqDataType()
+	// if !limiter.DoBucketLimiter(c.BucketLimiter) { //令牌桶限流
+	// 	c.doLimit()
+	// } else {
+	dataType := c.Req.GetReqDataType()
 
-		switch dataType {
-		case model.PDT_C_DO_JOB:
-			{
-				c.doJob()
-			}
+	switch dataType {
+	case model.PDT_C_DO_JOB:
+		{
+			c.doJob()
 		}
 	}
+	// }
 }
 
 // AliveTimeOut 客户端长连接时长限制

@@ -3,8 +3,9 @@ package client
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/HughNian/nmid/pkg/model"
 	"sync"
+
+	"github.com/HughNian/nmid/pkg/model"
 )
 
 type Response struct {
@@ -78,7 +79,7 @@ func GetConnType(data []byte) (connType uint32) {
 	return
 }
 
-//DecodePack 解包
+// DecodePack 解包
 func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 	resLen = len(data)
 	if resLen < model.MIN_DATA_SIZE {
@@ -128,7 +129,7 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 
 func NewResHandlerMap() *RespHandlerMap {
 	return &RespHandlerMap{
-		holder: make(map[string]RespHandler, model.QUEUE_SIZE),
+		holder: make(map[string]RespHandler),
 	}
 }
 

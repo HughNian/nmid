@@ -102,9 +102,6 @@ func (ser *Server) GrpcServerRun() {
 }
 
 func (ser *Server) ServerRun() {
-	//new log
-	logger.NewLogger(ser.SConfig.LogConfig)
-
 	var address string = ser.Host + ":" + ser.Port
 	listen, err := ser.NewListener(ser.Net, address)
 	if err != nil {

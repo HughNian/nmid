@@ -14,3 +14,4 @@
 /cmd/server/*.exe
 /cmd/server/*.env
 example/client/httpserver/nmid_log_dir/20230804_log_file.log
+/example/client/httpserver2/nmid_log_dir
