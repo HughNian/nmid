@@ -21,6 +21,10 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
+var discoverys = []string{"localhost:2379"}
+var disUsername = "root"
+var disPassword = "123456"
+
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
@@ -63,6 +67,8 @@ func main() {
 	}
 
 	worker.AddFunction("ToUpper", ToUpper)
+	//register to discovery server
+	worker.Register(wor.EtcdConfig{Addrs: discoverys, Username: disUsername, Password: disPassword})
 
 	if err = worker.WorkerReady(); err != nil {
 		log.Fatalln(err)

@@ -20,6 +20,7 @@ import (
 
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
+const SKYREPORTERURL = "192.168.10.176:11800" //skywalking的grpc地址
 
 func ToUpper(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
@@ -54,7 +55,7 @@ func main() {
 	var err error
 
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	worker = wor.NewWorker().SetWorkerName(wname)
+	worker = wor.NewWorker().SetWorkerName(wname).WithTrace(SKYREPORTERURL)
 	err = worker.AddServer("tcp", serverAddr)
 	if err != nil {
 		log.Fatalln(err)

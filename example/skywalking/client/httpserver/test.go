@@ -35,7 +35,7 @@ func getClient() *cli.Client {
 }
 
 func Test(ctx *fasthttp.RequestCtx) {
-	funcName := "ToUpper"
+	funcName := "ToUpper2"
 
 	client := getClient()
 	defer client.Close()
@@ -45,7 +45,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	client.SetParamsType(model.PARAMS_TYPE_JSON) //以json格式传输参数
+	client.SetParamsType(model.PARAMS_TYPE_JSON)
 
 	client.ErrHandler = func(e error) {
 		if model.RESTIMEOUT == e {
@@ -83,7 +83,7 @@ func Test(ctx *fasthttp.RequestCtx) {
 	}
 
 	paramsName := make(map[string]interface{})
-	paramsName["name"] = "nmid"
+	paramsName["name"] = "niansong1"
 	//params, err := msgpack.Marshal(&paramsName)
 	params1, err := json.Marshal(&paramsName)
 	if err != nil {

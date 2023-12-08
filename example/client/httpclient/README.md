@@ -1,0 +1,1 @@
+## 客户端以http方式请求nmid的worker服务，worker作为http服务

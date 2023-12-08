@@ -56,15 +56,15 @@ cmake version 3.11.4
 git clone https://github.com/HughNian/nmid.git
 
 1.client
-cd nmid/run/client
+cd nmid/example/client/testclient
 make
 
 2.server
-cd nmid/run/server
+cd nmid/cmd/server
 make
 
 3.worker
-cd nmid/run/worker
+cd nmid/example/worker/worker1
 make
 
 ```
