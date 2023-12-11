@@ -18,8 +18,9 @@ import (
 type Client struct {
 	sync.Mutex
 
-	net, addr string
-	conn      net.Conn
+	net  string
+	Addr string
+	conn net.Conn
 
 	Req      *Request
 	ResQueue chan *Response
@@ -33,7 +34,7 @@ type Client struct {
 func NewClient(network, addr string) (client *Client) {
 	client = &Client{
 		net:          network,
-		addr:         addr,
+		Addr:         addr,
 		Req:          nil,
 		ResQueue:     make(chan *Response),
 		IoTimeOut:    model.DEFAULT_TIME_OUT,
@@ -54,7 +55,7 @@ func (c *Client) ClientConn() error {
 
 	var err error
 
-	c.conn, err = net.DialTimeout(c.net, c.addr, model.DIAL_TIME_OUT)
+	c.conn, err = net.DialTimeout(c.net, c.Addr, model.DIAL_TIME_OUT)
 	if err != nil {
 		return err
 	}

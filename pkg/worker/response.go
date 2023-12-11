@@ -251,3 +251,51 @@ func (resp *Response) ClientCall(serverAddr, funcName string, params map[string]
 		logger.Error(`--do err--`, err)
 	}
 }
+
+func discovery(funcName string) *cli.Client {
+	var consumer *cli.Consumer
+
+	client := consumer.Discovery(funcName)
+	if client != nil {
+		client, err := client.SetIoTimeOut(30 * time.Second).Start()
+		if nil == client || err != nil {
+			logger.Error(err)
+		}
+	}
+
+	return client
+}
+
+// ClientCall call next worker
+func (resp *Response) ClientDiscovery(funcName string, params map[string]interface{}, respHandler func(resp *cli.Response), errHandler func(e error)) {
+	if len(funcName) == 0 {
+		logger.Fatal("funcName must be have")
+	}
+
+	var client *cli.Client
+	var err error
+
+	client = discovery(funcName)
+	if nil == client {
+		logger.Fatal("funcName not found")
+	}
+	defer client.Close()
+
+	client.ErrHandler = errHandler
+
+	//use trace
+	if resp.Agent.Worker.useTrace {
+		//set skywalking exit span
+		resp.SetExitSpan(client.Addr, funcName, &params)
+	}
+
+	//请求下层worker
+	cparams, err := msgpack.Marshal(&params)
+	if err != nil {
+		logger.Error("params msgpack error:", err)
+	}
+	err = client.Do(funcName, cparams, respHandler)
+	if nil != err {
+		logger.Error(`--do err--`, err)
+	}
+}
