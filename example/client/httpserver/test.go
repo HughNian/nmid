@@ -26,7 +26,7 @@ var err error
 
 func getClient() *cli.Client {
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
-	client, err := cli.NewClient("tcp", serverAddr).SetIoTimeOut(30 * time.Second).Start()
+	client, err := cli.NewClient("tcp", serverAddr).SetIoTimeOut(1 * time.Second).Start()
 	if nil == client || err != nil {
 		logger.Error(err)
 	}

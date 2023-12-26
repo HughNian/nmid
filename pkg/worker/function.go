@@ -4,6 +4,7 @@ import cli "github.com/HughNian/nmid/pkg/client"
 
 type Job interface {
 	GetResponse() *Response
+	ShouldBind(obj interface{}) error
 	ParseParams(params []byte)
 	GetParams() []byte
 	GetParamsMap() map[string]interface{}

@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/HughNian/nmid/pkg/conf"
+	"github.com/HughNian/nmid/pkg/logger"
 	ser "github.com/HughNian/nmid/pkg/server"
 )
 
@@ -32,6 +33,12 @@ func main() {
 	// 	ServerAddress:   "http://192.168.10.176:4040",
 	// })
 
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Errorf("nmid server crash error %v", err)
+		}
+	}()
+
 	rpcserver := ser.NewServer().SetSConfig(sConfig)
 	if nil == rpcserver {
 		return
@@ -45,7 +52,7 @@ func main() {
 	//开启rpc tcp服务
 	go rpcserver.ServerRun()
 	//开启rpc http服务
-	// go rpcserver.HttpServerRun()
+	go rpcserver.HttpServerRun()
 	//开启sidecar
 	// scCtx, scCancel := context.WithCancel(c)
 	// sidecar.NewScServer(scCtx, sConfig).StartScServer()

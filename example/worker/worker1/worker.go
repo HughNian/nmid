@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	_ "net/http/pprof"
@@ -21,18 +22,46 @@ import (
 const NMIDSERVERHOST = "127.0.0.1"
 const NMIDSERVERPORT = "6808"
 
-func ToUpper(job wor.Job) ([]byte, error) {
+func HealthCheck(job wor.Job) ([]byte, error) {
 	resp := job.GetResponse()
 	if nil == resp {
 		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	if len(resp.ParamsMap) > 0 {
-		name := resp.ParamsMap["name"].(string)
+	type Params struct {
+		Health string `json:"health"`
+	}
+
+	var params Params
+
+	err := job.ShouldBind(&params)
+	if err == nil {
+		type Res struct {
+			State   int
+			Message string
+		}
+
+		var resData []byte
+
+		if params.Health == "check" {
+			var res = Res{
+				200,
+				"success",
+			}
+
+			resData, _ = json.Marshal(&res)
+		} else {
+			var res = Res{
+				403,
+				"forbidden",
+			}
+
+			resData, _ = json.Marshal(&res)
+		}
 
 		retStruct := model.GetRetStruct()
 		retStruct.Msg = "ok"
-		retStruct.Data = []byte(strings.ToUpper(name))
+		retStruct.Data = resData
 		ret, err := msgpack.Marshal(retStruct)
 		if nil != err {
 			return []byte(``), err
@@ -42,9 +71,40 @@ func ToUpper(job wor.Job) ([]byte, error) {
 		resp.Ret = ret
 
 		return ret, nil
+	} else {
+		return nil, fmt.Errorf("invalid params")
+	}
+}
+
+func ToUpper(job wor.Job) ([]byte, error) {
+	resp := job.GetResponse()
+	if nil == resp {
+		return []byte(``), fmt.Errorf("response data error")
 	}
 
-	return nil, fmt.Errorf("response data error")
+	type Params struct {
+		Name string `json:"name"`
+	}
+
+	var params Params
+
+	err := job.ShouldBind(&params)
+	if err == nil {
+		retStruct := model.GetRetStruct()
+		retStruct.Msg = "ok"
+		retStruct.Data = []byte(strings.ToUpper(params.Name))
+		ret, err := msgpack.Marshal(retStruct)
+		if nil != err {
+			return []byte(``), err
+		}
+
+		resp.RetLen = uint32(len(ret))
+		resp.Ret = ret
+
+		return ret, nil
+	} else {
+		return nil, fmt.Errorf("invalid params")
+	}
 }
 
 func main() {
@@ -63,6 +123,7 @@ func main() {
 	}
 
 	worker.AddFunction("ToUpper", ToUpper)
+	worker.AddFunction("HealthCheck", HealthCheck)
 
 	if err = worker.WorkerReady(); err != nil {
 		log.Fatalln(err)

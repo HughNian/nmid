@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -107,6 +108,21 @@ func DecodePack(data []byte) (resp *Response, resLen int, err error) {
 
 func (resp *Response) GetResponse() *Response {
 	return resp
+}
+
+// bind params
+func (resp *Response) ShouldBind(obj interface{}) error {
+	params, err := json.Marshal(resp.ParamsMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(params, &obj)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (resp *Response) ParseParams(params []byte) {
