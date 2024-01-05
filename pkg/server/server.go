@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/metric"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/soheilhy/cmux"
 )
@@ -70,6 +71,16 @@ func (ser *Server) SetHttpPort(HttpPort string) *Server {
 
 func (ser *Server) SetTlsConfig(tls *tls.Config) *Server {
 	ser.TlsConfig = tls
+	return ser
+}
+
+// start up some else sever like prometheus...
+func (ser *Server) SetStartUp() *Server {
+	//start prometheus
+	if ser.SConfig.Prometheus.Enable {
+		metric.StartServer(ser.SConfig)
+	}
+
 	return ser
 }
 

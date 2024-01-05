@@ -14,6 +14,7 @@ import (
 
 	"github.com/HughNian/nmid/pkg/conf"
 	"github.com/HughNian/nmid/pkg/logger"
+	"github.com/HughNian/nmid/pkg/metric"
 	ser "github.com/HughNian/nmid/pkg/server"
 )
 
@@ -51,8 +52,12 @@ func main() {
 
 	//开启rpc tcp服务
 	go rpcserver.ServerRun()
+
 	//开启rpc http服务
-	go rpcserver.HttpServerRun()
+	if len(sConfig.RpcServer.HTTPPORT) != 0 {
+		go rpcserver.HttpServerRun()
+	}
+
 	//开启sidecar
 	// scCtx, scCancel := context.WithCancel(c)
 	// sidecar.NewScServer(scCtx, sConfig).StartScServer()
@@ -67,8 +72,13 @@ func main() {
 	}
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 	rpcserver.ServerClose(wg)
+
+	if sConfig.Prometheus.Enable {
+		metric.DoCloseListener()
+	}
+
 	wg.Wait()
 	os.Exit(0)
 }

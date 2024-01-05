@@ -11,6 +11,7 @@ type ServerConfig struct {
 	LogConfig      *LogConfig      `yaml:"LogConfig"`
 	TraceConfig    *TraceConfig    `yaml:"TraceConfig"`
 	DingTalkConfig *DingTalkConfig `yaml:"DingTalkConfig"`
+	Prometheus     *Prometheus     `yaml:"Prometheus"`
 }
 
 type RpcServer struct {
@@ -98,6 +99,13 @@ type RetStruct struct {
 	Code int
 	Msg  string
 	Data []byte
+}
+
+type Prometheus struct {
+	Enable bool   `yaml:"enable"`
+	Host   string `yaml:"host"`
+	Port   int    `yaml:"port" default:"9101"`
+	Path   string `yaml:"path" default:"/metrics"`
 }
 
 func GetRetStruct() *RetStruct {
