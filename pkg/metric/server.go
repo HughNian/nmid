@@ -11,8 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var once sync.Once
-var closeListeners = new(closeManager)
+var (
+	once           sync.Once
+	closeListeners = new(closeManager)
+)
 
 type closeManager struct {
 	lock      sync.Mutex
@@ -40,7 +42,7 @@ func (cm *closeManager) doListeners() {
 	defer cm.lock.Unlock()
 
 	for _, listener := range cm.listeners {
-		thread.StartMinorGO("close listeners", listener, nil)
+		thread.StartMinorGO("close prometheus metric listeners", listener, nil)
 	}
 }
 

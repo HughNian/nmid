@@ -156,42 +156,51 @@ func (c *Connect) Write(resPack []byte) {
 	var err error
 	if c.ConnType == model.CONN_TYPE_WORKER {
 		worker := c.RunWorker
-		for i := 0; i < len(resPack); i += n {
-			// n, err = worker.Connect.rw.Write(resPack[i:])
-			n, err = worker.Connect.Conn.Write(resPack[:])
-			if err != nil {
-				//worker.CloseSelfWorker()
-				logger.Error("write err", err.Error())
-				return
+
+		if worker.Connect.Conn != nil {
+			for i := 0; i < len(resPack); i += n {
+				// n, err = worker.Connect.rw.Write(resPack[i:])
+				n, err = worker.Connect.Conn.Write(resPack[:])
+				if err != nil {
+					//worker.CloseSelfWorker()
+					logger.Error("write err", err.Error())
+					return
+				}
 			}
+
+			// worker.Connect.rw.Flush()
+
+			// _, err = worker.Connect.Conn.Write(resPack[:])
+			// if err != nil {
+			// 	logger.Info("worker write err", err.Error())
+			// 	return
+			// }
+		} else {
+			logger.Info("worker connect has close")
 		}
-
-		// worker.Connect.rw.Flush()
-
-		// _, err = worker.Connect.Conn.Write(resPack[:])
-		// if err != nil {
-		// 	logger.Info("worker write err", err.Error())
-		// 	return
-		// }
 	} else if c.ConnType == model.CONN_TYPE_CLIENT {
 		client := c.RunClient
 
-		for i := 0; i < len(resPack); i += n {
-			// n, err = client.Connect.rw.Write(resPack[i:])
-			n, err = client.Connect.Conn.Write(resPack[:])
-			if err != nil {
-				logger.Info("client write err", err.Error())
-				return
+		if client.Connect.Conn != nil {
+			for i := 0; i < len(resPack); i += n {
+				// n, err = client.Connect.rw.Write(resPack[i:])
+				n, err = client.Connect.Conn.Write(resPack[:])
+				if err != nil {
+					logger.Info("client write err", err.Error())
+					return
+				}
 			}
+
+			// client.Connect.rw.Flush()
+
+			// n, err = client.Connect.Conn.Write(resPack[:])
+			// if err != nil {
+			// 	logger.Info("client write err", err.Error())
+			// 	return
+			// }
+		} else {
+			logger.Info("client connect has close")
 		}
-
-		// client.Connect.rw.Flush()
-
-		// n, err = client.Connect.Conn.Write(resPack[:])
-		// if err != nil {
-		// 	logger.Info("client write err", err.Error())
-		// 	return
-		// }
 	}
 }
 
