@@ -72,11 +72,12 @@ func main() {
 	}
 
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	rpcserver.ServerClose(wg)
 
 	if sConfig.Prometheus.Enable {
-		metric.DoCloseListener()
+		wg.Add(1)
+		metric.DoCloseListener(wg)
 	}
 
 	wg.Wait()

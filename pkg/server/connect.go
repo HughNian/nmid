@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -205,11 +206,15 @@ func (c *Connect) Write(resPack []byte) {
 }
 
 func (c *Connect) Read(size int) (data []byte, err error) {
-	n := 0
+	var n = 0
 	var connType, dataType uint32
 	var dataLen int
-	tmp := utils.GetBuffer(size)
 
+	if c.Conn == nil {
+		return data, errors.New("conn nil")
+	}
+
+	tmp := utils.GetBuffer(size)
 	if n, err = c.Conn.Read(tmp); err != nil {
 		if c.ConnType == model.CONN_TYPE_WORKER {
 			c.CloseWorkerConnect()
@@ -222,7 +227,7 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 			c.CloseClientConnect()
 		}
 
-		return []byte(``), err
+		return data, err
 	}
 
 	//读取数据头

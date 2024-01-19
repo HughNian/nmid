@@ -42,7 +42,9 @@ func (cm *closeManager) doListeners() {
 	defer cm.lock.Unlock()
 
 	for _, listener := range cm.listeners {
-		thread.StartMinorGO("close prometheus metric listeners", listener, nil)
+		if listener != nil {
+			thread.StartMinorGO("close prometheus metric listeners", listener, nil)
+		}
 	}
 }
 
@@ -50,7 +52,9 @@ func AddCloseListener(fn func()) (waitCalled func()) {
 	return closeListeners.addListener(fn)
 }
 
-func DoCloseListener() {
+func DoCloseListener(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	closeListeners.doListeners()
 }
 
