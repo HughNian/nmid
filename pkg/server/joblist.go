@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ type JobData struct {
 	ParamsHandleType uint32
 	Params           []byte
 	RetData          []byte
+	BeginDuring      time.Time
 }
 
 type JobDataList struct {
@@ -45,6 +47,7 @@ func NewJobData(Handle, Params string) (data *JobData) {
 
 	data.JobId = uuid.Must(uuid.NewRandom()).String() //utils.GetJobId(Handle, Params)
 	data.status = model.JOB_STATUS_INIT
+	data.BeginDuring = time.Now()
 
 	return data
 }

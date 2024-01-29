@@ -104,7 +104,7 @@ type RetStruct struct {
 type Prometheus struct {
 	Enable bool   `yaml:"enable"`
 	Host   string `yaml:"host"`
-	Port   int    `yaml:"port" default:"9101"`
+	Port   string `yaml:"port" default:"9099"`
 	Path   string `yaml:"path" default:"/metrics"`
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/limiter"
 	"github.com/HughNian/nmid/pkg/model"
@@ -144,6 +145,13 @@ func (w *SWorker) returnData() {
 					client.Write(resPack)
 					client.Unlock()
 				}
+
+				//do prometheus request during
+				ftime := float64(time.Since(job.BeginDuring).Milliseconds())
+				requestDuring.Add(ftime, w.WorkerId, functionName)
+
+				//do prometheus request duration
+				requestDuration.Observe(time.Since(job.BeginDuring).Milliseconds(), w.WorkerId, functionName)
 			}
 		} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
 			//http client response data

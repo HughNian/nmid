@@ -81,6 +81,9 @@ func (c *SClient) doJob() {
 	//w.JobsMap.Store(job.JobId, job)
 	worker.doWork(job)
 	worker.Unlock()
+
+	//do prometheus request count
+	requestCount.Inc(worker.WorkerId, c.Req.Handle)
 }
 
 func (c *SClient) doLimit() {

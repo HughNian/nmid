@@ -41,6 +41,8 @@ func (cm *closeManager) doListeners() {
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
 
+	fmt.Println(len(cm.listeners))
+
 	for _, listener := range cm.listeners {
 		if listener != nil {
 			thread.StartMinorGO("close prometheus metric listeners", listener, nil)
@@ -52,30 +54,34 @@ func AddCloseListener(fn func()) (waitCalled func()) {
 	return closeListeners.addListener(fn)
 }
 
-func DoCloseListener(wg *sync.WaitGroup) {
+func DoCloseListener() {
+	closeListeners.doListeners()
+}
+
+func DoCloseListenerWithWg(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	closeListeners.doListeners()
+	DoCloseListener()
 }
 
 // starts prometheus.
 func StartServer(c model.ServerConfig) {
-	if len(c.Prometheus.Host) == 0 {
+	if len(c.Prometheus.Port) == 0 {
 		return
 	}
 
 	once.Do(func() {
-		thread.StartMinorGO("Start Prometheus Server", func() {
+		thread.StartMinorGO("start prometheus server", func() {
 			http.Handle(c.Prometheus.Path, promhttp.Handler())
 
-			promeAddr := fmt.Sprintf("%s:%d", c.Prometheus.Host, c.Prometheus.Port)
-			logger.Infof("Starting Prometheus At %s", promeAddr)
+			promeAddr := fmt.Sprintf("%s:%s", c.Prometheus.Host, c.Prometheus.Port)
+			logger.Infof("starting prometheus server at %s", promeAddr)
 
 			if err := http.ListenAndServe(promeAddr, nil); err != nil {
 				logger.Error(err)
 			}
 		}, func(isdebug bool) {
-			fmt.Println("Start Prometheus Server Over")
+			fmt.Println("prometheus server over")
 		})
 	})
 }

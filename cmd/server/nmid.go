@@ -40,7 +40,7 @@ func main() {
 		}
 	}()
 
-	rpcserver := ser.NewServer().SetSConfig(sConfig)
+	rpcserver := ser.NewServer().SetSConfig(sConfig).SetStartUp()
 	if nil == rpcserver {
 		return
 	}
@@ -77,7 +77,7 @@ func main() {
 
 	if sConfig.Prometheus.Enable {
 		wg.Add(1)
-		metric.DoCloseListener(wg)
+		metric.DoCloseListenerWithWg(wg)
 	}
 
 	wg.Wait()

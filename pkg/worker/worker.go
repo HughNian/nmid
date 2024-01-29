@@ -334,6 +334,7 @@ func (w *Worker) WorkerDo() {
 func (w *Worker) WorkerClose() {
 	if w.running {
 		logger.Info("worker close")
+		alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker:%s", w.WorkerName))
 
 		for fn := range w.Funcs {
 			w.FuncBroadcast(fn, model.PDT_W_DEL_FUNC)
