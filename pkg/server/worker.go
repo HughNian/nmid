@@ -61,6 +61,12 @@ func (w *SWorker) addFunction() {
 		if len(functionName) != 0 {
 			w.Connect.Ser.Funcs.AddFunc(w, string(functionName))
 		}
+
+		//do prometheus worker func count
+		WorkerFuncCount.Add(1, w.WorkerId, string(functionName))
+
+		//do prometheus func count
+		FuncCount.Add(1, string(functionName))
 	}
 
 	w.Res.DataType = model.PDT_OK
@@ -74,6 +80,12 @@ func (w *SWorker) delFunction() {
 
 		if len(functionName) != 0 {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
+
+			//do prometheus worker func count
+			WorkerFuncCount.Add(-1, w.WorkerId, string(functionName))
+
+			//do prometheus func count
+			FuncCount.Add(-1, string(functionName))
 		}
 	}
 }
@@ -142,8 +154,19 @@ func (w *SWorker) returnData() {
 				if client.ConnType == model.CONN_TYPE_CLIENT {
 					client.Lock()
 					resPack := w.Res.ResEncodePack()
-					client.Write(resPack)
+					werr := client.Write(resPack)
 					client.Unlock()
+
+					//do prometheus worker write success/fail num
+					if werr == nil {
+						//success num
+						WorkerFuncSuccessCount.Inc(w.WorkerId, functionName)
+						FuncSuccessCount.Inc(functionName)
+					} else {
+						//fail num
+						WorkerFuncFailCount.Inc(w.WorkerId, functionName)
+						FuncFailCount.Inc(functionName)
+					}
 				}
 
 				//do prometheus request during

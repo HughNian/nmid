@@ -152,7 +152,7 @@ func (c *Connect) getSCClient() *SClient {
 	return c.RunClient
 }
 
-func (c *Connect) Write(resPack []byte) {
+func (c *Connect) Write(resPack []byte) error {
 	var n int
 	var err error
 	if c.ConnType == model.CONN_TYPE_WORKER {
@@ -165,7 +165,7 @@ func (c *Connect) Write(resPack []byte) {
 				if err != nil {
 					//worker.CloseSelfWorker()
 					logger.Error("write err", err.Error())
-					return
+					return err
 				}
 			}
 
@@ -178,6 +178,7 @@ func (c *Connect) Write(resPack []byte) {
 			// }
 		} else {
 			logger.Info("worker connect has close")
+			return errors.New("worker connect has close")
 		}
 	} else if c.ConnType == model.CONN_TYPE_CLIENT {
 		client := c.RunClient
@@ -188,7 +189,7 @@ func (c *Connect) Write(resPack []byte) {
 				n, err = client.Connect.Conn.Write(resPack[:])
 				if err != nil {
 					logger.Info("client write err", err.Error())
-					return
+					return err
 				}
 			}
 
@@ -201,8 +202,11 @@ func (c *Connect) Write(resPack []byte) {
 			// }
 		} else {
 			logger.Info("client connect has close")
+			return errors.New("worker connect has close")
 		}
 	}
+
+	return nil
 }
 
 func (c *Connect) Read(size int) (data []byte, err error) {
@@ -221,6 +225,8 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 
 			logger.Errorf("server read worker error conntype:%d, worker ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
 			alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip %s", c.Ip))
+			//do prometheus worker close count
+			WorkerCloseCount.Inc(c.Ip)
 		}
 
 		if c.ConnType == model.CONN_TYPE_CLIENT {

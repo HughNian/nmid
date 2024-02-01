@@ -29,4 +29,60 @@ var (
 		Labels:    []string{"worker_id", "func_name"},
 		Buckets:   []float64{5, 10, 20, 30, 50},
 	})
+
+	WorkerCloseCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "worker",
+		Name:      "close_count",
+		Help:      "nmid worker close count.",
+		Labels:    []string{"worker_ip"},
+	})
+
+	WorkerFuncCount = metric.NewGaugeVec(&metric.GaugeVecOpts{
+		Namespace: namespace,
+		Subsystem: "worker",
+		Name:      "func_count",
+		Help:      "nmid worker func count.",
+		Labels:    []string{"worker_id", "func_name"},
+	})
+
+	WorkerFuncSuccessCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "worker",
+		Name:      "func_success",
+		Help:      "nmid worker func do job success count.",
+		Labels:    []string{"worker_id", "func_name"},
+	})
+
+	WorkerFuncFailCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "worker",
+		Name:      "func_fail",
+		Help:      "nmid worker func do job fail count.",
+		Labels:    []string{"worker_id", "func_name"},
+	})
+
+	FuncCount = metric.NewGaugeVec(&metric.GaugeVecOpts{
+		Namespace: namespace,
+		Subsystem: "func",
+		Name:      "func_count",
+		Help:      "nmid all func count.",
+		Labels:    []string{"func_name"},
+	})
+
+	FuncSuccessCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "func",
+		Name:      "func_success",
+		Help:      "nmid func do job success count.",
+		Labels:    []string{"func_name"},
+	})
+
+	FuncFailCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "func",
+		Name:      "func_fail",
+		Help:      "nmid func do job fail count.",
+		Labels:    []string{"func_name"},
+	})
 )
