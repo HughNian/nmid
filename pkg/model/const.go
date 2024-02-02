@@ -37,6 +37,7 @@ const (
 	PDT_W_DEL_FUNC       = 14
 	PDT_W_RETURN_DATA    = 15
 	PDT_W_HEARTBEAT_PING = 22
+	PDT_W_SET_NAME       = 23
 	PDT_C_DO_JOB         = 16
 	PDT_C_GET_DATA       = 17
 	PDT_RATELIMIT        = 18

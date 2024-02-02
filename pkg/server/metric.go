@@ -10,7 +10,7 @@ var (
 		Subsystem: "client",
 		Name:      "request_count",
 		Help:      "nmid client requests count.",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 	})
 
 	requestDuring = metric.NewCounterVec(&metric.CounterVecOpts{
@@ -18,7 +18,7 @@ var (
 		Subsystem: "client",
 		Name:      "request_during",
 		Help:      "nmid client requests during time.",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 	})
 
 	requestDuration = metric.NewHistogramVec(&metric.HistogramVecOpts{
@@ -26,7 +26,7 @@ var (
 		Subsystem: "client",
 		Name:      "request_duration",
 		Help:      "nmid client http requests duration(ms).",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 		Buckets:   []float64{5, 10, 20, 30, 50},
 	})
 
@@ -43,7 +43,7 @@ var (
 		Subsystem: "worker",
 		Name:      "func_count",
 		Help:      "nmid worker func count.",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 	})
 
 	WorkerFuncSuccessCount = metric.NewCounterVec(&metric.CounterVecOpts{
@@ -51,7 +51,7 @@ var (
 		Subsystem: "worker",
 		Name:      "func_success",
 		Help:      "nmid worker func do job success count.",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 	})
 
 	WorkerFuncFailCount = metric.NewCounterVec(&metric.CounterVecOpts{
@@ -59,7 +59,7 @@ var (
 		Subsystem: "worker",
 		Name:      "func_fail",
 		Help:      "nmid worker func do job fail count.",
-		Labels:    []string{"worker_id", "func_name"},
+		Labels:    []string{"worker_name", "func_name"},
 	})
 
 	FuncCount = metric.NewGaugeVec(&metric.GaugeVecOpts{
@@ -84,5 +84,13 @@ var (
 		Name:      "func_fail",
 		Help:      "nmid func do job fail count.",
 		Labels:    []string{"func_name"},
+	})
+
+	ThreatIpCount = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: namespace,
+		Subsystem: "ip",
+		Name:      "threat_ip",
+		Help:      "nmid threat ip count.",
+		Labels:    []string{"ip", "zone"},
 	})
 )

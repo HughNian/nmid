@@ -14,8 +14,9 @@ import (
 type SWorker struct {
 	sync.Mutex
 
-	WorkerId string
-	Connect  *Connect
+	WorkerId   string
+	WorkerName string
+	Connect    *Connect
 
 	Weight uint
 
@@ -63,7 +64,7 @@ func (w *SWorker) addFunction() {
 		}
 
 		//do prometheus worker func count
-		WorkerFuncCount.Add(1, w.WorkerId, string(functionName))
+		WorkerFuncCount.Add(1, w.WorkerName, string(functionName))
 
 		//do prometheus func count
 		FuncCount.Add(1, string(functionName))
@@ -82,7 +83,7 @@ func (w *SWorker) delFunction() {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
 
 			//do prometheus worker func count
-			WorkerFuncCount.Add(-1, w.WorkerId, string(functionName))
+			WorkerFuncCount.Add(-1, w.WorkerName, string(functionName))
 
 			//do prometheus func count
 			FuncCount.Add(-1, string(functionName))
@@ -160,21 +161,21 @@ func (w *SWorker) returnData() {
 					//do prometheus worker write success/fail num
 					if werr == nil {
 						//success num
-						WorkerFuncSuccessCount.Inc(w.WorkerId, functionName)
+						WorkerFuncSuccessCount.Inc(w.WorkerName, functionName)
 						FuncSuccessCount.Inc(functionName)
 					} else {
 						//fail num
-						WorkerFuncFailCount.Inc(w.WorkerId, functionName)
+						WorkerFuncFailCount.Inc(w.WorkerName, functionName)
 						FuncFailCount.Inc(functionName)
 					}
 				}
 
 				//do prometheus request during
 				ftime := float64(time.Since(job.BeginDuring).Milliseconds())
-				requestDuring.Add(ftime, w.WorkerId, functionName)
+				requestDuring.Add(ftime, w.WorkerName, functionName)
 
 				//do prometheus request duration
-				requestDuration.Observe(time.Since(job.BeginDuring).Milliseconds(), w.WorkerId, functionName)
+				requestDuration.Observe(time.Since(job.BeginDuring).Milliseconds(), w.WorkerName, functionName)
 			}
 		} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
 			//http client response data
@@ -200,6 +201,20 @@ func (w *SWorker) doLimit() {
 func (w *SWorker) heartBeatPong() {
 	// logger.Infof("server worker heartbeat pong")
 	w.Res.DataType = model.PDT_S_HEARTBEAT_PONG
+	resPack := w.Res.ResEncodePack()
+	w.Connect.Write(resPack)
+}
+
+func (w *SWorker) setWorkerName() {
+	if w.Req.DataLen > 0 {
+		workerName := w.Req.GetReqData()
+
+		if len(workerName) != 0 {
+			w.WorkerName = string(workerName)
+		}
+	}
+
+	w.Res.DataType = model.PDT_OK
 	resPack := w.Res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
@@ -236,6 +251,11 @@ func (w *SWorker) RunWorker() {
 	case model.PDT_W_HEARTBEAT_PING:
 		{
 			w.heartBeatPong()
+		}
+	//set worker name
+	case model.PDT_W_SET_NAME:
+		{
+			w.setWorkerName()
 		}
 	}
 }

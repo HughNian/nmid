@@ -59,6 +59,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		ipzone := utils.GetIPZone(ip)
 		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, ipzone)
 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, ipzone))
+		ThreatIpCount.Inc(ip, ipzone)
 		conn.Close()
 		return nil
 	}
@@ -67,6 +68,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		ipzone := utils.GetIPZone(ip)
 		logger.Infof("blacklist ip %s, ip zone %s", ip, ipzone)
 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, ipzone))
+		ThreatIpCount.Inc(ip, ipzone)
 		conn.Close()
 		return nil
 	}
@@ -221,12 +223,12 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 	tmp := utils.GetBuffer(size)
 	if n, err = c.Conn.Read(tmp); err != nil {
 		if c.ConnType == model.CONN_TYPE_WORKER {
-			c.CloseWorkerConnect()
-
-			logger.Errorf("server read worker error conntype:%d, worker ip:%s, err:%s", c.ConnType, c.Ip, err.Error())
-			alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip %s", c.Ip))
+			logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, c.RunWorker.WorkerName, err.Error())
+			alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, c.RunWorker.WorkerName))
 			//do prometheus worker close count
 			WorkerCloseCount.Inc(c.Ip)
+
+			c.CloseWorkerConnect()
 		}
 
 		if c.ConnType == model.CONN_TYPE_CLIENT {

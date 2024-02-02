@@ -83,7 +83,7 @@ func (c *SClient) doJob() {
 	worker.Unlock()
 
 	//do prometheus request count
-	requestCount.Inc(worker.WorkerId, c.Req.Handle)
+	requestCount.Inc(worker.WorkerName, c.Req.Handle)
 }
 
 func (c *SClient) doLimit() {

@@ -49,6 +49,16 @@ func (req *Request) HeartBeatPack() (content []byte, err error) {
 	return
 }
 
+// SetWorkerName 打包内容-设置worker名称
+func (req *Request) SetWorkerName(workerName string) (content []byte, err error) {
+	req.DataType = model.PDT_W_SET_NAME
+	req.DataLen = uint32(len(workerName))
+	req.Data = []byte(workerName)
+	content = req.Data
+
+	return
+}
+
 // AddFunctionPack 打包内容-添加方法
 func (req *Request) AddFunctionPack(funcName string) (content []byte, err error) {
 	req.DataType = model.PDT_W_ADD_FUNC

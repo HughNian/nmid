@@ -132,7 +132,7 @@ func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
 	w.Unlock()
 
 	if w.running {
-		go w.FuncBroadcast(funcName, model.PDT_W_ADD_FUNC)
+		go w.MsgBroadcast(funcName, model.PDT_W_ADD_FUNC)
 	}
 
 	return nil
@@ -149,7 +149,7 @@ func (w *Worker) DelFunction(funcName string) (err error) {
 	w.Unlock()
 
 	if w.running {
-		go w.FuncBroadcast(funcName, model.PDT_W_DEL_FUNC)
+		go w.MsgBroadcast(funcName, model.PDT_W_DEL_FUNC)
 	}
 
 	return nil
@@ -216,15 +216,17 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 	return nil
 }
 
-func (w *Worker) FuncBroadcast(funcName string, flag int) {
+func (w *Worker) MsgBroadcast(Name string, flag int) {
 	for _, a := range w.Agents {
 		switch flag {
+		case model.PDT_W_SET_NAME:
+			a.Req.SetWorkerName(Name)
 		case model.PDT_W_ADD_FUNC:
-			a.Req.AddFunctionPack(funcName)
+			a.Req.AddFunctionPack(Name)
 		case model.PDT_W_DEL_FUNC:
-			a.Req.DelFunctionPack(funcName)
+			a.Req.DelFunctionPack(Name)
 		default:
-			a.Req.AddFunctionPack(funcName)
+			a.Req.AddFunctionPack(Name)
 		}
 		a.Write()
 	}
@@ -244,8 +246,10 @@ func (w *Worker) WorkerReady() (err error) {
 		}
 	}
 
+	w.MsgBroadcast(w.WorkerName, model.PDT_W_SET_NAME)
+
 	for fn := range w.Funcs {
-		w.FuncBroadcast(fn, model.PDT_W_ADD_FUNC)
+		w.MsgBroadcast(fn, model.PDT_W_ADD_FUNC)
 	}
 
 	w.Lock()
@@ -337,7 +341,7 @@ func (w *Worker) WorkerClose() {
 		alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker:%s", w.WorkerName))
 
 		for fn := range w.Funcs {
-			w.FuncBroadcast(fn, model.PDT_W_DEL_FUNC)
+			w.MsgBroadcast(fn, model.PDT_W_DEL_FUNC)
 		}
 
 		for _, a := range w.Agents {
