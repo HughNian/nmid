@@ -370,6 +370,8 @@ func (w *Worker) WorkerReConnect(a *Agent) {
 
 	//reconnect
 	a.ReConnect()
+	//resend set worker name
+	a.ReSetWorkerName(w.WorkerName)
 	//resend add function msg
 	for fname := range w.Funcs {
 		a.ReAddFuncMsg(fname)

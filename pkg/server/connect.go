@@ -160,6 +160,16 @@ func (c *Connect) Write(resPack []byte) error {
 	if c.ConnType == model.CONN_TYPE_WORKER {
 		worker := c.RunWorker
 
+		if worker == nil {
+			logger.Info("worker nil")
+			return errors.New("worker nil")
+		}
+
+		if worker.Connect == nil {
+			logger.Info("worker connect nil")
+			return errors.New("worker connect nil")
+		}
+
 		if worker.Connect.Conn != nil {
 			for i := 0; i < len(resPack); i += n {
 				// n, err = worker.Connect.rw.Write(resPack[i:])
@@ -185,6 +195,16 @@ func (c *Connect) Write(resPack []byte) error {
 	} else if c.ConnType == model.CONN_TYPE_CLIENT {
 		client := c.RunClient
 
+		if client == nil {
+			logger.Info("client nil")
+			return errors.New("client nil")
+		}
+
+		if client.Connect == nil {
+			logger.Info("client connect nil")
+			return errors.New("client connect nil")
+		}
+
 		if client.Connect.Conn != nil {
 			for i := 0; i < len(resPack); i += n {
 				// n, err = client.Connect.rw.Write(resPack[i:])
@@ -204,7 +224,7 @@ func (c *Connect) Write(resPack []byte) error {
 			// }
 		} else {
 			logger.Info("client connect has close")
-			return errors.New("worker connect has close")
+			return errors.New("client connect has close")
 		}
 	}
 

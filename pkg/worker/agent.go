@@ -77,6 +77,11 @@ func (a *Agent) ReAddFuncMsg(funcName string) {
 	a.Write()
 }
 
+func (a *Agent) ReSetWorkerName(workerName string) {
+	a.Req.SetWorkerName(workerName)
+	a.Write()
+}
+
 func (a *Agent) Read() (data []byte, err error) {
 	n := 0
 	temp := utils.GetBuffer(model.MIN_DATA_SIZE)
