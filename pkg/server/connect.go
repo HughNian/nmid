@@ -330,6 +330,10 @@ func (c *Connect) DoIO() {
 		if c.ConnType == model.CONN_TYPE_WORKER {
 			worker = c.RunWorker
 
+			if nil == worker {
+				continue
+			}
+
 			allLen := uint32(len(data))
 			if worker.Req.DataLen > allLen {
 				continue
@@ -347,6 +351,10 @@ func (c *Connect) DoIO() {
 			}
 		} else if c.ConnType == model.CONN_TYPE_CLIENT {
 			client = c.RunClient
+
+			if nil == client {
+				continue
+			}
 
 			allLen := uint32(len(data))
 			if client.Req.DataLen > allLen {
