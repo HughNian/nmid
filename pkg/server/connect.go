@@ -55,7 +55,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		return nil
 	}
 	//DoWhiteList do whitelist
-	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip, ser.SConfig.WhiteList) {
+	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip) {
 		ipzone := utils.GetIPZone(ip)
 		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, ipzone)
 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, ipzone))
@@ -64,7 +64,7 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		return nil
 	}
 	//DoBlackList do blacklist
-	if ser.SConfig.BlackList.Enable && security.DoBlackList(ip, ser.SConfig.BlackList) {
+	if ser.SConfig.BlackList.Enable && security.DoBlackList(ip) {
 		ipzone := utils.GetIPZone(ip)
 		logger.Infof("blacklist ip %s, ip zone %s", ip, ipzone)
 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, ipzone))

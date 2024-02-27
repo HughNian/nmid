@@ -18,10 +18,6 @@ import (
 	ser "github.com/HughNian/nmid/pkg/server"
 )
 
-var (
-	sConfig = conf.GetConfig()
-)
-
 func main() {
 	//pprof
 	// go func() {
@@ -40,10 +36,11 @@ func main() {
 		}
 	}()
 
-	rpcserver := ser.NewServer().SetSConfig(sConfig).SetStartUp()
+	rpcserver := ser.NewServer().SetSConfig()
 	if nil == rpcserver {
 		return
 	}
+	rpcserver.SetStartUp()
 
 	//c, cancel := context.WithCancel(context.Background())
 	_, cancel := context.WithCancel(context.Background())
@@ -54,7 +51,7 @@ func main() {
 	go rpcserver.ServerRun()
 
 	//开启rpc http服务
-	if len(sConfig.RpcServer.HTTPPORT) != 0 {
+	if len(conf.GetConfig().RpcServer.HTTPPORT) != 0 {
 		go rpcserver.HttpServerRun()
 	}
 
@@ -75,7 +72,7 @@ func main() {
 	wg.Add(1)
 	rpcserver.ServerClose(wg)
 
-	if sConfig.Prometheus.Enable {
+	if conf.GetConfig().Prometheus.Enable {
 		wg.Add(1)
 		metric.DoCloseListenerWithWg(wg)
 	}

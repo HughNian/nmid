@@ -2,20 +2,21 @@ package security
 
 import (
 	"net"
-	"github.com/HughNian/nmid/pkg/model"
+
+	"github.com/HughNian/nmid/pkg/conf"
 )
 
-func DoBlackList(ip string, list *model.BlackList) bool {
-	if !list.Enable {
+func DoBlackList(ip string) bool {
+	if !conf.GetConfig().BlackList.Enable {
 		return false
 	}
 
-	if list.NoAllowList[ip] {
+	if conf.GetConfig().BlackList.NoAllowList[ip] {
 		return false
 	}
 
 	remoteIP := net.ParseIP(ip)
-	for _, mask := range list.NoAllowListMask {
+	for _, mask := range conf.GetConfig().BlackList.NoAllowListMask {
 		_, ipNet, err := net.ParseCIDR(mask)
 		if nil == err {
 			if ipNet.Contains(remoteIP) {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/HughNian/nmid/pkg/conf"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/metric"
 	"github.com/HughNian/nmid/pkg/model"
@@ -40,7 +41,13 @@ func NewServer() (ser *Server) {
 	return
 }
 
-func (ser *Server) SetSConfig(SConfig model.ServerConfig) *Server {
+func (ser *Server) SetSConfig() *Server {
+	err := conf.Init()
+	if err != nil {
+		return nil
+	}
+
+	SConfig := conf.GetConfig()
 	ser.SConfig = SConfig
 	ser.Net = SConfig.RpcServer.NETWORK
 	ser.Host = SConfig.RpcServer.HOST
@@ -77,8 +84,8 @@ func (ser *Server) SetTlsConfig(tls *tls.Config) *Server {
 // start up some else sever like prometheus...
 func (ser *Server) SetStartUp() *Server {
 	//start prometheus
-	if ser.SConfig.Prometheus.Enable {
-		metric.StartServer(ser.SConfig)
+	if conf.GetConfig().Prometheus.Enable {
+		metric.StartServer(conf.GetConfig())
 	}
 
 	return ser

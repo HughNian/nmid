@@ -41,8 +41,6 @@ func (cm *closeManager) doListeners() {
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
 
-	fmt.Println(len(cm.listeners))
-
 	for _, listener := range cm.listeners {
 		if listener != nil {
 			thread.StartMinorGO("close prometheus metric listeners", listener, nil)
