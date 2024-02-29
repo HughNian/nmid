@@ -91,6 +91,6 @@ var (
 		Subsystem: "ip",
 		Name:      "threat_ip",
 		Help:      "nmid threat ip count.",
-		Labels:    []string{"ip", "zone"},
+		Labels:    []string{"ip", "zone", "country", "prov", "city", "lat", "lon"},
 	})
 )

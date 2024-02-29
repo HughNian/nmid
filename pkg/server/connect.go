@@ -56,19 +56,19 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	}
 	//DoWhiteList do whitelist
 	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip) {
-		ipzone := utils.GetIPZone(ip)
-		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, ipzone)
-		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, ipzone))
-		ThreatIpCount.Inc(ip, ipzone)
+		zinfo := utils.GetIPZone(ip)
+		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone)
+		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone))
+		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
 		conn.Close()
 		return nil
 	}
 	//DoBlackList do blacklist
 	if ser.SConfig.BlackList.Enable && security.DoBlackList(ip) {
-		ipzone := utils.GetIPZone(ip)
-		logger.Infof("blacklist ip %s, ip zone %s", ip, ipzone)
-		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, ipzone))
-		ThreatIpCount.Inc(ip, ipzone)
+		zinfo := utils.GetIPZone(ip)
+		// logger.Infof("blacklist ip %s, ip zone %s", ip, zinfo.Zone)
+		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, zinfo.Zone))
+		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
 		conn.Close()
 		return nil
 	}

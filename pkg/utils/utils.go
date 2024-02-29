@@ -264,7 +264,17 @@ func GetLocation(lat, lon float64) *LocationInfo {
 	return loca
 }
 
-func GetIPZone(ip string) (zone string) {
+type ZoneInfo struct {
+	Ip      string
+	Zone    string
+	Country string
+	Prov    string
+	City    string
+	Lat     string
+	Lon     string
+}
+
+func GetIPZone(ip string) (zinfo ZoneInfo) {
 	ret := GetIPInfo(ip)
 	if len(ret) > 0 {
 		var info IpInfo
@@ -276,7 +286,14 @@ func GetIPZone(ip string) (zone string) {
 				if location.Status == 0 {
 					address = fmt.Sprintf("%s, %s", location.Result.Address, location.Result.FormattedAddresses.Recommend)
 				}
-				zone = fmt.Sprintf("%s-%s-%s-%s", info.Country, info.City, info.Org, address)
+
+				zinfo.Ip = ip
+				zinfo.Zone = fmt.Sprintf("%s-%s-%s-%s", info.Country, info.City, info.Org, address)
+				zinfo.Lat = fmt.Sprintf("%.3f", info.Lat)
+				zinfo.Lon = fmt.Sprintf("%.3f", info.Lon)
+				zinfo.Country = info.Country
+				zinfo.Prov = info.RegionName
+				zinfo.City = info.City
 			}
 		}
 	}

@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const VERSION = "v1.0.16"
+
 const (
 	MAX_POOL_SIZE        = 128
 	QUEUE_SIZE           = 1
