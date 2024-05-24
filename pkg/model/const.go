@@ -93,7 +93,7 @@ const (
 )
 
 const (
-	EtcdBaseKey = "/provider/"
+	EtcdBaseKey = "nmid/"
 )
 
 var (

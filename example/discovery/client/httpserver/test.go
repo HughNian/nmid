@@ -24,7 +24,7 @@ const NMIDSERVERPORT = "6808"
 var client *cli.Client
 var err error
 
-var discoverys = []string{"localhost:2379"}
+var discoverys = []string{"192.168.10.188:2379"}
 var disUsername = "root"
 var disPassword = "123456"
 var consumer *cli.Consumer

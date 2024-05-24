@@ -73,6 +73,19 @@ func (w *Worker) SetWorkerName(wname string) *Worker {
 	return w
 }
 
+func (w *Worker) GetWorkerKey() (key string) {
+	key = w.WorkerName
+	if key == "" {
+		key = w.WorkerId
+	}
+
+	if key == "" {
+		key = utils.GetId()
+	}
+
+	return key
+}
+
 func (w *Worker) WithTrace(reporterUrl string) *Worker {
 	w.useTrace = true
 	w.Reporter, w.Tracer = trace.NewReporter(reporterUrl, w.WorkerName)
@@ -112,7 +125,7 @@ func (w *Worker) Register(config EtcdConfig) {
 		return
 	}
 	workerVal := string(jret)
-	workerKey := fmt.Sprintf("%s%s", model.EtcdBaseKey, w.WorkerId)
+	workerKey := fmt.Sprintf("%s%s", model.EtcdBaseKey, w.GetWorkerKey())
 
 	kv := clientv3.NewKV(etcdcli)
 	_, err = kv.Put(context.TODO(), workerKey, workerVal)
