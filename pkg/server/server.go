@@ -81,6 +81,19 @@ func (ser *Server) SetTlsConfig(tls *tls.Config) *Server {
 	return ser
 }
 
+func (ser *Server) SetTlsCrtKey(certFile, keyFile string) *Server {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return ser
+	}
+
+	ser.TlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+
+	return ser
+}
+
 // start up some else sever like prometheus...
 func (ser *Server) SetStartUp() *Server {
 	//start prometheus
