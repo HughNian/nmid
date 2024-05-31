@@ -25,11 +25,11 @@ local:
 
 .PHONY: dist
 dist:
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/$(BINNAME)-amd64
-	GOARM=7 GOARCH=arm CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/$(BINNAME)-arm
-	GOARCH=arm64 CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/$(BINNAME)-arm64
-	GOOS=windows CGO_ENABLED=0 go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/$(BINNAME).exe
-	GOOS=darwin CGO_ENABLED=0 go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/$(BINNAME)-darwin	
+	CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/nmid-amd64
+	GOARM=7 GOARCH=arm CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/nmid-arm
+	GOARCH=arm64 CGO_ENABLED=0 GOOS=linux go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/nmid-arm64
+	GOOS=windows CGO_ENABLED=0 go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/nmid.exe
+	GOOS=darwin CGO_ENABLED=0 go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o $(BINPATH)/nmid-darwin
 	cp -r config $(BINPATH)/
 
 .PHONY: clean
