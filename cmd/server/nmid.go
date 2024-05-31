@@ -15,8 +15,12 @@ import (
 	"github.com/HughNian/nmid/pkg/conf"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/metric"
-	"github.com/HughNian/nmid/pkg/model"
 	ser "github.com/HughNian/nmid/pkg/server"
+)
+
+var (
+	Version string
+	GitHash string
 )
 
 func main() {
@@ -90,6 +94,6 @@ func showLogo() {
  / / / / / / / / / / /_/ /  
 /_/ /_/_/ /_/ /_/_/\__,_/
 `
-	logoVersion := fmt.Sprintf("%sVersion:%s\n", logo, model.VERSION)
+	logoVersion := fmt.Sprintf("%s\nVersion:%s\n", logo, Version)
 	fmt.Println(logoVersion)
 }

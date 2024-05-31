@@ -2,6 +2,7 @@
 /.vscode
 /cmd/server/*log*
 /cmd/server/nmid
+/cmd/server/bin
 /example/worker/worker1/*log*
 /example/worker/worker2/*log*
 /example/client/httpclient/http-client
