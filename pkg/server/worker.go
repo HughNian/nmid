@@ -20,11 +20,7 @@ type SWorker struct {
 
 	Weight uint
 
-	Jobs     *JobDataList
-	DingJobs *JobDataList
-	DoneJobs *JobDataList
-
-	JobsMap sync.Map
+	Jobs *JobDataList
 
 	Req *Request
 	Res *Response
@@ -119,12 +115,6 @@ func (w *SWorker) doWork(job *JobData) {
 
 func (w *SWorker) returnData() {
 	job := w.Jobs.PopJobData()
-	// var job *JobData
-	// ret, ok := w.JobsMap.Load(w.Req.JobId)
-	// if ok {
-	// 	job = ret.(*JobData)
-	// 	w.JobsMap.Delete(w.Req.JobId)
-	// }
 
 	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
 		//解包获取数据内容

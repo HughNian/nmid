@@ -176,7 +176,7 @@ func (c *Connect) Write(resPack []byte) error {
 				n, err = worker.Connect.Conn.Write(resPack[:])
 				if err != nil {
 					//worker.CloseSelfWorker()
-					logger.Error("write err", err.Error())
+					logger.Error("worker write err ", err.Error())
 					return err
 				}
 			}

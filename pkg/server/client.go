@@ -78,7 +78,6 @@ func (c *SClient) doJob() {
 
 	worker.Lock()
 	worker.Jobs.PushJobData(job)
-	//w.JobsMap.Store(job.JobId, job)
 	worker.doWork(job)
 	worker.Unlock()
 
