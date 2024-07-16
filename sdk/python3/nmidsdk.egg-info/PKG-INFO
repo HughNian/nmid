@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: nmidsdk
+Version: 0.1.1
+Summary: nmid micro service framework python3 sdk
+Home-page: https://github.com/hughnian/nmid
+Author: hughnian
+Author-email: hughnian@163.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+
+## nmid-sdk
+### nmid micro service framework python3 sdk
+
