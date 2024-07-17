@@ -80,7 +80,7 @@ class Worker:
             self.funcs.pop(func_name)
             self.funcs_num -= 1
 
-        if self.funcs_num == True:
+        if self.running == True:
             self.msg_broadcast(func_name, const.PDT_W_DEL_FUNC)
 
     def get_function(self, func_name: str):
