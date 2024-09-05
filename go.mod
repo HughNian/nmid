@@ -9,6 +9,7 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-kratos/kratos v1.0.1
+	github.com/go-playground/validator v9.31.0+incompatible // indirect
 	github.com/google/uuid v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/joshbohde/codel v0.1.2

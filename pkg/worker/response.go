@@ -16,6 +16,7 @@ import (
 	"github.com/HughNian/nmid/pkg/utils"
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/propagation"
+	"github.com/go-playground/validator"
 	"github.com/vmihailenco/msgpack"
 	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
@@ -119,6 +120,15 @@ func (resp *Response) ShouldBind(obj interface{}) error {
 
 	err = json.Unmarshal(params, &obj)
 	if err != nil {
+		return err
+	}
+
+	validate := validator.New()
+	err = validate.Struct(obj)
+	if err != nil {
+		// for _, err := range err.(validator.ValidationErrors) {
+		// 	logger.Infof(err.Namespace(), "-", err.Tag())
+		// }
 		return err
 	}
 

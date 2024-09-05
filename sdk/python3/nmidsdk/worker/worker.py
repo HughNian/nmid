@@ -4,7 +4,6 @@ import time
 import asyncio
 import nmidsdk.worker.utils as utils
 import nmidsdk.model.const as const
-from queue import Queue
 from nmidsdk.worker.utils import IdGenerator
 from nmidsdk.worker.agent import Agent 
 from nmidsdk.worker.function import Function, JobFunc

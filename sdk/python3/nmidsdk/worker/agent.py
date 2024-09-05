@@ -115,6 +115,7 @@ class Agent:
                 logging.info("Read operation timed out: %s", opErr)
             except socket.error as opErr:
                 if opErr.errno == socket.EAGAIN or opErr.errno == socket.EWOULDBLOCK:
+                    time.sleep(0.01)
                     continue  # 临时错误，继续读取
                 elif opErr.errno == socket.ECONNRESET:  # 可能表示服务器关闭了连接
                     logging.info("Server closed the connection.")

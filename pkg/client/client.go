@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -81,6 +82,10 @@ func (c *Client) Write() (err error) {
 	c.Lock()
 	defer c.Unlock()
 
+	if c.conn == nil {
+		return errors.New("conn nil")
+	}
+
 	var n int
 	buf := c.Req.EncodePack()
 	for i := 0; i < len(buf); i += n {
@@ -94,6 +99,10 @@ func (c *Client) Write() (err error) {
 }
 
 func (c *Client) Read(length int) (data []byte, err error) {
+	if c.conn == nil {
+		return data, errors.New("conn nil")
+	}
+
 	n := 0
 	buf := utils.GetBuffer(length)
 	for i := length; i > 0 || len(data) < model.MIN_DATA_SIZE; i -= n {

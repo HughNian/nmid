@@ -242,19 +242,6 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 
 	tmp := utils.GetBuffer(size)
 	if n, err = c.Conn.Read(tmp); err != nil {
-		if c.ConnType == model.CONN_TYPE_WORKER {
-			logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, c.RunWorker.WorkerName, err.Error())
-			alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, c.RunWorker.WorkerName))
-			//do prometheus worker close count
-			WorkerCloseCount.Inc(c.Ip)
-
-			c.CloseWorkerConnect()
-		}
-
-		if c.ConnType == model.CONN_TYPE_CLIENT {
-			c.CloseClientConnect()
-		}
-
 		return data, err
 	}
 
@@ -315,7 +302,21 @@ func (c *Connect) DoIO() {
 				if opErr.Temporary() {
 					continue
 				} else {
-					//c.Ser.Cpool.DelConnect(c.Id)
+					// c.Ser.Cpool.DelConnect(c.Id)
+
+					if c.ConnType == model.CONN_TYPE_WORKER {
+						logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, c.RunWorker.WorkerName, err.Error())
+						alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, c.RunWorker.WorkerName))
+						//do prometheus worker close count
+						WorkerCloseCount.Inc(c.Ip)
+
+						c.CloseWorkerConnect()
+					}
+
+					if c.ConnType == model.CONN_TYPE_CLIENT {
+						c.CloseClientConnect()
+					}
+
 					break
 				}
 			} else if err == io.EOF {
