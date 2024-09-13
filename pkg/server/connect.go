@@ -123,6 +123,7 @@ func (c *Connect) CloseWorkerConnect() {
 	if c.Conn != nil {
 		c.Conn.Close()
 		c.Conn = nil
+		c.RunWorker.CloseSelfWorker()
 		c.RunWorker = nil
 	}
 }
