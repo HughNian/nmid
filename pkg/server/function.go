@@ -187,7 +187,7 @@ Again:
 				best = hashfunc()
 			}
 
-			//去除连接断开的worerk, 并重新负载均衡选择
+			//去除连接断开的worker, 并重新负载均衡选择
 			if best.Connect.RunWorker == nil || best.Connect == nil {
 				best.CloseSelfWorker()
 				goto Again
