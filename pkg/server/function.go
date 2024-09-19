@@ -133,6 +133,7 @@ func (fm *FuncMap) CleanWorkerFunc(workerId string) bool {
 }
 
 func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
+Again:
 	if item, exist := fm.Funcs.Load(name); exist {
 		function := item.(*Func)
 		if function.WorkerNum > 0 {
@@ -184,6 +185,12 @@ func (fm *FuncMap) GetBestWorker(name string) (worker *SWorker) {
 			//默认，一致性hash
 			default:
 				best = hashfunc()
+			}
+
+			//去除连接断开的worerk, 并重新负载均衡选择
+			if best.Connect.RunWorker == nil || best.Connect == nil {
+				best.CloseSelfWorker()
+				goto Again
 			}
 
 			worker = best
