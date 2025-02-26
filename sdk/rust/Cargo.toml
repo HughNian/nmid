@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "worker",
+    "client",
+    "model"
+]
+ 
+[profile.release]
+debug = true 
+
+[profile.bench]
+debug = true 
