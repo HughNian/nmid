@@ -116,6 +116,7 @@ impl Request {
         content.extend_from_slice(self.job_id.as_bytes());
 
         self.data = content.clone();
+        
         Ok(content)
     }
 

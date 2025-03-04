@@ -188,8 +188,6 @@ func (a *Agent) Grab() {
 	a.Req.GrabDataPack()
 	a.Write()
 	a.Unlock()
-
-	return
 }
 
 func (a *Agent) Wakeup() {

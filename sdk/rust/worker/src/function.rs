@@ -1,15 +1,15 @@
 use super::{Response,WorkerError};
 use std::sync::Arc;
-use serde_json::Value;
 use std::collections::HashMap;
 use async_trait::async_trait;
+use std::any::Any;
 
 #[async_trait]
 pub trait Job: Sync + Send {
     fn get_response(&self) -> Response;
     fn parse_params(&mut self, params: Vec<u8>);
     fn get_params(&self) -> Vec<u8>;
-    fn get_params_map(&self) -> HashMap<String, Value>;
+    fn get_params_map(&self) -> HashMap<String, Arc<dyn Any + Send + Sync>>;
 }
 
 pub trait JobFunc: Sync + Send {
@@ -48,6 +48,7 @@ where
 
 pub trait DynamicJobFunc: Send + Sync {
     fn call(&self, job: Arc<dyn Job>) -> Result<Vec<u8>, WorkerError>;
+    fn get_func_name(&self) -> String;
 }
 
 impl<F> DynamicJobFunc for Function<F> 
@@ -56,5 +57,9 @@ where
 {
     fn call(&self, job: Arc<dyn Job>) -> Result<Vec<u8>, WorkerError> {
         self.func.call(job).map_err(|e| WorkerError::AgentConnection(e.to_string()))
+    }
+
+    fn get_func_name(&self) -> String {
+        self.func_name.clone()
     }
 }

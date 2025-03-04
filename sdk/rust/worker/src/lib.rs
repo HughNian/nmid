@@ -44,11 +44,14 @@ pub struct Worker {
     running: Arc<AtomicBool>,
     use_trace: Arc<AtomicBool>,
     
-    resps: Arc<Mutex<mpsc::Receiver<Response>>>,
+    resps_s: mpsc::Sender<Response>,
+    resps_r: mpsc::Receiver<Response>,
 }
 
 impl Worker {
     pub fn new() -> Self {
+        let (resps_s, resps_r) = mpsc::channel(model::QUEUE_SIZE);
+
         Worker {
             worker_id: String::new(),
             worker_name: String::new(),
@@ -60,12 +63,15 @@ impl Worker {
             ready: Arc::new(RwLock::new(false)),
             running: Arc::new(AtomicBool::new(false)),
             use_trace: Arc::new(AtomicBool::new(false)),
-            resps:  Arc::new(Mutex::new(mpsc::channel(model::QUEUE_SIZE).1))
+            resps_s,
+            resps_r
         }
     }
 
     // 创建线程安全的克隆
     fn clone_worker(&self) -> Self {
+        let (resps_s, resps_r) = mpsc::channel(model::QUEUE_SIZE);
+
         Self {
             worker_id: self.worker_id.clone(),
             worker_name: self.worker_name.clone(),
@@ -73,7 +79,8 @@ impl Worker {
             ready: self.ready.clone(),
             running: self.running.clone(),
             use_trace: self.use_trace.clone(),
-            resps: Arc::clone(&self.resps),
+            resps_s,
+            resps_r
         }
     }
 
@@ -95,6 +102,8 @@ impl Worker {
                     agent.req.lock().await.add_function_pack(name.clone());
                 }
             }
+
+            let _ = agent.write().await;
         }
     }
 
@@ -112,10 +121,10 @@ impl Worker {
         // 异步连接所有Agent
         let connection_results = futures::future::join_all(
             guard.agents.iter().map(|agent| async {
-                agent.connect()
-                    .await
-                    .map_err(|e| WorkerError::AgentConnection(e.to_string()))
-            })
+                    agent.connect()
+                        .await
+                        .map_err(|e| WorkerError::AgentConnection(e.to_string()))
+                })
         ).await;
 
         // 检查连接结果
@@ -201,22 +210,21 @@ impl Worker {
                 
                 let guard = heartbeat_worker.inner.lock().await;
                 for agent in guard.agents.iter() {
-                    agent.heart_beat_ping().await;
-                    agent.grab().await;
+                    agent.heart_beat_ping().await.unwrap();
+                    agent.grab().await.unwrap();
                 }
             }
         });
 
         // 处理响应队列
         while let Some(resp) = {
-            let mut guard = self.resps.lock().await;
-            guard.recv().await
+            self.resps_r.recv().await
         } {
             match resp.data_type {
                 model::PDT_TOSLEEP => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     if let Some(agent) = &resp.agent {
-                        agent.wakeup().await;
+                        agent.wakeup().await.unwrap();
                     }
                 }
                 model::PDT_S_GET_DATA => {
@@ -226,7 +234,7 @@ impl Worker {
                 }
                 model::PDT_NO_JOB | model::PDT_WAKEUPED => {
                     if let Some(agent) = &resp.agent {
-                        agent.grab().await;
+                        agent.grab().await.unwrap();
                     }
                 }
                 model::PDT_S_HEARTBEAT_PONG => {
@@ -236,7 +244,7 @@ impl Worker {
                 }
                 _ => {
                     if let Some(agent) = &resp.agent {
-                        agent.grab().await;
+                        agent.grab().await.unwrap();
                     }
                 }
             }
@@ -267,8 +275,18 @@ impl Worker {
 
         guard.funcs.get(func_name)
         .and_then(|(_, any_func)| {
-            any_func.downcast_ref::<Arc<dyn DynamicJobFunc>>()
-            .map(|f| f.clone())
+            // any_func.downcast_ref::<Arc<dyn DynamicJobFunc>>()
+            // .map(|f| f.clone())
+
+            if let Some(f) = any_func.downcast_ref::<Arc<dyn DynamicJobFunc>>() {
+                if f.get_func_name() == func_name {
+                    return Some(f.clone());
+                } else {
+                    return None;
+                }
+            } else {
+                return None;
+            }
         })
         .ok_or(WorkerError::NoFunctions)
     }
@@ -309,7 +327,7 @@ impl Worker {
     {
         if resp.data_type == model::PDT_S_GET_DATA {
             let afunc = self.get_function(&resp.handle).await?;
-
+            
             let job_instance = Arc::new(resp.clone()) as Arc<dyn Job>;
             let result = afunc.call(job_instance).unwrap();
 
@@ -327,20 +345,33 @@ impl Worker {
     }
 
     pub async fn worker_re_connect(&mut self, agent: Arc<Agent>) {
-        let guard = self.inner.lock().await;
-
-        for func_name in guard.funcs.keys() {
-            agent.del_old_func_msg(func_name.clone()).await;
+        let func_names: Vec<String>; {
+            let guard = self.inner.lock().await;
+            func_names = guard.funcs.keys().cloned().collect()
         }
 
-        agent.close().await;
+        for func_name in func_names.iter() {
+            if let Err(e) = agent.del_old_func_msg(func_name.clone()).await {
+                log::error!("del old func msg error: {}", e)
+            }
+        }
 
-        agent.reconnect().await;
+        if let Err(e) = agent.close().await {
+            log::error!("close agent error: {}", e)
+        }
 
-        agent.re_set_worker_name(self.worker_name.clone()).await;
+        if let Err(e) = agent.reconnect().await {
+            log::error!("reconnect agent error: {}", e)
+        }
 
-        for func_name in guard.funcs.keys() {
-            agent.re_add_func_msg(func_name.clone()).await;
+        if let Err(e) = agent.re_set_worker_name(self.worker_name.clone()).await {
+            log::error!("re set worker name error: {}", e)
+        }
+
+        for func_name in func_names.iter() {
+            if let Err(e) = agent.re_add_func_msg(func_name.clone()).await {
+                log::error!("re add func msg error: {}", e)
+            }
         }
     }
 }
