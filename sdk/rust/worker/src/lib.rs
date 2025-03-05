@@ -90,20 +90,20 @@ impl Worker {
         for agent in guard.agents.iter() {
             match flag {
                 model::PDT_W_SET_NAME => {
-                    agent.req.lock().await.set_worker_name(name.clone());
+                    agent.conn_manager.req.lock().await.set_worker_name(name.clone());
                 }
                 model::PDT_W_ADD_FUNC => {
-                    agent.req.lock().await.add_function_pack(name.clone());
+                    agent.conn_manager.req.lock().await.add_function_pack(name.clone());
                 }
                 model::PDT_W_DEL_FUNC => {
-                    agent.req.lock().await.del_function_pack(name.clone());
+                    agent.conn_manager.req.lock().await.del_function_pack(name.clone());
                 }
                 _=>{
-                    agent.req.lock().await.add_function_pack(name.clone());
+                    agent.conn_manager.req.lock().await.add_function_pack(name.clone());
                 }
             }
 
-            let _ = agent.write().await;
+            let _ = agent.conn_manager.write().await;
         }
     }
 
@@ -121,7 +121,7 @@ impl Worker {
         // 异步连接所有Agent
         let connection_results = futures::future::join_all(
             guard.agents.iter().map(|agent| async {
-                    agent.connect()
+                    agent.conn_manager.connect(&agent.addr)
                         .await
                         .map_err(|e| WorkerError::AgentConnection(e.to_string()))
                 })
@@ -210,8 +210,8 @@ impl Worker {
                 
                 let guard = heartbeat_worker.inner.lock().await;
                 for agent in guard.agents.iter() {
-                    agent.heart_beat_ping().await.unwrap();
-                    agent.grab().await.unwrap();
+                    agent.conn_manager.heart_beat_ping().await.unwrap();
+                    agent.conn_manager.grab().await.unwrap();
                 }
             }
         });
@@ -224,7 +224,7 @@ impl Worker {
                 model::PDT_TOSLEEP => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     if let Some(agent) = &resp.agent {
-                        agent.wakeup().await.unwrap();
+                        agent.conn_manager.wakeup().await.unwrap();
                     }
                 }
                 model::PDT_S_GET_DATA => {
@@ -234,7 +234,7 @@ impl Worker {
                 }
                 model::PDT_NO_JOB | model::PDT_WAKEUPED => {
                     if let Some(agent) = &resp.agent {
-                        agent.grab().await.unwrap();
+                        agent.conn_manager.grab().await.unwrap();
                     }
                 }
                 model::PDT_S_HEARTBEAT_PONG => {
@@ -244,7 +244,7 @@ impl Worker {
                 }
                 _ => {
                     if let Some(agent) = &resp.agent {
-                        agent.grab().await.unwrap();
+                        agent.conn_manager.grab().await.unwrap();
                     }
                 }
             }
@@ -310,7 +310,7 @@ impl Worker {
                 let func_name = func_name.to_string();
                 tokio::spawn(async move {
                     for agent in agents.iter() {
-                        agent.req.lock().await.del_function_pack(func_name.clone());
+                        agent.conn_manager.req.lock().await.del_function_pack(func_name.clone());
                     }
                 });
 
@@ -333,11 +333,11 @@ impl Worker {
 
             if let Some(agent) = &resp.agent {
                 {
-                    let mut req_guard = agent.req.lock().await;
+                    let mut req_guard = agent.conn_manager.req.lock().await;
                     let _ = req_guard.ret_pack(result);
                 }
 
-                let _ = agent.write().await;
+                let _ = agent.conn_manager.write().await;
             }
         }
 
@@ -351,25 +351,25 @@ impl Worker {
         }
 
         for func_name in func_names.iter() {
-            if let Err(e) = agent.del_old_func_msg(func_name.clone()).await {
+            if let Err(e) = agent.conn_manager.del_old_func_msg(func_name.clone()).await {
                 log::error!("del old func msg error: {}", e)
             }
         }
 
-        if let Err(e) = agent.close().await {
+        if let Err(e) = agent.conn_manager.close().await {
             log::error!("close agent error: {}", e)
         }
 
-        if let Err(e) = agent.reconnect().await {
+        if let Err(e) = agent.conn_manager.reconnect(&agent.addr).await {
             log::error!("reconnect agent error: {}", e)
         }
 
-        if let Err(e) = agent.re_set_worker_name(self.worker_name.clone()).await {
+        if let Err(e) = agent.conn_manager.re_set_worker_name(self.worker_name.clone()).await {
             log::error!("re set worker name error: {}", e)
         }
 
         for func_name in func_names.iter() {
-            if let Err(e) = agent.re_add_func_msg(func_name.clone()).await {
+            if let Err(e) = agent.conn_manager.re_add_func_msg(func_name.clone()).await {
                 log::error!("re add func msg error: {}", e)
             }
         }

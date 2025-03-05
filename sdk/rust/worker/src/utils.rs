@@ -8,6 +8,10 @@ pub fn get_buffer(n: usize) -> Vec<u8> {
     vec![0u8; n]
 }
 
+pub fn current_timestamp() -> u64 {
+    chrono::Utc::now().timestamp() as u64
+}
+
 pub fn get_now_second() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
