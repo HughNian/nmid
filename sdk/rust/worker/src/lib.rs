@@ -23,11 +23,13 @@ pub enum WorkerError {
     NoFunctions,
     #[error("agent connection failed: {0}")]
     AgentConnection(String),
+    #[error("Agent creation failed")]
+    AgentCreationFailed,
 }
 
 #[derive(Debug)]
 struct WorkerInner {
-    agents: Arc<Vec<Arc<Agent>>>,
+    agents: Vec<Arc<Agent>>,
     funcs: HashMap<String, (TypeId, Arc<dyn Any + Send + Sync>)>,
     funcs_num: usize,
 }
@@ -56,7 +58,7 @@ impl Worker {
             worker_id: String::new(),
             worker_name: String::new(),
             inner: Arc::new(Mutex::new(WorkerInner {
-                agents: Arc::new(Vec::new()),
+                agents: Vec::new(),
                 funcs: HashMap::new(),
                 funcs_num: 0
             })),
@@ -69,8 +71,8 @@ impl Worker {
     }
 
     // 创建线程安全的克隆
-    fn clone_worker(&self) -> Self {
-        let (resps_s, resps_r) = mpsc::channel(model::QUEUE_SIZE);
+    fn worker_clone(&self) -> Self {
+        let (_, resps_r) = mpsc::channel(model::QUEUE_SIZE);
 
         Self {
             worker_id: self.worker_id.clone(),
@@ -79,9 +81,53 @@ impl Worker {
             ready: self.ready.clone(),
             running: self.running.clone(),
             use_trace: self.use_trace.clone(),
-            resps_s,
+            resps_s: self.resps_s.clone(),
             resps_r
         }
+    }
+
+    pub fn set_worker_id(&mut self, wid: String) -> &Self {
+        if wid.is_empty() {
+            self.worker_id = utils::get_id()
+        } else {
+            self.worker_id = wid
+        }
+
+        self
+    }
+
+    pub fn set_worker_name(&mut self, wname: String) -> &Self {
+        if wname.is_empty() {
+            self.worker_name = utils::get_id()
+        } else {
+            self.worker_name = wname
+        }
+
+        self
+    }
+
+    pub fn get_worker_key(&self) -> String {
+        let mut key = self.worker_name.clone();
+
+        if key.is_empty() {
+            key = self.worker_id.clone()
+        }
+
+        if key.is_empty() {
+            key = utils::get_id()
+        }
+
+        key
+    }
+
+    pub async fn add_server(&self, addr: &str) -> Result<(), WorkerError> {
+        let agent = Agent::new(addr, Arc::new(Mutex::new(self.worker_clone())));
+
+        let mut guard = self.inner.lock().await;
+
+        guard.agents.push(Arc::new(agent));
+
+        Ok(())
     }
 
     pub async fn msg_broadcast(&self, name: String, flag: u32) {
@@ -165,7 +211,7 @@ impl Worker {
         self.running.store(true, Ordering::SeqCst);
 
         // 启动超时检测任务
-        let mut timeout_worker = self.clone_worker();
+        let mut timeout_worker = self.worker_clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
             loop {
@@ -198,7 +244,7 @@ impl Worker {
         });
 
         // 启动心跳和任务抓取
-        let heartbeat_worker = self.clone_worker();
+        let heartbeat_worker = self.worker_clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(model::DEFAULTHEARTBEATTIME));
             loop {
@@ -255,11 +301,11 @@ impl Worker {
     where 
         F: JobFunc + 'static
     {
-        let mut guard = self.inner.lock().await;
         let type_id = TypeId::of::<F>();
         let dyn_func = Arc::new(func) as Arc<dyn DynamicJobFunc>;
         let vfunc = Arc::new(dyn_func) as Arc<dyn Any + Send + Sync>;
-
+        
+        let mut guard = self.inner.lock().await;
         guard.funcs.insert(func_name.to_string(), (type_id, vfunc));
         guard.funcs_num += 1;
 

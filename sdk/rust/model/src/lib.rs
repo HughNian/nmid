@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+pub mod models;
+
 pub const MAX_POOL_SIZE: usize = 128;
 pub const QUEUE_SIZE: usize    = 1;
 pub const BUFFER_SIZE: usize     = 512;

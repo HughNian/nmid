@@ -3,7 +3,7 @@ members = [
     "worker",
     "client",
     "model"
-]
+, "example/worker1"]
  
 [profile.release]
 debug = true 

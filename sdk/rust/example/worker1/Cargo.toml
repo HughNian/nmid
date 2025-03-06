@@ -1,0 +1,10 @@
+[package]
+name = "worker1"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+worker =  { version = "0.1.0", path = "../../worker" }
+model = { version = "0.1.0", path = "../../model" }
+thiserror = "2.0.12"
+tokio = "1.43.0"

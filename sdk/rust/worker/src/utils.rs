@@ -1,8 +1,24 @@
 use super::ParamsValue;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
 use rmpv::{Value, encode};
 use serde_json::{from_slice, Value as JValue};
+
+static COUNTER: AtomicI64 = AtomicI64::new(0);
+
+pub fn get_id() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d: std::time::Duration| d.subsec_nanos() as i64);
+    
+    let base = nanos.wrapping_shl(32);
+    let next = COUNTER.fetch_add(1, Ordering::Relaxed).wrapping_rem(1_000_000);
+    
+    let mut buffer = itoa::Buffer::new();
+    buffer.format(base.wrapping_add(next)).to_string()
+}
+
 pub fn get_buffer(n: usize) -> Vec<u8> {
     vec![0u8; n]
 }
