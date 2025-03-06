@@ -1,9 +1,10 @@
 use super::{Agent,Job,utils};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::any::Any;
 use thiserror::Error;
 use byteorder::{BigEndian, ReadBytesExt};
+use rmpv::Value as MValue;
+use serde_json::Value as JValue;
 
 #[derive(Debug, Error)]
 pub enum ResponseError {
@@ -17,6 +18,12 @@ pub enum ResponseError {
     IoError(#[from] std::io::Error),
     #[error("insufficient data: {0},{1}")]
     InsufficientData(String,String),
+}
+
+#[derive(Debug, Clone)]
+pub enum ParamsValue {
+    MsgPackValue(MValue),
+    JsonValue(JValue),  
 }
 
 #[derive(Debug, Clone)]
@@ -35,7 +42,7 @@ pub struct Response {
     pub params_handle_type: u32,
     pub params_len: u32,
     pub params: Vec<u8>,
-    pub params_map: HashMap<String, Arc<dyn Any + Send + Sync>>,
+    pub params_map: HashMap<String, ParamsValue>,
 
     // 任务标识
     pub job_id: String,
@@ -200,7 +207,7 @@ impl Job for Response {
         self.data.clone()
     }
     
-    fn get_params_map(&self) -> HashMap<String, Arc<dyn Any + Send + Sync>> {
+    fn get_params_map(&self) -> HashMap<String, ParamsValue> {
         self.params_map.clone()
     }
 }
