@@ -1,3 +1,4 @@
+#[derive(serde::Serialize)]
 pub struct GetRetStruct {
     pub code: u32,
     pub msg: String,
