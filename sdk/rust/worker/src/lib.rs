@@ -71,7 +71,7 @@ impl Worker {
     }
 
     // 创建线程安全的克隆
-    fn worker_clone(&self) -> Self {
+    pub fn worker_clone(&self) -> Self {
         let (_, resps_r) = mpsc::channel(model::QUEUE_SIZE);
 
         Self {
@@ -419,5 +419,9 @@ impl Worker {
                 log::error!("re add func msg error: {}", e)
             }
         }
+    }
+
+    pub fn worker_close(&self) {
+        todo!()
     }
 }

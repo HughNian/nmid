@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc;
 use worker::*;
 use model::*;
 use thiserror::Error;
@@ -39,5 +40,34 @@ async fn main() {
 
     wor.worker_ready().await.unwrap();
 
-    wor.worker_do().await;
+    let wor_clone = wor.worker_clone();
+
+    tokio::spawn(async move {
+        wor.worker_do().await;
+    });
+
+    let (tx, rx) = mpsc::channel();
+    ctrlc::set_handler(move || {
+        tx.send(()).unwrap();
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    rx.recv().unwrap();
+    println!("Shutting down...");
+
+    // let (tx, rx) = mpsc::channel();
+    // let tx = Arc::new(Mutex::new(tx));
+    // ctrlc::set_handler({
+    //     let tx = Arc::clone(&tx);
+    //     move || {
+    //         tx.lock().unwrap().send(()).unwrap();
+    //     }
+    // })
+    // .expect("Error setting Ctrl-C handler");
+
+    // rx.recv().unwrap();
+
+    // println!("Shutting down...");
+
+    wor_clone.worker_close();
 }
