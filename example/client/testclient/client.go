@@ -63,13 +63,13 @@ func main() {
 	}
 
 	paramsName1 := make(map[string]interface{})
-	paramsName1["health"] = "check"
+	paramsName1["name"] = "nmid"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 		os.Exit(1)
 	}
-	err = client.Do("gateway/HealthCheck", params1, respHandler)
+	err = client.Do("ToUpper", params1, respHandler)
 	if nil != err {
 		fmt.Println(err)
 	}
