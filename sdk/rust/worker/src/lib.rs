@@ -154,19 +154,23 @@ impl Worker {
     }
 
     pub async fn worker_ready(&self) -> Result<(), WorkerError> {
-        let guard = self.inner.lock().await;
-        
-        if guard.agents.is_empty() {
-            return Err(WorkerError::NoAgents);
-        }
+        let (agents, funcs) = {
+            let guard = self.inner.lock().await;
 
-        if guard.funcs.is_empty() || guard.funcs_num == 0 {
-            return Err(WorkerError::NoFunctions);
+            if guard.funcs.is_empty() || guard.funcs_num == 0 {
+                return Err(WorkerError::NoFunctions);
+            }
+
+            (guard.agents.clone(), guard.funcs.clone())
+        };
+        
+        if agents.is_empty() {
+            return Err(WorkerError::NoAgents);
         }
 
         // 异步连接所有Agent
         let connection_results = futures::future::join_all(
-            guard.agents.iter().map(|agent| async {
+            agents.iter().map(|agent| async {
                     agent.conn_manager.connect(&agent.addr)
                         .await
                         .map_err(|e| WorkerError::AgentConnection(e.to_string()))
@@ -185,7 +189,7 @@ impl Worker {
         ).await;
 
         // 广播所有函数
-        for func_name in guard.funcs.keys() {
+        for func_name in funcs.keys() {
             self.msg_broadcast(
                 func_name.to_string(), 
                 model::PDT_W_ADD_FUNC
@@ -195,6 +199,17 @@ impl Worker {
         // 更新就绪状态
         let mut ready = self.ready.write().unwrap();
         *ready = true;
+
+        tokio::spawn(async move {
+            for agent in agents.iter() {
+                let agent_clone = agent.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = agent_clone.work().await {
+                        log::error!("Agent work error: {}", e);
+                    }
+                });
+            }
+        });
 
         Ok(())
     }

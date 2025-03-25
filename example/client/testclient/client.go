@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	cli "github.com/HughNian/nmid/pkg/client"
 	"github.com/HughNian/nmid/pkg/model"
@@ -22,7 +23,7 @@ func main() {
 	var err error
 
 	serverAddr := SERVERHOST + ":" + SERVERPORT
-	client, err = cli.NewClient("tcp", serverAddr).Start()
+	client, err = cli.NewClient("tcp", serverAddr).SetIoTimeOut(30 * time.Second).Start()
 	if nil == client || err != nil {
 		log.Println(err)
 		return
@@ -62,13 +63,13 @@ func main() {
 	}
 
 	paramsName1 := make(map[string]interface{})
-	paramsName1["name"] = "nmid"
+	paramsName1["health"] = "check"
 	params1, err := msgpack.Marshal(&paramsName1)
 	if err != nil {
 		log.Fatalln("params msgpack error:", err)
 		os.Exit(1)
 	}
-	err = client.Do("ToUpper", params1, respHandler)
+	err = client.Do("gateway/HealthCheck", params1, respHandler)
 	if nil != err {
 		fmt.Println(err)
 	}

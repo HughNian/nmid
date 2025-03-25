@@ -47,7 +47,7 @@ impl Agent {
         }
     }
 
-    pub async fn worker_do(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn work(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.conn_manager.connect(&self.addr).await?;
 
         self.update_last_time();
@@ -79,8 +79,10 @@ impl Agent {
                         Ok(d) => d,
                         Err(e) => {
                             if self.handle_io_error(&e).await {
+                                println!("==io error true==");
                                 continue;
                             } else {
+                                println!("==io error false==");
                                 break Err(e);
                             }
                         }
@@ -223,6 +225,8 @@ impl ConnectionManager {
                 AgentError::InsufficientHeaderData
             );
         }
+
+        println!("===read33===");
 
         // 解析数据长度（BigEndian格式）
         let data_len = byteorder::ReadBytesExt::read_u32::<BigEndian>(

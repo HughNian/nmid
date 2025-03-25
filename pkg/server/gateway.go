@@ -5,14 +5,15 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
+	cli "github.com/HughNian/nmid/pkg/client"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/julienschmidt/httprouter"
@@ -65,8 +66,8 @@ func (ser *Server) StartHTTPAPIGateway(ln net.Listener) {
 	ser.Lock()
 	ser.HTTPServerGateway = &http.Server{
 		Handler:      router,
-		ReadTimeout:  model.DEFAULT_TIME_OUT,
-		WriteTimeout: model.DEFAULT_TIME_OUT,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 300 * time.Second,
 	}
 	ser.Unlock()
 
@@ -85,26 +86,30 @@ func (ser *Server) HTTPAPIGatewayHandle(w http.ResponseWriter, r *http.Request, 
 
 	if requestType == model.HTTPDOWORK {
 		//client do work
-		ser.HTTPDoWorkHandle(w, r, params)
+		ser.HTTPDoWorkByClientHandle(w, r, params)
 	}
 }
 
-// HTTPDoWorkHandle http server router handle
-// first get functionName
-// second make nwe job
-// last doWork with job
-func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	var err error
-	var paramsType uint32
-	var paramsHandleType uint32
-	var paramsBytes []byte
-
-	if r.Header.Get(model.NFunctionName) == "" {
-		functionName := params.ByName("functionName")
-		functionName = strings.TrimPrefix(functionName, "/")
-		r.Header.Set(model.NFunctionName, functionName)
+func (ser *Server) GetClient() *cli.Client {
+	serverAddr := fmt.Sprintf("%s:%s", ser.Host, ser.Port)
+	client, err := cli.NewClient("tcp", serverAddr).SetIoTimeOut(30 * time.Second).Start()
+	if nil == client || err != nil {
+		logger.Error(err)
 	}
-	functionName := r.Header.Get(model.NFunctionName)
+
+	return client
+}
+
+func (ser *Server) HTTPDoWorkByClientHandle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	var functionName string
+	var paramsType uint32
+	var paramsBytes []byte
+	var err error
+
+	functionName = r.Header.Get(model.NFunctionName)
+	if r.Header.Get(model.NFunctionName) == "" {
+		functionName = params.ByName("functionName")
+	}
 
 	paramsType = model.PARAMS_TYPE_MSGPACK
 	if ptype := r.Header.Get(model.NParamsType); ptype != "" {
@@ -113,28 +118,56 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 			paramsType = uint32(val)
 		}
 	}
-	paramsHandleType = model.PARAMS_HANDLE_TYPE_ENCODE
-	if phtype := r.Header.Get(model.NParamsHandleType); phtype != "" {
-		val, err := strconv.Atoi(phtype)
-		if nil == err {
-			paramsHandleType = uint32(val)
-		}
-	}
+
+	client := ser.GetClient()
+	defer client.Close()
+	client.SetParamsType(paramsType)
 
 	//set headers
 	wh := w.Header()
 	wh.Set(model.NFunctionName, r.Header.Get(model.NFunctionName))
 
-	//get best worker with function name
-	worker := ser.Funcs.GetBestWorker(functionName)
-	if worker == nil {
-		wh.Set(model.NMessageStatusType, "PDT_CANT_DO")
-		err = errors.New("no worker can do")
-		wh.Set(model.NErrorMessage, err.Error())
-		return
+	client.ErrHandler = func(e error) {
+		if model.RESTIMEOUT == e {
+			logger.Warn("time out here")
+			wh.Set(model.NMessageStatusType, "REQUST TIME OUT")
+			wh.Set(model.NErrorMessage, e.Error())
+			w.WriteHeader(408)
+		}
+
+		logger.Error(e)
+		wh.Set(model.NMessageStatusType, "REQUST ERROR")
+		wh.Set(model.NErrorMessage, e.Error())
+		w.WriteHeader(500)
 	}
 
-	//make new job
+	respHandler := func(resp *cli.Response) {
+		if resp.DataType == model.PDT_S_RETURN_DATA && resp.RetLen != 0 {
+			if resp.RetLen == 0 {
+				logger.Info("ret empty")
+				return
+			}
+
+			var retStruct model.RetStruct
+			err := msgpack.Unmarshal(resp.Ret, &retStruct)
+			if nil != err {
+				w.Header().Set(model.NMessageStatusType, "RET MSGPACK UNMARSHAL ERROR")
+				wh.Set(model.NErrorMessage, err.Error())
+				return
+			}
+
+			if retStruct.Code != 0 {
+				w.Header().Set(model.NMessageStatusType, "RET CODE ERROR")
+				wh.Set(model.NErrorMessage, retStruct.Msg)
+				return
+			}
+
+			w.Header().Set(model.NPdtDataType, "PDT_S_RETURN_DATA")
+			w.Write(retStruct.Data)
+			return
+		}
+	}
+
 	clen := r.ContentLength
 	if clen == 0 {
 		wh.Set(model.NMessageStatusType, "PARAMS LENGTH ZERO")
@@ -172,52 +205,11 @@ func (ser *Server) HTTPDoWorkHandle(w http.ResponseWriter, r *http.Request, para
 		paramsBytes = body
 	}
 
-	job := NewJobData(functionName, string(paramsBytes))
-	job.Lock()
-	job.WorkerId = worker.WorkerId
-	job.HTTPClientR = r
-	job.FuncName = functionName
-	job.Params = paramsBytes
-	job.ParamsType = paramsType
-	job.ParamsHandleType = paramsHandleType
-	job.Unlock()
-
-	if ok := worker.Jobs.PushJobData(job); !ok {
-		wh.Set(model.NMessageStatusType, "WORKER JOB PUSH JOBLIST ERROR")
-		err = errors.New("worker job push jobList error")
+	err = client.Do(functionName, paramsBytes, respHandler)
+	if nil != err {
+		wh.Set(model.NMessageStatusType, "CLIENT DO ERROR")
+		err = errors.New("client do error")
 		wh.Set(model.NErrorMessage, err.Error())
-		return
-	}
-
-	//doWork
-	go worker.doWork(job)
-
-	//http client response
-	var timer = time.After(model.DEFAULT_TIME_OUT)
-	select {
-	case <-worker.HttpResTag:
-		{
-			var retStruct model.RetStruct
-			err := msgpack.Unmarshal(worker.Res.Ret, &retStruct)
-			if nil != err {
-				w.Header().Set(model.NMessageStatusType, "RET MSGPACK UNMARSHAL ERROR")
-				wh.Set(model.NErrorMessage, err.Error())
-				return
-			}
-
-			if retStruct.Code != 0 {
-				w.Header().Set(model.NMessageStatusType, "RET CODE ERROR")
-				wh.Set(model.NErrorMessage, retStruct.Msg)
-				return
-			}
-
-			w.Header().Set(model.NPdtDataType, "PDT_S_RETURN_DATA")
-			w.Write(retStruct.Data)
-		}
-	case <-timer:
-		w.WriteHeader(200)
-		w.Header().Set(model.NMessageStatusType, "REQUST TIME OUT")
-		wh.Set(model.NErrorMessage, model.RESTIMEOUT.Error())
 		return
 	}
 }
