@@ -41,7 +41,9 @@ func main() {
 		}
 	}()
 
-	rpcserver := ser.NewServer().SetSConfig()
+	showLogo()
+
+	rpcserver := ser.NewServer().SetSConfig().SetVersion(Version)
 	if nil == rpcserver {
 		return
 	}
@@ -49,8 +51,6 @@ func main() {
 
 	//c, cancel := context.WithCancel(context.Background())
 	_, cancel := context.WithCancel(context.Background())
-
-	showLogo()
 
 	//开启rpc tcp服务
 	go rpcserver.ServerRun()

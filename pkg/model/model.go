@@ -12,6 +12,7 @@ type ServerConfig struct {
 	TraceConfig    *TraceConfig    `yaml:"TraceConfig"`
 	DingTalkConfig *DingTalkConfig `yaml:"DingTalkConfig"`
 	Prometheus     *Prometheus     `yaml:"Prometheus"`
+	Dashboard      *Dashboard      `yaml:"Dashboard"`
 }
 
 type RpcServer struct {
@@ -106,6 +107,13 @@ type Prometheus struct {
 	Host   string `yaml:"host"`
 	Port   string `yaml:"port" default:"9099"`
 	Path   string `yaml:"path" default:"/metrics"`
+}
+
+type Dashboard struct {
+	Enable      bool   `yaml:"enable"`
+	Host        string `yaml:"host"`
+	Port        string `yaml:"port" default:"9099"`
+	DefaultPath string `yaml:"default_path" default:"/dashboard"`
 }
 
 func GetRetStruct() *RetStruct {

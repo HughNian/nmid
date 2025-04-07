@@ -30,7 +30,7 @@ type Connect struct {
 	RunWorker *SWorker
 	RunClient *SClient
 
-	isFree uint32
+	// isFree uint32
 }
 
 type ConnectPool struct {

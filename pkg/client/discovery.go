@@ -47,6 +47,9 @@ func (c *Consumer) EtcdWatch() {
 			<-watchCh
 
 			c.Workers = c.GetAllWorkerIns(model.EtcdBaseKey)
+
+			//do prometheus discovery count
+			discoveryCount.Inc("etcd")
 		}
 	}()
 }

@@ -1,9 +1,10 @@
 package server
 
 import (
+	"sync"
+
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/utils"
-	"sync"
 )
 
 type Job struct {
@@ -82,7 +83,7 @@ func (jl *JobList) PushList(job *Job) bool {
 		jl.Head = job
 		jl.Head.Prev = nil
 		jl.Head.Next = nil
-	} else if tmpHead != nil && tmpHead.Next == nil {
+	} else if tmpHead.Next == nil {
 		job.Next = nil
 		job.Prev = tmpHead
 		tmpHead.Next = job
@@ -173,7 +174,7 @@ func (jl *JobList) DelListStatsJob(status uint32) (delNum int) {
 		if job == nil {
 			break
 		}
-		if job != nil && job.status == status {
+		if job.status == status {
 			prevJob := job.Prev
 			nextJob := job.Next
 			if jl.Size > 1 {
@@ -214,7 +215,7 @@ func (jl *JobList) GetListJob(jobId string) (job *Job) {
 		if jl.Size < i {
 			break
 		}
-		if job != nil && job.JobId == jobId {
+		if job.JobId == jobId {
 			isGet = 1
 			break
 		}

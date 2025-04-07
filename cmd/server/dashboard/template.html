@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nmid dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-sidebar: #1a2332;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f0f4f8;
+      --bg-card-header: #f5f7fa;
+      --text-primary: #333333;
+      --text-secondary: #6c757d;
+      --text-sidebar: #b0b8c4;
+      --text-sidebar-active: #ffffff;
+      --border-color: #e2e8f0;
+      --card-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      --hosts-color: #3b82f6;
+      --hosts-bg: #dbeafe;
+      --components-color: #10b981;
+      --components-bg: #d1fae5;
+      --providers-color: #ef4444;
+      --providers-bg: #fee2e2;
+      --badge-bg: #f1f5f9;
+      --badge-text: #64748b;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-sidebar: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #2d3748;
+      --bg-card-header: #1a2332;
+      --text-primary: #f8f9fa;
+      --text-secondary: #cbd5e1;
+      --text-sidebar: #64748b;
+      --text-sidebar-active: #ffffff;
+      --border-color: #334155;
+      --card-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      --hosts-color: #60a5fa;
+      --hosts-bg: #1e3a8a;
+      --components-color: #34d399;
+      --components-bg: #065f46;
+      --providers-color: #f87171;
+      --providers-bg: #7f1d1d;
+      --badge-bg: #334155;
+      --badge-text: #cbd5e1;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-image: linear-gradient(47deg, #f99106 0%, #fc1d44 100%);
+      color: var(--text-sidebar);
+      padding: 20px 0;
+      transition: background-color 0.3s ease, background-image 0.3s ease;
+    }
+
+    [data-theme="dark"] .sidebar {
+      background-image: linear-gradient(47deg, #b86a04 0%, #b01631 100%);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      padding: 0 20px 20px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background-color: #fd7e14;
+      border-radius: 50%;
+      margin-right: 15px;
+      background-image: "https://nmid.site/images/logo-removebg.png";
+    }
+
+    .logo-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 15px;
+      object-fit: contain;
+    }
+
+    .logo-text {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-item.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-sidebar-active);
+      border-left: 3px solid #fd7e14;
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      background-color: var(--text-sidebar);
+      margin-right: 15px;
+      border-radius:11px;
+    }
+
+    .nav-item.active .nav-icon {
+      background-color: #fd7e14;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      width: 24px;
+      height: 24px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      margin-right: 15px;
+      font-size: 1.2rem;
+    }
+
+    .user-profile {
+      width: 36px;
+      height: 36px;
+      background-color: #f1f5f9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .cards-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .status-card {
+      flex: 1;
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+      min-height: 120px;
+    }
+
+    .status-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .status-card h3 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 15px;
+      color: var(--text-primary);
+    }
+
+    .status-card .count {
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .status-card .status-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .hosts-card .count {
+      color: var(--hosts-color);
+    }
+
+    .hosts-card .status-icon {
+      background-color: var(--hosts-bg);
+      color: var(--hosts-color);
+    }
+
+    .components-card .count {
+      color: var(--components-color);
+    }
+
+    .components-card .status-icon {
+      background-color: var(--components-bg);
+      color: var(--components-color);
+    }
+
+    .providers-card .count {
+      color: var(--providers-color);
+    }
+
+    .providers-card .status-icon {
+      background-color: var(--providers-bg);
+      color: var(--providers-color);
+    }
+
+    .section {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 30px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .section-header {
+      padding: 15px 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .host-item {
+      padding: 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .host-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      cursor: pointer;
+      background-color: var(--bg-card-header);
+    }
+
+    .host-name {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .version-badge {
+      background-color: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+    }
+
+    .host-details {
+      padding: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .detail-row {
+      display: flex;
+      margin-bottom: 15px;
+    }
+
+    .detail-label {
+      width: 100px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .detail-value {
+      flex: 1;
+      font-size: 0.9rem;
+    }
+
+    .labels-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .label-badge {
+      background-color: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .detail-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .detail-button {
+      color: #3b82f6;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      text-align: left;
+      padding: 12px 20px;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="logo-container">
+        <img src="https://nmid.site/images/logo-removebg.png" class="logo-img" alt="Nmid Logo">
+        <div class="logo-text">nmid dashboard</div>
+      </div>
+      <div class="nav-item active" data-page="dashboard">
+        <div class="nav-icon"></div>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="hosts">
+        <div class="nav-icon"></div>
+        <span>Hosts</span>
+      </div>
+      <div class="nav-item" data-page="components">
+        <div class="nav-icon"></div>
+        <span>Workers</span>
+      </div>
+      <div class="nav-item" data-page="providers">
+        <div class="nav-icon"></div>
+        <span>Functions</span>
+      </div>
+      <div class="nav-item" data-page="links">
+        <div class="nav-icon"></div>
+        <span>Links</span>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="header">
+        <h1>Overview</h1>
+        <div class="header-actions">
+          <button id="theme-toggle" class="theme-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                    </svg>
+          </button>
+          <div class="user-profile">JS</div>
+        </div>
+      </div>
+
+      <!-- Dashboard Page -->
+      <div id="dashboard" class="page active">
+        <div class="cards-container">
+          <div class="status-card hosts-card">
+            <h3>Discoverys</h3>
+            <div class="count">{{ .DiscoveryNum }}</div>
+            <div class="status-icon">D</div>
+          </div>
+          <div class="status-card components-card">
+            <h3>Workers</h3>
+            <div class="count">{{ .WorkerNum }}</div>
+            <div class="status-icon">W</div>
+          </div>
+          <div class="status-card providers-card">
+            <h3>Functions</h3>
+            <div class="count">{{ .FuncNum }}</div>
+            <div class="status-icon">F</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">Active Hosts</div>
+          <div class="host-item">
+            <div class="host-header">
+              <div class="host-name">
+                Host: {{ .HostName }}
+              </div>
+              <div class="host-name">
+                Server: nmid server
+                <span class="version-badge">{{ .Version }}</span>
+              </div>
+              <div class="detail-button" id="toggle-details">Details ↓</div>
+            </div>
+            <div class="host-details" id="host-details" style="display: none;">
+              <div class="detail-row">
+                <div class="detail-label">Uptime:</div>
+                <div class="detail-value">{{ .UpTime }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">PID:</div>
+                <div class="detail-value">{{ .Pid }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Labels:</div>
+                <div class="detail-value">
+                  <div class="labels-container">
+                    <span class="label-badge">arch={{ .Arch }}</span>
+                    <span class="label-badge">os={{ .Os }}</span>
+                    <span class="label-badge">osfamily={{ .Osfamily }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-container">
+          <div class="section">
+            <div class="section-header">Workers</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+            </table>
+            <div class="empty-state">
+              <div class="empty-icon">⊘</div>
+              <div>No workers found</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-header">Functions</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Health</th>
+                  <th>Hosts</th>
+                </tr>
+              </thead>
+            </table>
+            <div class="empty-state">
+              <div class="empty-icon">⊘</div>
+              <div>No functions found</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hosts Page -->
+      <div id="hosts" class="page">
+        <div class="section">
+          <div class="section-header">Server</div>
+          <div class="host-item">
+            <div class="host-header">
+              <div class="host-name">
+                gray-frog-2204
+                <span class="version-badge">1.7.1</span>
+              </div>
+              <div class="detail-button" id="toggle-details-hosts">Details ↓</div>
+            </div>
+            <div class="host-details" id="host-details-hosts" style="display: none;">
+              <div class="detail-row">
+                <div class="detail-label">Uptime:</div>
+                <div class="detail-value">34 seconds</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Host ID:</div>
+                <div class="detail-value">NCYE0JMB7VEG...</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Labels:</div>
+                <div class="detail-value">
+                  <div class="labels-container">
+                    <span class="label-badge">arch=aarch64</span>
+                    <span class="label-badge">os=macos</span>
+                    <span class="label-badge">osfamily=unix</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workers Page -->
+      <div id="components" class="page">
+        <div class="section">
+          <div class="section-header">Workers</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="empty-state">
+            <div class="empty-icon">⊘</div>
+            <div>No components found</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Functions Page -->
+      <div id="providers" class="page">
+        <div class="section">
+          <div class="section-header">Functions</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Health</th>
+                <th>Hosts</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="empty-state">
+            <div class="empty-icon">⊘</div>
+            <div>No providers found</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Links Page -->
+      <div id="links" class="page">
+        <div class="section">
+          <div class="section-header">Links</div>
+          <div class="empty-state">
+            <div class="empty-icon">⊘</div>
+            <div>No links found</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme toggling
+    const themeToggle = document.getElementById('theme-toggle');
+    let isDarkMode = localStorage.getItem('darkMode') === 'true';
+    
+    function updateTheme() {
+      if (isDarkMode) {
+        document.body.setAttribute('data-theme', 'dark');
+        themeToggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2"></path>
+                        <path d="M12 20v2"></path>
+                        <path d="m4.93 4.93 1.41 1.41"></path>
+                        <path d="m17.66 17.66 1.41 1.41"></path>
+                        <path d="M2 12h2"></path>
+                        <path d="M20 12h2"></path>
+                        <path d="m6.34 17.66-1.41 1.41"></path>
+                        <path d="m19.07 4.93-1.41 1.41"></path>
+                    </svg>
+                `;
+      } else {
+        document.body.removeAttribute('data-theme');
+        themeToggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                    </svg>
+                `;
+      }
+    }
+    
+    // Set initial theme
+    updateTheme();
+    
+    themeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      localStorage.setItem('darkMode', isDarkMode);
+      updateTheme();
+    });
+    
+    // Page navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    const pages = document.querySelectorAll('.page');
+    
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const pageId = item.getAttribute('data-page');
+        
+        // Update navigation active state
+        navItems.forEach(nav => nav.classList.remove('active'));
+        item.classList.add('active');
+        
+        // Update page visibility
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        // Update header title
+        document.querySelector('.header h1').textContent = 
+          pageId.charAt(0).toUpperCase() + pageId.slice(1) + (pageId === 'dashboard' ? ' Overview' : '');
+      });
+    });
+    
+    // Toggle host details
+    const toggleDetails = document.getElementById('toggle-details');
+    const hostDetails = document.getElementById('host-details');
+    
+    toggleDetails.addEventListener('click', () => {
+      const isVisible = hostDetails.style.display !== 'none';
+      hostDetails.style.display = isVisible ? 'none' : 'block';
+      toggleDetails.textContent = isVisible ? 'Details ↓' : 'Details ↑';
+    });
+    
+    // Toggle host details on hosts page
+    const toggleDetailsHosts = document.getElementById('toggle-details-hosts');
+    const hostDetailsHosts = document.getElementById('host-details-hosts');
+    
+    toggleDetailsHosts.addEventListener('click', () => {
+      const isVisible = hostDetailsHosts.style.display !== 'none';
+      hostDetailsHosts.style.display = isVisible ? 'none' : 'block';
+      toggleDetailsHosts.textContent = isVisible ? 'Details ↓' : 'Details ↑';
+    });
+  </script>
+</body>
+</html>

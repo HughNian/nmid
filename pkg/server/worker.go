@@ -79,10 +79,10 @@ func (w *SWorker) delFunction() {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
 
 			//do prometheus worker func count
-			WorkerFuncCount.Add(-1, w.WorkerName, string(functionName))
+			WorkerFuncCount.Set(-1, w.WorkerName, string(functionName))
 
 			//do prometheus func count
-			FuncCount.Add(-1, string(functionName))
+			FuncCount.Set(-1, string(functionName))
 		}
 	}
 }

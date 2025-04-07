@@ -6,8 +6,10 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/conf"
+	"github.com/HughNian/nmid/pkg/dashboard"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/metric"
 	"github.com/HughNian/nmid/pkg/model"
@@ -31,6 +33,8 @@ type Server struct {
 	Cpool             *ConnectPool
 	Funcs             *FuncMap
 	TlsConfig         *tls.Config
+	StartTime         time.Time
+	Version           string
 }
 
 func NewServer() (ser *Server) {
@@ -94,11 +98,25 @@ func (ser *Server) SetTlsCrtKey(certFile, keyFile string) *Server {
 	return ser
 }
 
+func (ser *Server) SetVersion(version string) *Server {
+	ser.Version = version
+	return ser
+}
+
 // start up some else sever like prometheus...
 func (ser *Server) SetStartUp() *Server {
+	//start time
+	ser.StartTime = time.Now()
+
 	//start prometheus
 	if conf.GetConfig().Prometheus.Enable {
 		metric.StartServer(conf.GetConfig())
+	}
+
+	//start dashboard
+	if conf.GetConfig().Dashboard.Enable {
+		dashboard := dashboard.NewDashboard(ser.StartTime, ser.Version)
+		dashboard.StartDashboard(conf.GetConfig())
 	}
 
 	return ser
