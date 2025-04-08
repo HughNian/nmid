@@ -43,7 +43,7 @@ var (
 		Subsystem: "worker",
 		Name:      "func_count",
 		Help:      "nmid worker func count.",
-		Labels:    []string{"worker_name", "func_name"},
+		Labels:    []string{"worker_id", "worker_name", "worker_ip", "func_name"},
 	})
 
 	WorkerFuncSuccessCount = metric.NewCounterVec(&metric.CounterVecOpts{

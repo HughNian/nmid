@@ -114,6 +114,7 @@ type Dashboard struct {
 	Host        string `yaml:"host"`
 	Port        string `yaml:"port" default:"9099"`
 	DefaultPath string `yaml:"default_path" default:"/dashboard"`
+	Template    string `yaml:"template"`
 }
 
 func GetRetStruct() *RetStruct {

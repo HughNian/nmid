@@ -23,9 +23,16 @@
       --components-color: #10b981;
       --components-bg: #d1fae5;
       --providers-color: #ef4444;
+      --close-color: #c6b81c;
+      --worker-color: #ef850d;
       --providers-bg: #fee2e2;
+      --close-bg: #eed572;
+      --worker-bg: #f0ab76;
       --badge-bg: #f1f5f9;
       --badge-text: #64748b;
+      --status-online: #10b981;
+      --status-offline: #ef4444;
+      --status-warning: #f59e0b;
     }
 
     [data-theme="dark"] {
@@ -46,9 +53,16 @@
       --components-color: #34d399;
       --components-bg: #065f46;
       --providers-color: #f87171;
+      --close-color: #e0d017;
+      --worker-color: #ef9733;
       --providers-bg: #7f1d1d;
+      --close-bg: #a68606;
+      --worker-bg: #944203;
       --badge-bg: #334155;
       --badge-text: #cbd5e1;
+      --status-online: #34d399;
+      --status-offline: #f87171;
+      --status-warning: #fbbf24;
     }
 
     * {
@@ -266,6 +280,24 @@
       color: var(--providers-color);
     }
 
+    .close-card .count {
+      color: var(--close-color);
+    }
+
+    .close-card .status-icon {
+      background-color: var(--close-bg);
+      color: var(--close-color);
+    }
+
+    .worker-card .count {
+      color: var(--worker-color);
+    }
+
+    .worker-card .status-icon {
+      background-color: var(--worker-bg);
+      color: var(--worker-color);
+    }
+
     .section {
       background-color: var(--bg-card);
       border-radius: 8px;
@@ -380,6 +412,12 @@
       font-size: 0.9rem;
     }
 
+    .table td {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
     .empty-state {
       padding: 60px 20px;
       text-align: center;
@@ -398,6 +436,61 @@
 
     .page.active {
       display: block;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .status-online {
+      background-color: var(--status-online);
+    }
+
+    .status-offline {
+      background-color: var(--status-offline);
+    }
+
+    .status-warning {
+      background-color: var(--status-warning);
+    }
+
+    .status-text {
+      display: flex;
+      align-items: center;
+    }
+
+    .health-badge {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+    }
+
+    .health-good {
+      background-color: var(--components-bg);
+      color: var(--components-color);
+    }
+
+    .health-warning {
+      background-color: #fff7ed;
+      color: #f59e0b;
+    }
+
+    .health-critical {
+      background-color: var(--providers-bg);
+      color: var(--providers-color);
+    }
+
+    [data-theme="dark"] .health-warning {
+      background-color: #78350f;
+      color: #fbbf24;
     }
   </style>
 </head>
@@ -424,10 +517,10 @@
         <div class="nav-icon"></div>
         <span>Functions</span>
       </div>
-      <div class="nav-item" data-page="links">
+      <!-- <div class="nav-item" data-page="links">
         <div class="nav-icon"></div>
         <span>Links</span>
-      </div>
+      </div> -->
     </div>
 
     <div class="main-content">
@@ -439,7 +532,7 @@
                         <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
                     </svg>
           </button>
-          <div class="user-profile">JS</div>
+          <div class="user-profile">ND</div>
         </div>
       </div>
 
@@ -451,7 +544,7 @@
             <div class="count">{{ .DiscoveryNum }}</div>
             <div class="status-icon">D</div>
           </div>
-          <div class="status-card components-card">
+          <div class="status-card worker-card">
             <h3>Workers</h3>
             <div class="count">{{ .WorkerNum }}</div>
             <div class="status-icon">W</div>
@@ -460,6 +553,23 @@
             <h3>Functions</h3>
             <div class="count">{{ .FuncNum }}</div>
             <div class="status-icon">F</div>
+          </div>
+        </div>
+        <div class="cards-container">
+          <div class="status-card components-card">
+            <h3>Succes</h3>
+            <div class="count">{{ .SuccesNum }}</div>
+            <div class="status-icon">S</div>
+          </div>
+          <div class="status-card providers-card">
+            <h3>Fail</h3>
+            <div class="count">{{ .FailNum }}</div>
+            <div class="status-icon">F</div>
+          </div>
+          <div class="status-card close-card">
+            <h3>Close</h3>
+            <div class="count">{{ .CloseNum }}</div>
+            <div class="status-icon">C</div>
           </div>
         </div>
 
@@ -505,13 +615,22 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>Name</th>
                   <th>ID</th>
+                  <th>Name</th>
                   <th>Status</th>
                 </tr>
               </thead>
-            </table>
-            <div class="empty-state">
+              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
+                {{ range $key, $worker := .WorkerList }}
+                <tr>
+                  <td>{{ $worker.ID }}</td>
+                  <td>{{ $worker.Name }}</td>
+                  <td><div class="status-text"><span class="status-indicator status-online"></span>{{ $worker.Status }}</div></td>
+                </tr>
+                {{ end }}
+              </tbody>
+            </table>  
+            <div class="empty-state" {{ if ne (len .WorkerList) 0 }}style="display: none;"{{ end }}>
               <div class="empty-icon">⊘</div>
               <div>No workers found</div>
             </div>
@@ -523,12 +642,23 @@
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Worker</th>
+                  <th>Worker Host</th>
                   <th>Health</th>
-                  <th>Hosts</th>
                 </tr>
               </thead>
+              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
+                {{ range $key, $func := .FuncList }}
+                <tr>
+                  <td>{{ $func.Name }}</td>
+                  <td>{{ $func.Worker }}</td>
+                  <td>{{ $func.Host }}</td>
+                  <td><span class="health-badge health-good">{{ $func.Health }}</span></td>
+                </tr>
+                {{ end }}
+              </tbody>
             </table>
-            <div class="empty-state">
+            <div class="empty-state" {{ if ne (len .FuncList) 0 }}style="display: none;"{{ end }}>
               <div class="empty-icon">⊘</div>
               <div>No functions found</div>
             </div>

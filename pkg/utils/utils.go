@@ -5,11 +5,13 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -304,4 +306,38 @@ func GetIPZone(ip string) (zinfo ZoneInfo) {
 func RandomInt(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min+1) + min
+}
+
+// 获取服务器第一个有效 IPv4 地址（排除回环和 Docker 虚拟接口）
+func GetServerIP() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", fmt.Errorf("get interfaces failed: %v", err)
+	}
+
+	for _, iface := range interfaces {
+		// 排除 Docker 虚拟接口
+		if strings.Contains(iface.Name, "docker") ||
+			strings.Contains(iface.Name, "lo") {
+			continue
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+
+		for _, addr := range addrs {
+			ipNet, ok := addr.(*net.IPNet)
+			if !ok || ipNet.IP.IsLoopback() {
+				continue
+			}
+
+			if ipv4 := ipNet.IP.To4(); ipv4 != nil {
+				return ipv4.String(), nil
+			}
+		}
+	}
+
+	return "", errors.New("no valid IPv4 address found")
 }
