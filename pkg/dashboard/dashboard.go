@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -20,24 +22,44 @@ var (
 )
 
 type Dashboard struct {
-	Arch         string
-	HostName     string
-	Os           string
-	Osfamily     string
-	Pid          int
-	Version      string
-	StartTime    time.Time
-	UpTime       time.Duration
-	DiscoveryNum int
-	WorkerNum    int
-	FuncNum      int
-	SuccesNum    float64
-	FailNum      float64
-	CloseNum     float64
-	WorkerList   map[string]metric.WorkerList
-	FuncList     map[string]metric.FuncList
+	Pid                                         int
+	Arch                                        string
+	HostName                                    string
+	Os                                          string
+	Osfamily                                    string
+	Version                                     string
+	GoVersion                                   string
+	StartTime                                   time.Time
+	UpTime                                      time.Duration
+	DiscoveryNum                                int
+	WorkerNum                                   int
+	FuncNum                                     int
+	SuccesNum                                   float64
+	FailNum                                     float64
+	CloseNum                                    float64
+	WCurrentPage, FCurrentPage                  int
+	WPageSize, FPageSize                        int
+	WTotalPages, FTotalPages                    int
+	IndexWorkerList, WorkerList, WorkersPerPage []metric.WorkerList
+	IndexFuncList, FuncList, FuncsPerPage       []metric.FuncList
 
 	Template string
+}
+
+func seq(a, b int) []int {
+	var res []int
+	for i := a; i <= b; i++ {
+		res = append(res, i)
+	}
+	return res
+}
+
+func sub(a, b int) int {
+	return a - b
+}
+
+func add(a, b int) int {
+	return a + b
 }
 
 func NewDashboard(startTime time.Time, version string) (d *Dashboard) {
@@ -50,34 +72,87 @@ func NewDashboard(startTime time.Time, version string) (d *Dashboard) {
 		Osfamily:  getOSFamily(),
 		Pid:       os.Getpid(),
 		Version:   version,
+		GoVersion: runtime.Version(),
 		StartTime: startTime,
+		WPageSize: 10,
+		FPageSize: 10,
 	}
 
 	return
 }
 
 func (d *Dashboard) handler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(d.Template)
+	// 创建带自定义函数的模板
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"sub": sub,
+		"add": add,
+		"seq": seq,
+	})
+	tmpl, err := tmpl.ParseFiles(d.Template)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	wpageStr := r.URL.Query().Get("wpage")
+	if wpageStr == "" {
+		d.WCurrentPage = 1
+	} else {
+		d.WCurrentPage, _ = strconv.Atoi(wpageStr)
+	}
+
+	fpageStr := r.URL.Query().Get("fpage")
+	if fpageStr == "" {
+		d.FCurrentPage = 1
+	} else {
+		d.FCurrentPage, _ = strconv.Atoi(fpageStr)
 	}
 
 	dwfNum := metric.GetDiscoveryWorkerFuncNum()
 	d.DiscoveryNum = dwfNum["discovery_num"]
 	d.WorkerNum = dwfNum["worker_num"]
 	d.FuncNum = dwfNum["func_num"]
+
 	sfcNum := metric.GetSuccesFailCloseNum()
 	d.SuccesNum = sfcNum["success_num"]
 	d.FailNum = sfcNum["fail_num"]
 	d.CloseNum = sfcNum["close_num"]
+
 	lists := metric.GetWorkersFuncs()
-	d.WorkerList = lists["workers"].(map[string]metric.WorkerList)
-	d.FuncList = lists["funcs"].(map[string]metric.FuncList)
+	d.WorkerList = lists["workers"].([]metric.WorkerList)
+	totalWorkers := len(d.WorkerList)
+	d.WTotalPages = (totalWorkers + d.WPageSize - 1) / d.WPageSize // 向上取整
+	start := (d.WCurrentPage - 1) * d.WPageSize
+	end := start + d.WPageSize
+	if end > totalWorkers {
+		end = totalWorkers
+	}
+	d.WorkersPerPage = d.WorkerList[start:end]
+
+	d.FuncList = lists["funcs"].([]metric.FuncList)
+	totalFuncs := len(d.FuncList)
+	d.FTotalPages = (totalFuncs + d.FPageSize - 1) / d.FPageSize
+	startFunc := (d.FCurrentPage - 1) * d.FPageSize
+	endFunc := startFunc + d.FPageSize
+	if endFunc > totalFuncs {
+		endFunc = totalFuncs
+	}
+	d.FuncsPerPage = d.FuncList[startFunc:endFunc]
+
+	var iwlimit, iflimit = 5, 5
+	if len(lists["workers"].([]metric.WorkerList)) < iwlimit {
+		iwlimit = len(lists["workers"].([]metric.WorkerList))
+	}
+	if len(lists["funcs"].([]metric.FuncList)) < iflimit {
+		iflimit = len(lists["funcs"].([]metric.FuncList))
+	}
+	d.IndexWorkerList = lists["workers"].([]metric.WorkerList)[0:iwlimit]
+	d.IndexFuncList = lists["funcs"].([]metric.FuncList)[0:iflimit]
 
 	d.UpTime = time.Since(d.StartTime)
 
-	tmpl.Execute(w, d)
+	templateName := filepath.Base(d.Template)
+	tmpl.ExecuteTemplate(w, templateName, d)
 }
 
 func (d *Dashboard) StartDashboard(c model.ServerConfig) {

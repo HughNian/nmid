@@ -78,7 +78,7 @@ func GetSuccesFailCloseNum() map[string]float64 {
 					continue
 				}
 
-				success_num = metric.Counter.GetValue()
+				success_num += metric.Counter.GetValue()
 			}
 		}
 
@@ -89,7 +89,7 @@ func GetSuccesFailCloseNum() map[string]float64 {
 					continue
 				}
 
-				fail_num = metric.Counter.GetValue()
+				fail_num += metric.Counter.GetValue()
 			}
 		}
 
@@ -100,7 +100,7 @@ func GetSuccesFailCloseNum() map[string]float64 {
 					continue
 				}
 
-				close_num = metric.Counter.GetValue()
+				close_num += metric.Counter.GetValue()
 			}
 		}
 	}
@@ -165,8 +165,18 @@ func GetWorkersFuncs() map[string]interface{} {
 		}
 	}
 
-	results["workers"] = workers
-	results["funcs"] = funcs
+	workerList := make([]WorkerList, 0)
+	for _, worker := range workers {
+		workerList = append(workerList, worker)
+	}
+
+	funcList := make([]FuncList, 0)
+	for _, funcl := range funcs {
+		funcList = append(funcList, funcl)
+	}
+
+	results["workers"] = workerList
+	results["funcs"] = funcList
 
 	return results
 }
