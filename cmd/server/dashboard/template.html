@@ -442,6 +442,76 @@
       display: block;
     }
 
+     /* Pagination Styles */
+     .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .pagination-item {
+      margin: 0 5px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.2s ease;
+    }
+
+    a {
+      text-decoration: none;
+    }
+    
+    a:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    a:active {
+      background-color: var(--bg-card-active);
+    }
+
+    a:visited {
+      color: var(--text-color);
+    }
+
+    .pagination-item:hover {
+      background-color: var(--bg-card-hover);
+    }
+    
+    .pagination-item.active {
+      background-color: var(--hosts-color);
+      color: white;
+    }
+    
+    .pagination-arrow {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 5px;
+      color: var(--text-secondary);
+    }
+    
+    .pagination-arrow:hover {
+      background-color: var(--bg-card-hover);
+    }
+    
+    .pagination-info {
+      margin: 0 15px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
     .status-indicator {
       width: 10px;
       height: 10px;
@@ -621,7 +691,7 @@
                 </tr>
               </thead>
               <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $worker := .WorkerList }}
+                {{ range $key, $worker := .IndexWorkerList }}
                 <tr>
                   <td>{{ $worker.ID }}</td>
                   <td>{{ $worker.Name }}</td>
@@ -629,7 +699,7 @@
                 </tr>
                 {{ end }}
               </tbody>
-            </table>  
+            </table>
             <div class="empty-state" {{ if ne (len .WorkerList) 0 }}style="display: none;"{{ end }}>
               <div class="empty-icon">⊘</div>
               <div>No workers found</div>
@@ -648,7 +718,7 @@
                 </tr>
               </thead>
               <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $func := .FuncList }}
+                {{ range $key, $func := .IndexFuncList }}
                 <tr>
                   <td>{{ $func.Name }}</td>
                   <td>{{ $func.Worker }}</td>
@@ -673,27 +743,34 @@
           <div class="host-item">
             <div class="host-header">
               <div class="host-name">
-                gray-frog-2204
-                <span class="version-badge">1.7.1</span>
+                Server: nmid server
+                <span class="version-badge">{{ .Version }}</span>
               </div>
-              <div class="detail-button" id="toggle-details-hosts">Details ↓</div>
             </div>
-            <div class="host-details" id="host-details-hosts" style="display: none;">
+            <div class="host-details" id="host-details-hosts">
+              <div class="detail-row">
+                <div class="detail-label">Host:</div>
+                <div class="detail-value">{{ .HostName }}</div>
+              </div>
               <div class="detail-row">
                 <div class="detail-label">Uptime:</div>
-                <div class="detail-value">34 seconds</div>
+                <div class="detail-value">{{ .UpTime }}</div>
               </div>
               <div class="detail-row">
-                <div class="detail-label">Host ID:</div>
-                <div class="detail-value">NCYE0JMB7VEG...</div>
+                <div class="detail-label">PID:</div>
+                <div class="detail-value">{{ .Pid }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Go Version:</div>
+                <div class="detail-value">{{ .GoVersion }}</div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">Labels:</div>
                 <div class="detail-value">
                   <div class="labels-container">
-                    <span class="label-badge">arch=aarch64</span>
-                    <span class="label-badge">os=macos</span>
-                    <span class="label-badge">osfamily=unix</span>
+                    <span class="label-badge">arch={{ .Arch }}</span>
+                    <span class="label-badge">os={{ .Os }}</span>
+                    <span class="label-badge">osfamily={{ .Osfamily }}</span>
                   </div>
                 </div>
               </div>
@@ -709,15 +786,49 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Name</th>
                 <th>ID</th>
+                <th>Name</th>
                 <th>Status</th>
               </tr>
             </thead>
+            <tbody {{ if eq (len .WorkersPerPage) 0 }}style="display: none;"{{ end }}>
+              {{ range $key, $worker := .WorkersPerPage }}
+              <tr>
+                <td>{{ $worker.ID }}</td>
+                <td>{{ $worker.Name }}</td>
+                <td><div class="status-text"><span class="status-indicator status-online"></span>{{ $worker.Status }}</div></td>
+              </tr>
+              {{ end }}
+            </tbody>
           </table>
-          <div class="empty-state">
+          <div class="pagination">
+            {{ if gt .WCurrentPage 1 }}
+            <div class="pagination-arrow">
+              <a href="?wpage={{ $prevPage := sub .WCurrentPage 1 }}{{ $prevPage }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </a>
+            </div>
+            {{ end }}
+            {{ range $i := seq 1 .WTotalPages }}
+              <a href="?wpage={{ $i }}">
+              <div class="pagination-item {{ if eq $i $.WCurrentPage }}active{{ end }}">{{ $i }}</div>
+              </a>
+            {{ end }}
+            {{ if lt .WCurrentPage .WTotalPages }}
+            <div class="pagination-arrow">
+              <a href="?wpage={{ $nextPage := add .WCurrentPage 1 }}{{ $nextPage }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              </a>
+            </div>
+            {{ end }}
+          </div>
+          <div class="empty-state" {{ if ne (len .WorkersPerPage) 0 }}style="display: none;"{{ end }}>
             <div class="empty-icon">⊘</div>
-            <div>No components found</div>
+            <div>No workers found</div>
           </div>
         </div>
       </div>
@@ -730,14 +841,50 @@
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Worker</th>
+                <th>Worker Host</th>
                 <th>Health</th>
-                <th>Hosts</th>
               </tr>
             </thead>
+            <tbody {{ if eq (len .FuncsPerPage) 0 }}style="display: none;"{{ end }}>
+              {{ range $key, $func := .FuncsPerPage }}
+              <tr>
+                <td>{{ $func.Name }}</td>
+                <td>{{ $func.Worker }}</td>
+                <td>{{ $func.Host }}</td>
+                <td><span class="health-badge health-good">{{ $func.Health }}</span></td>
+              </tr>
+              {{ end }}
+            </tbody>
           </table>
-          <div class="empty-state">
+          <div class="pagination">
+            {{ if gt .FCurrentPage 1 }}
+            <div class="pagination-arrow">
+              <a href="?fpage={{ $prevPage := sub .FCurrentPage 1 }}{{ $prevPage }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </a>
+            </div>
+            {{ end }}
+            {{ range $i := seq 1 .FTotalPages }}
+              <a href="?fpage={{ $i }}">
+              <div class="pagination-item {{ if eq $i $.FCurrentPage }}active{{ end }}">{{ $i }}</div>
+              </a>
+            {{ end }}
+            {{ if lt .FCurrentPage .FTotalPages }}
+            <div class="pagination-arrow">
+              <a href="?fpage={{ $nextPage := add .FCurrentPage 1 }}{{ $nextPage }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              </a>
+            </div>
+            {{ end }}
+          </div>
+          <div class="empty-state" {{ if ne (len .FuncsPerPage) 0 }}style="display: none;"{{ end }}>
             <div class="empty-icon">⊘</div>
-            <div>No providers found</div>
+            <div>No functions found</div>
           </div>
         </div>
       </div>
@@ -752,6 +899,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
