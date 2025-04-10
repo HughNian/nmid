@@ -81,7 +81,7 @@ func NewDashboard(startTime time.Time, version string) (d *Dashboard) {
 	return
 }
 
-func (d *Dashboard) handler(w http.ResponseWriter, r *http.Request) {
+func (d *Dashboard) index(w http.ResponseWriter, r *http.Request) {
 	// 创建带自定义函数的模板
 	tmpl := template.New("").Funcs(template.FuncMap{
 		"sub": sub,
@@ -92,20 +92,6 @@ func (d *Dashboard) handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	wpageStr := r.URL.Query().Get("wpage")
-	if wpageStr == "" {
-		d.WCurrentPage = 1
-	} else {
-		d.WCurrentPage, _ = strconv.Atoi(wpageStr)
-	}
-
-	fpageStr := r.URL.Query().Get("fpage")
-	if fpageStr == "" {
-		d.FCurrentPage = 1
-	} else {
-		d.FCurrentPage, _ = strconv.Atoi(fpageStr)
 	}
 
 	dwfNum := metric.GetDiscoveryWorkerFuncNum()
@@ -119,26 +105,6 @@ func (d *Dashboard) handler(w http.ResponseWriter, r *http.Request) {
 	d.CloseNum = sfcNum["close_num"]
 
 	lists := metric.GetWorkersFuncs()
-	d.WorkerList = lists["workers"].([]metric.WorkerList)
-	totalWorkers := len(d.WorkerList)
-	d.WTotalPages = (totalWorkers + d.WPageSize - 1) / d.WPageSize // 向上取整
-	start := (d.WCurrentPage - 1) * d.WPageSize
-	end := start + d.WPageSize
-	if end > totalWorkers {
-		end = totalWorkers
-	}
-	d.WorkersPerPage = d.WorkerList[start:end]
-
-	d.FuncList = lists["funcs"].([]metric.FuncList)
-	totalFuncs := len(d.FuncList)
-	d.FTotalPages = (totalFuncs + d.FPageSize - 1) / d.FPageSize
-	startFunc := (d.FCurrentPage - 1) * d.FPageSize
-	endFunc := startFunc + d.FPageSize
-	if endFunc > totalFuncs {
-		endFunc = totalFuncs
-	}
-	d.FuncsPerPage = d.FuncList[startFunc:endFunc]
-
 	var iwlimit, iflimit = 5, 5
 	if len(lists["workers"].([]metric.WorkerList)) < iwlimit {
 		iwlimit = len(lists["workers"].([]metric.WorkerList))
@@ -155,6 +121,74 @@ func (d *Dashboard) handler(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, templateName, d)
 }
 
+func (d *Dashboard) workers(w http.ResponseWriter, r *http.Request) {
+	// 创建带自定义函数的模板
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"sub": sub,
+		"add": add,
+		"seq": seq,
+	})
+	tmpl, err := tmpl.ParseFiles("dashboard/workers.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	wpageStr := r.URL.Query().Get("wpage")
+	if wpageStr == "" {
+		d.WCurrentPage = 1
+	} else {
+		d.WCurrentPage, _ = strconv.Atoi(wpageStr)
+	}
+
+	lists := metric.GetWorkersFuncs()
+	d.WorkerList = lists["workers"].([]metric.WorkerList)
+	totalWorkers := len(d.WorkerList)
+	d.WTotalPages = (totalWorkers + d.WPageSize - 1) / d.WPageSize // 向上取整
+	start := (d.WCurrentPage - 1) * d.WPageSize
+	end := start + d.WPageSize
+	if end > totalWorkers {
+		end = totalWorkers
+	}
+	d.WorkersPerPage = d.WorkerList[start:end]
+
+	tmpl.ExecuteTemplate(w, "workers.html", d)
+}
+
+func (d *Dashboard) functions(w http.ResponseWriter, r *http.Request) {
+	// 创建带自定义函数的模板
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"sub": sub,
+		"add": add,
+		"seq": seq,
+	})
+	tmpl, err := tmpl.ParseFiles("dashboard/functions.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fpageStr := r.URL.Query().Get("fpage")
+	if fpageStr == "" {
+		d.FCurrentPage = 1
+	} else {
+		d.FCurrentPage, _ = strconv.Atoi(fpageStr)
+	}
+
+	lists := metric.GetWorkersFuncs()
+	d.FuncList = lists["funcs"].([]metric.FuncList)
+	totalFuncs := len(d.FuncList)
+	d.FTotalPages = (totalFuncs + d.FPageSize - 1) / d.FPageSize
+	startFunc := (d.FCurrentPage - 1) * d.FPageSize
+	endFunc := startFunc + d.FPageSize
+	if endFunc > totalFuncs {
+		endFunc = totalFuncs
+	}
+	d.FuncsPerPage = d.FuncList[startFunc:endFunc]
+
+	tmpl.ExecuteTemplate(w, "functions.html", d)
+}
+
 func (d *Dashboard) StartDashboard(c model.ServerConfig) {
 	if len(c.Dashboard.Port) == 0 {
 		return
@@ -164,7 +198,9 @@ func (d *Dashboard) StartDashboard(c model.ServerConfig) {
 		thread.StartMinorGO("start dashboard server", func() {
 			d.Template = c.Dashboard.Template
 
-			http.HandleFunc(c.Dashboard.DefaultPath, d.handler)
+			http.HandleFunc(c.Dashboard.DefaultPath, d.index)
+			http.HandleFunc("/workers", d.workers)
+			http.HandleFunc("/functions", d.functions)
 
 			dashboradAddr := fmt.Sprintf("%s:%s", c.Dashboard.Host, c.Dashboard.Port)
 			logger.Infof("starting dashboard server at %s", dashboradAddr)
