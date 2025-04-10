@@ -2,6 +2,7 @@ package metric
 
 import (
 	"fmt"
+	"sort"
 
 	prom "github.com/prometheus/client_golang/prometheus"
 )
@@ -48,11 +49,20 @@ func GetDiscoveryWorkerFuncNum() map[string]int {
 							worker_funcs[label.GetValue()]++
 						}
 					}
-					if label.GetName() == "func_name" {
-						if value > 0 {
-							func_num++
-						}
-					}
+				}
+			}
+		}
+
+		if mf.GetName() == "nmid_server_func_func_count" {
+			for _, metric := range mf.Metric {
+				if metric.Gauge == nil {
+					fmt.Println("WARN: metric is not a Gauge type")
+					continue
+				}
+
+				value := metric.Gauge.GetValue()
+				if value > 0 {
+					func_num++
 				}
 			}
 		}
@@ -112,16 +122,18 @@ func GetSuccesFailCloseNum() map[string]float64 {
 }
 
 type WorkerList struct {
-	ID     string
-	Name   string
-	Status string
+	ID         string
+	Name       string
+	Status     string
+	CreateTime string
 }
 
 type FuncList struct {
-	Name   string
-	Health string
-	Worker string
-	Host   string
+	Name       string
+	Health     string
+	Worker     string
+	Host       string
+	CreateTime string
 }
 
 func GetWorkersFuncs() map[string]interface{} {
@@ -139,28 +151,42 @@ func GetWorkersFuncs() map[string]interface{} {
 				}
 
 				value := metric.Gauge.GetValue()
-				if value != 0 {
-					var worker WorkerList
+				var worker WorkerList
+				if value > 0 {
 					worker.Status = "Online"
-
-					var funcl FuncList
-					funcl.Health = "OK"
-
-					for _, label := range metric.Label {
-						if label.GetName() == "worker_name" {
-							worker.Name = label.GetValue()
-							funcl.Worker = label.GetValue()
-						} else if label.GetName() == "worker_id" {
-							worker.ID = label.GetValue()
-						} else if label.GetName() == "func_name" {
-							funcl.Name = label.GetValue()
-						} else if label.GetName() == "worker_ip" {
-							funcl.Host = label.GetValue()
-						}
-					}
-					workers[worker.Name] = worker
-					funcs[funcl.Name] = funcl
+				} else {
+					worker.Status = "Offline"
 				}
+				for _, label := range metric.Label {
+					if label.GetName() == "worker_name" {
+						worker.Name = label.GetValue()
+					} else if label.GetName() == "worker_id" {
+						worker.ID = label.GetValue()
+					} else if label.GetName() == "create_time" {
+						worker.CreateTime = label.GetValue()
+					}
+				}
+				workers[worker.Name] = worker
+
+				var funcl FuncList
+				if value > 0 {
+					funcl.Health = "On"
+				} else {
+					funcl.Health = "Off"
+				}
+				for _, label := range metric.Label {
+					if label.GetName() == "worker_name" {
+						funcl.Worker = label.GetValue()
+					} else if label.GetName() == "func_name" {
+						funcl.Name = label.GetValue()
+					} else if label.GetName() == "worker_ip" {
+						funcl.Host = label.GetValue()
+					} else if label.GetName() == "create_time" {
+						funcl.CreateTime = label.GetValue()
+					}
+				}
+
+				funcs[funcl.Name] = funcl
 			}
 		}
 	}
@@ -169,11 +195,17 @@ func GetWorkersFuncs() map[string]interface{} {
 	for _, worker := range workers {
 		workerList = append(workerList, worker)
 	}
+	sort.Slice(workerList, func(i, j int) bool {
+		return workerList[i].CreateTime < workerList[j].CreateTime
+	})
 
 	funcList := make([]FuncList, 0)
 	for _, funcl := range funcs {
 		funcList = append(funcList, funcl)
 	}
+	sort.Slice(funcList, func(i, j int) bool {
+		return funcList[i].CreateTime < funcList[j].CreateTime
+	})
 
 	results["workers"] = workerList
 	results["funcs"] = funcList

@@ -60,7 +60,8 @@ func (w *SWorker) addFunction() {
 		}
 
 		//do prometheus worker func count
-		WorkerFuncCount.Add(1, w.WorkerId, w.WorkerName, w.Connect.Ip, string(functionName))
+		createTime := time.Now().Format("2006-01-02 15:04:05")
+		WorkerFuncCount.Add(1, w.WorkerId, w.WorkerName, w.Connect.Ip, string(functionName), createTime)
 
 		//do prometheus func count
 		FuncCount.Add(1, string(functionName))
@@ -79,7 +80,8 @@ func (w *SWorker) delFunction() {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
 
 			//do prometheus worker func count
-			WorkerFuncCount.Add(-1, w.WorkerId, w.WorkerName, w.Connect.Ip, string(functionName))
+			createTime := time.Now().Format("2006-01-02 15:04:05")
+			WorkerFuncCount.Add(-1, w.WorkerId, w.WorkerName, w.Connect.Ip, string(functionName), createTime)
 
 			//do prometheus func count
 			FuncCount.Add(-1, string(functionName))
