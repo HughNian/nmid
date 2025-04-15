@@ -12,6 +12,10 @@
       --bg-card: #ffffff;
       --bg-card-hover: #f0f4f8;
       --bg-card-header: #f5f7fa;
+      --error-color: #ef4444;
+      --success-color: #22c55e;
+      --accent-color: #eb4c0e;
+      --accent-hover: #f47d15;
       --text-primary: #333333;
       --text-secondary: #6c757d;
       --text-sidebar: #b0b8c4;
@@ -42,6 +46,10 @@
       --bg-card: #1e293b;
       --bg-card-hover: #2d3748;
       --bg-card-header: #1a2332;
+      --error-color: #f87171;
+      --success-color: #4ade80;
+      --accent-color: #eb4c0e;
+      --accent-hover: #f47d15;
       --text-primary: #f8f9fa;
       --text-secondary: #cbd5e1;
       --text-sidebar: #64748b;
@@ -563,6 +571,207 @@
       background-color: #78350f;
       color: #fbbf24;
     }
+
+    .card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-info h3 {
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stat-info .number {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .stat-card.success .number {
+            color: var(--success-color);
+        }
+
+        .stat-card.error .number {
+            color: var(--error-color);
+        }
+
+        .stat-card.yellow .number {
+            color: #eab308;
+        }
+
+        .stat-card.blue .number {
+            color: var(--accent-color);
+        }
+
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .icon-circle.blue {
+            background-color: var(--accent-color);
+        }
+
+        .icon-circle.green {
+            background-color: var(--success-color);
+        }
+
+        .icon-circle.red {
+            background-color: var(--error-color);
+        }
+
+        .icon-circle.yellow {
+            background-color: #eab308;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            margin-left: 5px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+        }
+
+        .badge-danger {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--error-color);
+        }
   </style>
 </head>
 <body>
@@ -572,10 +781,12 @@
         <img src="https://nmid.site/images/logo-removebg.png" class="logo-img" alt="Nmid Logo">
         <div class="logo-text">nmid dashboard</div>
       </div>
-      <div class="nav-item active" data-page="dashboard">
+      <a href="/dashboard">
+      <div class="nav-item" data-page="dashboard">
         <div class="nav-icon"></div>
         <span>Dashboard</span>
       </div>
+      </a>
       <div class="nav-item" data-page="hosts">
         <div class="nav-icon"></div>
         <span>Hosts</span>
@@ -593,20 +804,16 @@
       </div>
       </a>
       <a href="/health">
-      <div class="nav-item" data-page="providers">
+      <div class="nav-item active" data-page="providers">
         <div class="nav-icon"></div>
         <span>Health</span>
       </div>
       </a>
-      <!-- <div class="nav-item" data-page="links">
-        <div class="nav-icon"></div>
-        <span>Links</span>
-      </div> -->
     </div>
 
     <div class="main-content">
       <div class="header">
-        <h1>Overview</h1>
+        <h1>Health Check</h1>
         <div class="header-actions">
           <button id="theme-toggle" class="theme-toggle">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -614,153 +821,6 @@
                     </svg>
           </button>
           <div class="user-profile">ND</div>
-        </div>
-      </div>
-
-      <!-- Dashboard Page -->
-      <div id="dashboard" class="page active">
-        <div class="cards-container">
-          <div class="status-card hosts-card">
-            <h3>Discoverys</h3>
-            <div class="count">{{ .DiscoveryNum }}</div>
-            <div class="status-icon">D</div>
-          </div>
-          <div class="status-card worker-card">
-            <h3>Workers</h3>
-            <div class="count">{{ .WorkerNum }}</div>
-            <div class="status-icon">W</div>
-          </div>
-          <div class="status-card providers-card">
-            <h3>Functions</h3>
-            <div class="count">{{ .FuncNum }}</div>
-            <div class="status-icon">F</div>
-          </div>
-        </div>
-        <div class="cards-container">
-          <div class="status-card components-card">
-            <h3>Succes</h3>
-            <div class="count">{{ .SuccesNum }}</div>
-            <div class="status-icon">S</div>
-          </div>
-          <div class="status-card providers-card">
-            <h3>Fail</h3>
-            <div class="count">{{ .FailNum }}</div>
-            <div class="status-icon">F</div>
-          </div>
-          <div class="status-card close-card">
-            <h3>Close</h3>
-            <div class="count">{{ .CloseNum }}</div>
-            <div class="status-icon">C</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">Active Hosts</div>
-          <div class="host-item">
-            <div class="host-header">
-              <div class="host-name">
-                Host: {{ .HostName }}
-              </div>
-              <div class="host-name">
-                Server: nmid server
-                <span class="version-badge">{{ .Version }}</span>
-              </div>
-              <div class="detail-button" id="toggle-details">Details ↓</div>
-            </div>
-            <div class="host-details" id="host-details" style="display: none;">
-              <div class="detail-row">
-                <div class="detail-label">Uptime:</div>
-                <div class="detail-value">{{ .UpTime }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">PID:</div>
-                <div class="detail-value">{{ .Pid }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Labels:</div>
-                <div class="detail-value">
-                  <div class="labels-container">
-                    <span class="label-badge">arch={{ .Arch }}</span>
-                    <span class="label-badge">os={{ .Os }}</span>
-                    <span class="label-badge">osfamily={{ .Osfamily }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid-container">
-          <div class="section">
-            <div class="section-header">Workers</div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $worker := .IndexWorkerList }}
-                <tr>
-                  <td>{{ $worker.ID }}</td>
-                  <td>{{ $worker.Name }}</td>
-                  <td>
-                    <div class="status-text">
-                      {{ if eq $worker.Status "Online" }}
-                        <span class="status-indicator status-online"></span>
-                      {{ else if eq $worker.Status "Offline" }}
-                        <span class="status-indicator status-offline"></span>
-                      {{ end }}
-                    {{ $worker.Status }}
-                    </div>
-                  </td>
-                </tr>
-                {{ end }}
-              </tbody>
-            </table>
-            <div class="empty-state" {{ if ne (len .WorkerList) 0 }}style="display: none;"{{ end }}>
-              <div class="empty-icon">⊘</div>
-              <div>No workers found</div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-header">Functions</div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Worker</th>
-                  <th>Worker Host</th>
-                  <th>Health</th>
-                </tr>
-              </thead>
-              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $func := .IndexFuncList }}
-                <tr>
-                  <td>{{ $func.Name }}</td>
-                  <td>{{ $func.Worker }}</td>
-                  <td>{{ $func.Host }}</td>
-                  <td>
-                    {{ if eq $func.Health "On" }}
-                      <span class="health-badge health-good">
-                    {{ else if eq $func.Health "Off" }}
-                      <span class="health-badge health-warning">
-                    {{ end }}
-                      {{ $func.Health }}
-                    </span>
-                  </td>
-                </tr>
-                {{ end }}
-              </tbody>
-            </table>
-            <div class="empty-state" {{ if ne (len .FuncList) 0 }}style="display: none;"{{ end }}>
-              <div class="empty-icon">⊘</div>
-              <div>No functions found</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -806,17 +866,82 @@
           </div>
         </div>
       </div>
-
-      <!-- Links Page -->
-      <div id="links" class="page">
-        <div class="section">
-          <div class="section-header">Links</div>
-          <div class="empty-state">
-            <div class="empty-icon">⊘</div>
-            <div>No links found</div>
-          </div>
+      
+      <!-- Health Page -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">添加新目标</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="serviceUrl">服务 URL</label>
+                    <input type="text" id="serviceUrl" class="form-control" placeholder="https://example.com/api/health" />
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="requestMethod">请求方法</label>
+                        <select id="requestMethod" class="form-control">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="OPTIONS">OPTIONS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="checkInterval">检测间隔 (毫秒)</label>
+                        <select id="checkInterval" class="form-control">
+                            <option value="1000">1000 毫秒（1秒）</option>
+                            <option value="5000" selected>5000 毫秒（5秒）</option>
+                            <option value="30000">30000 毫秒（30秒）</option>
+                            <option value="60000">60000 毫秒（1分钟）</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="requestHeaders">请求头 (JSON 格式)</label>
+                    <textarea id="requestHeaders" class="form-control" placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="requestBody">请求体 (JSON 格式)</label>
+                    <textarea id="requestBody" class="form-control" placeholder='{"key": "value"}'></textarea>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="addTargetBtn" class="btn btn-primary">添加监控目标</button>
+                    <button id="globalToggleBtn" class="btn btn-primary">停止所有监控</button>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">监控目标列表</h2>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>请求方法</th>
+                            <th>状态</th>
+                            <th>响应码</th>
+                            <th>响应时间</th>
+                            <th>最后检测时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="targetTableBody">
+                        <!-- 目标数据将在此动态插入 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
     </div>
   </div>
@@ -863,8 +988,6 @@
     
     // Page navigation
     const navItems = document.querySelectorAll('.nav-item');
-    const wpages = document.querySelectorAll('.wpage');
-    const fpages = document.querySelectorAll('.fpage');
     const pages = document.querySelectorAll('.page');
     
     navItems.forEach(item => {
@@ -885,45 +1008,241 @@
       });
     });
 
-    wpages.forEach(wpage => {
-      wpage.addEventListener('click', () => {
-        const pageId = item.getAttribute('data-page');
+    document.addEventListener('DOMContentLoaded', function() {
+      // 加载所有目标
+      loadTargets();
+      
+      // 设置定时刷新
+      let refreshInterval = setInterval(loadTargets, 5000);
+      
+      // 添加目标按钮点击事件
+      document.getElementById('addTargetBtn').addEventListener('click', function() {
+          const url = document.getElementById('serviceUrl').value.trim();
+          const method = document.getElementById('requestMethod').value;
+          const intervalMs = parseInt(document.getElementById('checkInterval').value);
+          let headers = {};
+          let body = null;
+          
+          try {
+              const headersText = document.getElementById('requestHeaders').value.trim();
+              if (headersText) {
+                  headers = JSON.parse(headersText);
+              }
+          } catch (e) {
+              alert('请求头格式不正确，请使用有效的 JSON 格式');
+              return;
+          }
+          
+          try {
+              const bodyText = document.getElementById('requestBody').value.trim();
+              if (bodyText) {
+                  body = JSON.parse(bodyText);
+              }
+          } catch (e) {
+              alert('请求体格式不正确，请使用有效的 JSON 格式');
+              return;
+          }
+          
+          if (!url) {
+              alert('请输入有效的URL');
+              return;
+          }
+          
+          addTarget(url, method, intervalMs, headers, body);
+      });
 
-        // Update page visibility
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+      document.getElementById('globalToggleBtn').addEventListener('click', function() {
+          toggleGlobalMonitoring();
       });
     });
 
-    fpages.forEach(fpage => {
-      fpage.addEventListener('click', () => {
-        const pageId = item.getAttribute('data-page');
+    // 停止和恢复监控的标志
+    let monitoringActive = true;
 
-        // Update page visibility
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+    // 加载所有目标
+    function loadTargets() {
+      if (!monitoringActive) return;
+      
+      fetch('/api/targets')
+        .then(response => response.json())
+        .then(targets => {
+            const tableBody = document.getElementById('targetTableBody');
+            tableBody.innerHTML = '';
+            
+            targets.forEach(target => {
+                const row = document.createElement('tr');
+                
+                // URL
+                const urlCell = document.createElement('td');
+                urlCell.textContent = target.url;
+                row.appendChild(urlCell);
+                
+                // 请求方法
+                const methodCell = document.createElement('td');
+                methodCell.textContent = target.method || 'GET';
+                row.appendChild(methodCell);
+                
+                // 状态
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.textContent = target.is_up ? '在线' : '离线';
+                statusBadge.className = target.is_up ? 'badge badge-success' : 'badge badge-danger';
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+                
+                // 响应码
+                const codeCell = document.createElement('td');
+                codeCell.textContent = target.status_code || '-';
+                row.appendChild(codeCell);
+                
+                // 响应时间
+                const timeCell = document.createElement('td');
+                timeCell.textContent = target.response_time ? `${(target.response_time / 1000000).toFixed(2)} ms` : '-';
+                row.appendChild(timeCell);
+                
+                // 最后检测时间
+                const lastCheckedCell = document.createElement('td');
+                lastCheckedCell.textContent = target.last_checked_at ? new Date(target.last_checked_at).toLocaleString() : '-';
+                row.appendChild(lastCheckedCell);
+                
+                // 操作
+                const actionCell = document.createElement('td');
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '移除';
+                removeBtn.className = 'btn btn-danger';
+                removeBtn.style.padding = '4px 8px';
+                removeBtn.style.fontSize = '12px';
+                removeBtn.addEventListener('click', function() {
+                    removeTarget(target.url);
+                });
+                
+                const stopBtn = document.createElement('button');
+                stopBtn.textContent = target.is_monitoring ? '停止' : '开始';
+                stopBtn.className = target.is_monitoring ? 'btn btn-danger' : 'btn btn-primary';
+                stopBtn.style.padding = '4px 8px';
+                stopBtn.style.fontSize = '12px';
+                stopBtn.addEventListener('click', function() {
+                    toggleMonitoring(target.url, !target.is_monitoring);
+                });
+                
+                actions.appendChild(removeBtn);
+                actions.appendChild(stopBtn);
+                actionCell.appendChild(actions);
+                row.appendChild(actionCell);
+                
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('加载目标失败:', error);
+        });
+    }
+
+    // 添加目标
+    function addTarget(url, method, intervalMs, headers, body) {
+        fetch('/api/targets', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: url,
+                method: method,
+                interval_ms: intervalMs,
+                headers: headers,
+                body: body
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('添加目标失败');
+            }
+            return response.json();
+        })
+        .then(() => {
+            document.getElementById('serviceUrl').value = '';
+            document.getElementById('requestHeaders').value = '';
+            document.getElementById('requestBody').value = '';
+            loadTargets(); // 重新加载目标列表
+        })
+        .catch(error => {
+            console.error('添加目标失败:', error);
+            alert('添加目标失败: ' + error.message);
+        });
+    }
+    
+    // 移除目标
+    function removeTarget(url) {
+        if (!confirm('确定要移除此监控目标吗？')) {
+            return;
+        }
+        
+        const encodedUrl = encodeURIComponent(url);
+        fetch(`/api/targets?url=${encodedUrl}`, {
+            method: 'DELETE',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('移除目标失败');
+            }
+            return response.json();
+        })
+        .then(() => {
+            loadTargets(); // 重新加载目标列表
+        })
+        .catch(error => {
+            console.error('移除目标失败:', error);
+            alert('移除目标失败: ' + error.message);
+        });
+    }
+    
+    // 切换监控状态
+    function toggleMonitoring(url, isMonitoring) {
+      const encodedUrl = encodeURIComponent(url);
+      fetch(`/api/targets/toggle?url=${encodedUrl}`, {
+          method: 'PUT',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              is_monitoring: isMonitoring
+          }),
+      })
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('更改监控状态失败');
+          }
+          return response.json();
+      })
+      .then(() => {
+          loadTargets(); // 重新加载目标列表
+      })
+      .catch(error => {
+          console.error('更改监控状态失败:', error);
+          alert('更改监控状态失败: ' + error.message);
       });
-    });
+    }
     
-    // Toggle host details
-    const toggleDetails = document.getElementById('toggle-details');
-    const hostDetails = document.getElementById('host-details');
-    
-    toggleDetails.addEventListener('click', () => {
-      const isVisible = hostDetails.style.display !== 'none';
-      hostDetails.style.display = isVisible ? 'none' : 'block';
-      toggleDetails.textContent = isVisible ? 'Details ↓' : 'Details ↑';
-    });
-    
-    // Toggle host details on hosts page
-    const toggleDetailsHosts = document.getElementById('toggle-details-hosts');
-    const hostDetailsHosts = document.getElementById('host-details-hosts');
-    
-    toggleDetailsHosts.addEventListener('click', () => {
-      const isVisible = hostDetailsHosts.style.display !== 'none';
-      hostDetailsHosts.style.display = isVisible ? 'none' : 'block';
-      toggleDetailsHosts.textContent = isVisible ? 'Details ↓' : 'Details ↑';
-    });
+    // 全局停止/开始监控
+    function toggleGlobalMonitoring() {
+      monitoringActive = !monitoringActive;
+      
+      if (monitoringActive) {
+          document.getElementById('globalToggleBtn').textContent = '停止所有监控';
+          document.getElementById('globalToggleBtn').className = 'btn btn-danger';
+          // 重启定时刷新
+          refreshInterval = setInterval(loadTargets, 5000);
+          loadTargets(); // 立即刷新一次
+      } else {
+          document.getElementById('globalToggleBtn').textContent = '开始所有监控';
+          document.getElementById('globalToggleBtn').className = 'btn btn-primary';
+          // 停止定时刷新
+          clearInterval(refreshInterval);
+      }
+    }
   </script>
 </body>
 </html>

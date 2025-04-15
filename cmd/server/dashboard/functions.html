@@ -572,10 +572,12 @@
         <img src="https://nmid.site/images/logo-removebg.png" class="logo-img" alt="Nmid Logo">
         <div class="logo-text">nmid dashboard</div>
       </div>
-      <div class="nav-item active" data-page="dashboard">
+      <a href="/dashboard">
+      <div class="nav-item" data-page="dashboard">
         <div class="nav-icon"></div>
         <span>Dashboard</span>
       </div>
+      </a>
       <div class="nav-item" data-page="hosts">
         <div class="nav-icon"></div>
         <span>Hosts</span>
@@ -587,7 +589,7 @@
       </div>
       </a>
       <a href="/functions">
-      <div class="nav-item" data-page="providers">
+      <div class="nav-item active" data-page="providers">
         <div class="nav-icon"></div>
         <span>Functions</span>
       </div>
@@ -598,10 +600,6 @@
         <span>Health</span>
       </div>
       </a>
-      <!-- <div class="nav-item" data-page="links">
-        <div class="nav-icon"></div>
-        <span>Links</span>
-      </div> -->
     </div>
 
     <div class="main-content">
@@ -614,153 +612,6 @@
                     </svg>
           </button>
           <div class="user-profile">ND</div>
-        </div>
-      </div>
-
-      <!-- Dashboard Page -->
-      <div id="dashboard" class="page active">
-        <div class="cards-container">
-          <div class="status-card hosts-card">
-            <h3>Discoverys</h3>
-            <div class="count">{{ .DiscoveryNum }}</div>
-            <div class="status-icon">D</div>
-          </div>
-          <div class="status-card worker-card">
-            <h3>Workers</h3>
-            <div class="count">{{ .WorkerNum }}</div>
-            <div class="status-icon">W</div>
-          </div>
-          <div class="status-card providers-card">
-            <h3>Functions</h3>
-            <div class="count">{{ .FuncNum }}</div>
-            <div class="status-icon">F</div>
-          </div>
-        </div>
-        <div class="cards-container">
-          <div class="status-card components-card">
-            <h3>Succes</h3>
-            <div class="count">{{ .SuccesNum }}</div>
-            <div class="status-icon">S</div>
-          </div>
-          <div class="status-card providers-card">
-            <h3>Fail</h3>
-            <div class="count">{{ .FailNum }}</div>
-            <div class="status-icon">F</div>
-          </div>
-          <div class="status-card close-card">
-            <h3>Close</h3>
-            <div class="count">{{ .CloseNum }}</div>
-            <div class="status-icon">C</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">Active Hosts</div>
-          <div class="host-item">
-            <div class="host-header">
-              <div class="host-name">
-                Host: {{ .HostName }}
-              </div>
-              <div class="host-name">
-                Server: nmid server
-                <span class="version-badge">{{ .Version }}</span>
-              </div>
-              <div class="detail-button" id="toggle-details">Details ↓</div>
-            </div>
-            <div class="host-details" id="host-details" style="display: none;">
-              <div class="detail-row">
-                <div class="detail-label">Uptime:</div>
-                <div class="detail-value">{{ .UpTime }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">PID:</div>
-                <div class="detail-value">{{ .Pid }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Labels:</div>
-                <div class="detail-value">
-                  <div class="labels-container">
-                    <span class="label-badge">arch={{ .Arch }}</span>
-                    <span class="label-badge">os={{ .Os }}</span>
-                    <span class="label-badge">osfamily={{ .Osfamily }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid-container">
-          <div class="section">
-            <div class="section-header">Workers</div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $worker := .IndexWorkerList }}
-                <tr>
-                  <td>{{ $worker.ID }}</td>
-                  <td>{{ $worker.Name }}</td>
-                  <td>
-                    <div class="status-text">
-                      {{ if eq $worker.Status "Online" }}
-                        <span class="status-indicator status-online"></span>
-                      {{ else if eq $worker.Status "Offline" }}
-                        <span class="status-indicator status-offline"></span>
-                      {{ end }}
-                    {{ $worker.Status }}
-                    </div>
-                  </td>
-                </tr>
-                {{ end }}
-              </tbody>
-            </table>
-            <div class="empty-state" {{ if ne (len .WorkerList) 0 }}style="display: none;"{{ end }}>
-              <div class="empty-icon">⊘</div>
-              <div>No workers found</div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-header">Functions</div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Worker</th>
-                  <th>Worker Host</th>
-                  <th>Health</th>
-                </tr>
-              </thead>
-              <tbody {{ if eq (len .FuncList) 0 }}style="display: none;"{{ end }}>
-                {{ range $key, $func := .IndexFuncList }}
-                <tr>
-                  <td>{{ $func.Name }}</td>
-                  <td>{{ $func.Worker }}</td>
-                  <td>{{ $func.Host }}</td>
-                  <td>
-                    {{ if eq $func.Health "On" }}
-                      <span class="health-badge health-good">
-                    {{ else if eq $func.Health "Off" }}
-                      <span class="health-badge health-warning">
-                    {{ end }}
-                      {{ $func.Health }}
-                    </span>
-                  </td>
-                </tr>
-                {{ end }}
-              </tbody>
-            </table>
-            <div class="empty-state" {{ if ne (len .FuncList) 0 }}style="display: none;"{{ end }}>
-              <div class="empty-icon">⊘</div>
-              <div>No functions found</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -803,6 +654,70 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Functions Page -->
+      <div id="providers" class="page active">
+        <div class="section">
+          <div class="section-header">Functions</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Worker</th>
+                <th>Worker Host</th>
+                <th>Health</th>
+              </tr>
+            </thead>
+            <tbody {{ if eq (len .FuncsPerPage) 0 }}style="display: none;"{{ end }}>
+              {{ range $key, $func := .FuncsPerPage }}
+              <tr>
+                <td>{{ $func.Name }}</td>
+                <td>{{ $func.Worker }}</td>
+                <td>{{ $func.Host }}</td>
+                <td>
+                  {{ if eq $func.Health "On" }}
+                    <span class="health-badge health-good">
+                  {{ else if eq $func.Health "Off" }}
+                    <span class="health-badge health-warning">
+                  {{ end }}
+                    {{ $func.Health }}
+                  </span>
+                </td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+          <div class="pagination">
+            {{ if gt .FCurrentPage 1 }}
+            <div class="pagination-arrow">
+              <a href="?fpage={{ $prevPage := sub .FCurrentPage 1 }}{{ $prevPage }}" class="fpage" data-page="providers">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </a>
+            </div>
+            {{ end }}
+            {{ range $i := seq 1 .FTotalPages }}
+              <a href="?fpage={{ $i }}" class="fpage" data-page="providers">
+              <div class="pagination-item {{ if eq $i $.FCurrentPage }}active{{ end }}">{{ $i }}</div>
+              </a>
+            {{ end }}
+            {{ if lt .FCurrentPage .FTotalPages }}
+            <div class="pagination-arrow">
+              <a href="?fpage={{ $nextPage := add .FCurrentPage 1 }}{{ $nextPage }}" class="fpage" data-page="providers">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              </a>
+            </div>
+            {{ end }}
+          </div>
+          <div class="empty-state" {{ if ne (len .FuncsPerPage) 0 }}style="display: none;"{{ end }}>
+            <div class="empty-icon">⊘</div>
+            <div>No functions found</div>
           </div>
         </div>
       </div>
@@ -863,8 +778,6 @@
     
     // Page navigation
     const navItems = document.querySelectorAll('.nav-item');
-    const wpages = document.querySelectorAll('.wpage');
-    const fpages = document.querySelectorAll('.fpage');
     const pages = document.querySelectorAll('.page');
     
     navItems.forEach(item => {
@@ -882,26 +795,6 @@
         // Update header title
         document.querySelector('.header h1').textContent = 
           pageId.charAt(0).toUpperCase() + pageId.slice(1) + (pageId === 'dashboard' ? ' Overview' : '');
-      });
-    });
-
-    wpages.forEach(wpage => {
-      wpage.addEventListener('click', () => {
-        const pageId = item.getAttribute('data-page');
-
-        // Update page visibility
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-      });
-    });
-
-    fpages.forEach(fpage => {
-      fpage.addEventListener('click', () => {
-        const pageId = item.getAttribute('data-page');
-
-        // Update page visibility
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
       });
     });
     
