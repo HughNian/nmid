@@ -44,6 +44,8 @@ type Dashboard struct {
 	IndexFuncList, FuncList, FuncsPerPage       []metric.FuncList
 
 	Template string
+
+	HealthChecker *HealthChecker
 }
 
 func seq(a, b int) []int {
@@ -66,16 +68,17 @@ func NewDashboard(startTime time.Time, version string) (d *Dashboard) {
 	hostName, _ := os.Hostname()
 
 	d = &Dashboard{
-		Arch:      runtime.GOARCH,
-		HostName:  hostName,
-		Os:        runtime.GOOS,
-		Osfamily:  getOSFamily(),
-		Pid:       os.Getpid(),
-		Version:   version,
-		GoVersion: runtime.Version(),
-		StartTime: startTime,
-		WPageSize: 10,
-		FPageSize: 10,
+		Arch:          runtime.GOARCH,
+		HostName:      hostName,
+		Os:            runtime.GOOS,
+		Osfamily:      getOSFamily(),
+		Pid:           os.Getpid(),
+		Version:       version,
+		GoVersion:     runtime.Version(),
+		StartTime:     startTime,
+		WPageSize:     10,
+		FPageSize:     10,
+		HealthChecker: NewHealthChecker(),
 	}
 
 	return
@@ -189,6 +192,22 @@ func (d *Dashboard) functions(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "functions.html", d)
 }
 
+func (d *Dashboard) health(w http.ResponseWriter, r *http.Request) {
+	// 创建带自定义函数的模板
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"sub": sub,
+		"add": add,
+		"seq": seq,
+	})
+	tmpl, err := tmpl.ParseFiles("dashboard/health.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "health.html", d)
+}
+
 func (d *Dashboard) StartDashboard(c model.ServerConfig) {
 	if len(c.Dashboard.Port) == 0 {
 		return
@@ -198,9 +217,14 @@ func (d *Dashboard) StartDashboard(c model.ServerConfig) {
 		thread.StartMinorGO("start dashboard server", func() {
 			d.Template = c.Dashboard.Template
 
+			//html
 			http.HandleFunc(c.Dashboard.DefaultPath, d.index)
 			http.HandleFunc("/workers", d.workers)
 			http.HandleFunc("/functions", d.functions)
+			http.HandleFunc("/health", d.health)
+			//api
+			http.HandleFunc("/api/targets", d.HealthChecker.requestTargets)
+			http.HandleFunc("/api/targets/", d.HealthChecker.getTargets)
 
 			dashboradAddr := fmt.Sprintf("%s:%s", c.Dashboard.Host, c.Dashboard.Port)
 			logger.Infof("starting dashboard server at %s", dashboradAddr)
