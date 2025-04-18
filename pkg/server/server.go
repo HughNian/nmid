@@ -111,12 +111,12 @@ func (ser *Server) SetStartUp() *Server {
 	//start prometheus
 	if conf.GetConfig().Prometheus.Enable {
 		metric.StartServer(conf.GetConfig())
-	}
 
-	//start dashboard
-	if conf.GetConfig().Dashboard.Enable {
-		dashboard := dashboard.NewDashboard(ser.StartTime, ser.Version)
-		dashboard.StartDashboard(conf.GetConfig())
+		//start dashboard
+		if conf.GetConfig().Dashboard.Enable {
+			dashboard := dashboard.NewDashboard(ser.StartTime, ser.Version)
+			dashboard.StartDashboard(conf.GetConfig())
+		}
 	}
 
 	return ser
