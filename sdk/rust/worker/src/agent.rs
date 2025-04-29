@@ -226,8 +226,6 @@ impl ConnectionManager {
             );
         }
 
-        println!("===read33===");
-
         // 解析数据长度（BigEndian格式）
         let data_len = byteorder::ReadBytesExt::read_u32::<BigEndian>(
             &mut &temp[8..model::MIN_DATA_SIZE]
