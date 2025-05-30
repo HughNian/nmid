@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
 use byteorder::{BigEndian, ReadBytesExt};
-use rmpv::Value as MValue;
-use serde_json::Value as JValue;
+// use rmpv::Value as MValue;
+// use serde_json::Value as JValue;
 
 #[derive(Debug, Error)]
 pub enum ResponseError {
@@ -20,11 +20,11 @@ pub enum ResponseError {
     InsufficientData(String,String),
 }
 
-#[derive(Debug, Clone)]
-pub enum ParamsValue {
-    MsgPackValue(MValue),
-    JsonValue(JValue),  
-}
+// #[derive(Debug, Clone)]
+// pub enum ParamsValue {
+//     MsgPackValue(MValue),
+//     JsonValue(JValue),  
+// }
 
 #[derive(Debug, Clone)]
 pub struct Response {
@@ -42,7 +42,7 @@ pub struct Response {
     pub params_handle_type: u32,
     pub params_len: u32,
     pub params: Vec<u8>,
-    pub params_map: HashMap<String, ParamsValue>,
+    pub params_map: HashMap<String, String>,
 
     // 任务标识
     pub job_id: String,
@@ -196,18 +196,21 @@ impl Job for Response {
     }
 
     fn parse_params(&mut self, params: Vec<u8>) {
-        if self.data_type == model::PARAMS_TYPE_MSGPACK {
-            self.params_map = utils::msgpack_params_map(params).unwrap();
-        } else if self.data_type == model::PARAMS_TYPE_JSON {
-            self.params_map = utils::json_params_map(params).unwrap();
+        self.params = params.clone();
+        if self.params_type == model::PARAMS_TYPE_MSGPACK {
+            let temp_map = utils::msgpack_params_map(params).unwrap();
+            self.params_map = temp_map.into_iter().collect()
+        } else if self.params_type == model::PARAMS_TYPE_JSON {
+            let temp_map = utils::json_params_map(params).unwrap();
+            self.params_map = temp_map.into_iter().collect()
         }
     }
 
     fn get_params(&self) -> Vec<u8> {
-        self.data.clone()
+        self.params.clone()
     }
-    
-    fn get_params_map(&self) -> HashMap<String, ParamsValue> {
+
+    fn get_params_map(&self) -> HashMap<String, String> {
         self.params_map.clone()
     }
 }

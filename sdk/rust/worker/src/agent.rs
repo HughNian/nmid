@@ -48,8 +48,6 @@ impl Agent {
     }
 
     pub async fn work(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.conn_manager.connect(&self.addr).await?;
-
         self.update_last_time();
 
         let agent = Arc::new(self.clone());
@@ -79,10 +77,8 @@ impl Agent {
                         Ok(d) => d,
                         Err(e) => {
                             if self.handle_io_error(&e).await {
-                                println!("==io error true==");
                                 continue;
                             } else {
-                                println!("==io error false==");
                                 break Err(e);
                             }
                         }
@@ -95,7 +91,7 @@ impl Agent {
                 }
             }
 
-            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
         }
     }
 
@@ -114,7 +110,7 @@ impl Agent {
 
         // 解码数据包
         match Response::decode_pack(&data) {
-            Ok((resp, processed_len)) => {
+            Ok((mut resp, processed_len)) => {
                 if processed_len != data.len() {
                     *left_data = data[processed_len..].to_vec();
                 } else {
@@ -126,6 +122,7 @@ impl Agent {
                     let guard = self.worker.lock().await;
                     guard.resps_s.clone()
                 };
+                resp.agent = Some(Arc::new(self.clone())); // 设置关联的Agent
                 sender.send(resp).await.map_err(|_| io::Error::new(ErrorKind::BrokenPipe, "Worker channel closed"))?;
                 
                 Ok(true)
@@ -210,7 +207,8 @@ impl ConnectionManager {
     pub async fn read(&self) -> Result<Vec<u8>, AgentError> {
         let mut buf = Vec::with_capacity(model::MIN_DATA_SIZE * 2);
         let mut temp = utils::get_buffer(model::MIN_DATA_SIZE);
-        
+        let mut stemp = &mut temp[..];
+
         let mut conn_guard = self.conn.lock().await;
         let conn = conn_guard.as_mut().ok_or(AgentError::NotConnected)?; // 明确处理未连接状态
         if let Err(e) = conn.peer_addr() {
@@ -219,7 +217,7 @@ impl ConnectionManager {
         }
 
         // 读取初始数据块
-        let n = conn.read(&mut temp).await?;
+        let n = conn.read(&mut stemp).await?;
         if n < model::MIN_DATA_SIZE {
             return Err(
                 AgentError::InsufficientHeaderData
@@ -228,15 +226,16 @@ impl ConnectionManager {
 
         // 解析数据长度（BigEndian格式）
         let data_len = byteorder::ReadBytesExt::read_u32::<BigEndian>(
-            &mut &temp[8..model::MIN_DATA_SIZE]
+            &mut &stemp[8..model::MIN_DATA_SIZE]
         )?;
-        buf.extend_from_slice(&temp[..n]);
+        buf.extend_from_slice(&stemp[..n]);
 
         // 循环读取剩余数据
         while buf.len() < model::MIN_DATA_SIZE + data_len as usize {
             let mut tmp_content = utils::get_buffer(data_len as usize);
-            let n = conn.read(&mut tmp_content).await?;
-            buf.extend_from_slice(&tmp_content[..n]);
+            let mut stmp_content = &mut tmp_content[..];
+            let n = conn.read(&mut stmp_content).await?;
+            buf.extend_from_slice(&stmp_content[..n]);
             
             if n == 0 { // 处理连接关闭的情况
                 return Err(
@@ -244,6 +243,8 @@ impl ConnectionManager {
                 );
             }
         }
+
+        // println!("buf: {:?}", buf);
 
         Ok(buf)
     }

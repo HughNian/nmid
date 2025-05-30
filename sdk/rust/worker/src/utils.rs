@@ -1,4 +1,3 @@
-use super::ParamsValue;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
@@ -59,8 +58,8 @@ pub fn msg_pack_decode(buf: Vec<u8>) -> Value {
     rmpv::decode::read_value(&mut &buf[..]).unwrap()
 }
 
-pub fn msgpack_params_map(buf: Vec<u8>) -> Option<HashMap<String, ParamsValue>> {
-    let mut params_map:HashMap<String, ParamsValue> = HashMap::new();
+pub fn msgpack_params_map(buf: Vec<u8>) -> Result<HashMap<String, String>, ()> {
+    let mut params_map:HashMap<String, String> = HashMap::new();
     
     match msg_pack_decode(buf) {
         Value::Map(mapkv) => {
@@ -68,7 +67,8 @@ pub fn msgpack_params_map(buf: Vec<u8>) -> Option<HashMap<String, ParamsValue>> 
                 match key {
                     Value::String(key_str) => {
                         let map_key = key_str.as_str().unwrap().to_string();
-                        params_map.insert(map_key, ParamsValue::MsgPackValue(value));
+                        let map_value =value.as_str().unwrap().to_string();
+                        params_map.insert(map_key, map_value);
                     }
 
                     _ => {
@@ -80,30 +80,31 @@ pub fn msgpack_params_map(buf: Vec<u8>) -> Option<HashMap<String, ParamsValue>> 
         }
         
         _ => {
-            return None;
+            return Err(());
         }
     }
 
-    Some(params_map)
+    Ok(params_map)
 }
 
-pub fn json_params_map(buf: Vec<u8>) -> Option<HashMap<String, ParamsValue>> {
-    let mut params_map: HashMap<String, ParamsValue>   = HashMap::new();
+pub fn json_params_map(buf: Vec<u8>) -> Result<HashMap<String, String>, ()> {
+    let mut params_map: HashMap<String, String>   = HashMap::new();
 
     match from_slice::<JValue>(&buf) {
         Ok(JValue::Object(map)) => {
             for (k, v) in map {
-                params_map.insert(k, ParamsValue::JsonValue(v));
+                let value = v.as_str().unwrap().to_string();
+                params_map.insert(k, value);
             }
 
-            Some(params_map)
+            Ok(params_map)
         }
 
-        Ok(_) => None, // 非对象类型返回None
+        Ok(_) => Err(()), // 非对象类型返回None
 
         Err(e) => {
             log::warn!("JSON parse error: {}", e);
-            None
+            Err(())
         }
     }
 }

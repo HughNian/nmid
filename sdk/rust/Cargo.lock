@@ -1947,7 +1947,9 @@ version = "0.1.0"
 dependencies = [
  "ctrlc",
  "model",
+ "rmp",
  "rmp-serde",
+ "serde",
  "serde_json",
  "signal-hook",
  "thiserror 2.0.12",

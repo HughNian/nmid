@@ -1,4 +1,4 @@
-use super::{Response,WorkerError,ParamsValue};
+use super::{Response,WorkerError};
 use std::sync::Arc;
 use std::collections::HashMap;
 use async_trait::async_trait;
@@ -8,7 +8,7 @@ pub trait Job: Sync + Send {
     fn get_response(&self) -> Response;
     fn parse_params(&mut self, params: Vec<u8>);
     fn get_params(&self) -> Vec<u8>;
-    fn get_params_map(&self) -> HashMap<String, ParamsValue>;
+    fn get_params_map(&self) -> HashMap<String, String>;
 }
 
 pub trait JobFunc: Sync + Send {

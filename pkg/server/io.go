@@ -157,7 +157,6 @@ func (req *Request) ReqDecodePack() {
 			end := model.UINT32_SIZE + handLen
 			copy(handle, req.Data[start:end])
 			req.Handle = string(handle)
-
 			var params []byte
 			var paramsLen int
 			start = end
@@ -169,7 +168,6 @@ func (req *Request) ReqDecodePack() {
 			end = start + paramsLen
 			copy(params, req.Data[start:end])
 			req.Params = params //append(req.Params, params...)
-
 			var ret []byte
 			var retLen int
 			start = end

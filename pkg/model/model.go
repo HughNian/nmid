@@ -97,7 +97,7 @@ type DingTalkConfig struct {
 }
 
 type RetStruct struct {
-	Code int
+	Code int64
 	Msg  string
 	Data []byte
 }

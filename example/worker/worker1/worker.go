@@ -91,6 +91,7 @@ func ToUpper(job wor.Job) ([]byte, error) {
 	err := job.ShouldBind(&params)
 	if err == nil {
 		retStruct := model.GetRetStruct()
+		retStruct.Code = 0
 		retStruct.Msg = "ok"
 		retStruct.Data = []byte(strings.ToUpper(params.Name))
 		ret, err := msgpack.Marshal(retStruct)
@@ -100,6 +101,9 @@ func ToUpper(job wor.Job) ([]byte, error) {
 
 		resp.RetLen = uint32(len(ret))
 		resp.Ret = ret
+
+		fmt.Println("==result1==", ret)
+		fmt.Println("==result1 string==", string(ret))
 
 		return ret, nil
 	} else {

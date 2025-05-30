@@ -232,7 +232,8 @@ impl Worker {
             loop {
                 interval.tick().await;
                 
-                if timeout_worker.running.load(Ordering::SeqCst) == false {
+                let run_status = timeout_worker.running.load(Ordering::SeqCst);
+                if run_status == false {
                     break;
                 }
                 
@@ -245,7 +246,8 @@ impl Worker {
                     let last_time = agent.last_time.load(Ordering::Relaxed);
                     let now = utils::get_now_second();
                     
-                    if now - last_time > model::NMID_SERVER_TIMEOUT {
+                    let diff_time = now - last_time;
+                    if diff_time > model::NMID_SERVER_TIMEOUT {
                         log::error!(
                             "nmid server timeout: server@{} worker@{}",
                             agent.addr,
@@ -264,8 +266,9 @@ impl Worker {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(model::DEFAULTHEARTBEATTIME));
             loop {
                 interval.tick().await;
-                
-                if heartbeat_worker.running.load(Ordering::SeqCst) == false {
+
+                let run_status = heartbeat_worker.running.load(Ordering::SeqCst);
+                if run_status == false {
                     break;
                 }
                 
@@ -391,10 +394,15 @@ impl Worker {
             
             let job_instance = Arc::new(resp.clone()) as Arc<dyn Job>;
             let result = afunc.call(job_instance).unwrap();
-
             if let Some(agent) = &resp.agent {
                 {
                     let mut req_guard = agent.conn_manager.req.lock().await;
+                    req_guard.handle = resp.handle.clone();
+                    req_guard.handle_len = resp.handle_len;
+                    req_guard.params = resp.params.clone();
+                    req_guard.params_len = resp.params_len;
+                    req_guard.job_id = resp.job_id.clone();
+                    req_guard.job_id_len = resp.job_id_len;
                     let _ = req_guard.ret_pack(result);
                 }
 

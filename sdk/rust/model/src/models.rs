@@ -1,7 +1,10 @@
 #[derive(serde::Serialize)]
 pub struct GetRetStruct {
-    pub code: u32,
+    #[serde(rename = "Code")]
+    pub code: i64,
+    #[serde(rename = "Msg")]
     pub msg: String,
+    #[serde(rename = "Data")]
     pub data: Vec<u8>,
 }
 
