@@ -3,6 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
 use rmpv::{Value, encode};
 use serde_json::{from_slice, Value as JValue};
+use model::*;
 
 static COUNTER: AtomicI64 = AtomicI64::new(0);
 
@@ -107,4 +108,25 @@ pub fn json_params_map(buf: Vec<u8>) -> Result<HashMap<String, String>, ()> {
             Err(())
         }
     }
+}
+
+pub fn msgpack_encode_data(data: &models::GetRetStruct) -> Result<Vec<u8>, rmp::encode::ValueWriteError> {
+    let mut buf = Vec::new();
+    
+    // 编码为 map 格式
+    rmp::encode::write_map_len(&mut buf, 3)?; // 4 个字段
+    
+    // code 字段
+    rmp::encode::write_str(&mut buf, "Code")?;
+    rmp::encode::write_i64(&mut buf, data.code)?; // 强制使用 int64 编码
+    
+    // msg 字段
+    rmp::encode::write_str(&mut buf, "Msg")?;
+    rmp::encode::write_str(&mut buf, &data.msg)?;
+    
+    // data 字段
+    rmp::encode::write_str(&mut buf, "Data")?;
+    rmp::encode::write_bin(&mut buf, &data.data)?;// 强制使用 int64 编码
+    
+    Ok(buf)
 }

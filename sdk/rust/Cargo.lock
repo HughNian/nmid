@@ -1934,6 +1934,7 @@ dependencies = [
  "model",
  "parking_lot",
  "reqwest",
+ "rmp",
  "rmpv",
  "serde",
  "serde_json",

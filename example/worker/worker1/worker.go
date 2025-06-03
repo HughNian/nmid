@@ -102,9 +102,6 @@ func ToUpper(job wor.Job) ([]byte, error) {
 		resp.RetLen = uint32(len(ret))
 		resp.Ret = ret
 
-		fmt.Println("==result1==", ret)
-		fmt.Println("==result1 string==", string(ret))
-
 		return ret, nil
 	} else {
 		return nil, fmt.Errorf("invalid params")

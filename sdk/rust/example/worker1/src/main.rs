@@ -15,27 +15,6 @@ pub enum ToUpperError {
     InvalidParams(String),
 }
 
-fn msgpack_encode_data(data: &models::GetRetStruct) -> Result<Vec<u8>, rmp::encode::ValueWriteError> {
-    let mut buf = Vec::new();
-    
-    // 编码为 map 格式
-    rmp::encode::write_map_len(&mut buf, 3)?; // 4 个字段
-    
-    // code 字段
-    rmp::encode::write_str(&mut buf, "Code")?;
-    rmp::encode::write_i64(&mut buf, data.code)?; // 强制使用 int64 编码
-    
-    // msg 字段
-    rmp::encode::write_str(&mut buf, "Msg")?;
-    rmp::encode::write_str(&mut buf, &data.msg)?;
-    
-    // data 字段
-    rmp::encode::write_str(&mut buf, "Data")?;
-    rmp::encode::write_bin(&mut buf, &data.data)?;// 强制使用 int64 编码
-    
-    Ok(buf)
-}
-
 fn to_upper(job: Arc<dyn Job>) -> Result<Vec<u8>, Box<dyn std::error::Error+Send + Sync + 'static>> {
     let resp = job.get_response();
     let value = resp.params_map.get("name").unwrap();
@@ -47,7 +26,7 @@ fn to_upper(job: Arc<dyn Job>) -> Result<Vec<u8>, Box<dyn std::error::Error+Send
         data: upper_value.into_bytes(),
     };
 
-    let bytes = match msgpack_encode_data(&ret_struct) {
+    let bytes = match worker::utils::msgpack_encode_data(&ret_struct) {
         Ok(data) => data,
         Err(e) => {
             eprintln!("Error encoding data: {}", e);
