@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -20,7 +21,12 @@ type SWorker struct {
 
 	Weight uint
 
-	Jobs *JobDataList
+	Jobs map[string]*JobDataList
+
+	JobChannelsMutex sync.RWMutex
+	JobChannels      map[string]chan *JobData
+
+	Results chan *ResultJob
 
 	Req *Request
 	Res *Response
@@ -33,15 +39,22 @@ type SWorker struct {
 	HttpResTag chan struct{}
 }
 
+type ResultJob struct {
+	JobId    string
+	FuncName string
+}
+
 func NewSWorker(conn *Connect) *SWorker {
 	if conn == nil {
 		return nil
 	}
 
-	return &SWorker{
+	sworker := &SWorker{
 		WorkerId:      conn.Id,
 		Connect:       conn,
-		Jobs:          NewJobDataList(),
+		Jobs:          make(map[string]*JobDataList),
+		JobChannels:   make(map[string]chan *JobData),
+		Results:       make(chan *ResultJob, 1024),
 		Req:           NewReq(),
 		Res:           NewRes(),
 		Sleep:         false,
@@ -49,6 +62,72 @@ func NewSWorker(conn *Connect) *SWorker {
 		BucketLimiter: limiter.NewBucketLimiter(),
 		HttpResTag:    make(chan struct{}),
 	}
+
+	go sworker.processResults()
+
+	return sworker
+}
+
+func (w *SWorker) processResults() {
+	for result := range w.Results {
+		w.returnData(result.FuncName)
+	}
+}
+
+func (w *SWorker) GetJobChannel(funcName string) chan *JobData {
+	if ch, exists := w.JobChannels[funcName]; exists {
+		return ch
+	}
+
+	ch := make(chan *JobData, 1024) // 缓冲 channel
+	w.JobChannels[funcName] = ch
+	return ch
+}
+
+func (w *SWorker) PushJobToChannel(job *JobData) bool {
+	if job == nil || job.FuncName == "" {
+		return false
+	}
+
+	ch := w.GetJobChannel(job.FuncName)
+
+	select {
+	case ch <- job:
+		return true
+	default:
+		// channel 满了，可以选择丢弃或阻塞
+		return false
+	}
+}
+
+func (w *SWorker) PopJobFromChannel(handle string) *JobData {
+	ch := w.GetJobChannel(handle)
+
+	select {
+	case job := <-ch:
+		return job
+	case <-time.After(50 * time.Millisecond):
+		return nil
+	}
+}
+
+func (w *SWorker) GetOrCreateJobList(funcName string) *JobDataList {
+	if jobList, exists := w.Jobs[funcName]; exists {
+		return jobList
+	}
+
+	jobList := NewJobDataList()
+	w.Jobs[funcName] = jobList
+	return jobList
+}
+
+func (w *SWorker) PushJobToList(job *JobData) bool {
+	if job == nil || job.FuncName == "" {
+		return false
+	}
+
+	jobList := w.GetOrCreateJobList(job.FuncName)
+	return jobList.PushJobData(job)
 }
 
 func (w *SWorker) addFunction() {
@@ -108,15 +187,18 @@ func (w *SWorker) doWork(job *JobData) {
 			w.Res.JobIdLen = uint32(len(job.JobId))
 
 			resPack := w.Res.ResEncodePack()
-			w.Connect.Lock()
-			w.Connect.Write(resPack)
-			w.Connect.Unlock()
+			go func() {
+				w.Connect.Lock()
+				w.Connect.Write(resPack)
+				w.Connect.Unlock()
+			}()
 		}
 	}
 }
 
-func (w *SWorker) returnData() {
-	job := w.Jobs.PopJobData()
+func (w *SWorker) returnData(handle string) {
+	job := w.Jobs[handle].PopJobData()
+	// job := w.PopJobFromChannel(handle)
 
 	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
 		//解包获取数据内容
@@ -130,6 +212,12 @@ func (w *SWorker) returnData() {
 			job.RetData = append(job.RetData, w.Req.Ret...)
 			job.status = model.JOB_STATUS_DONE
 		} else {
+			fmt.Println("res handle len", w.Res.HandleLen)
+			fmt.Println("req handle len", w.Req.HandleLen)
+			fmt.Println("res handle", w.Res.Handle)
+			fmt.Println("req handle", w.Req.Handle)
+			fmt.Println("res params", string(w.Res.Params))
+			fmt.Println("req params", string(w.Req.Params))
 			return
 		}
 
@@ -140,13 +228,14 @@ func (w *SWorker) returnData() {
 		if clientId != `` && functionName != `` && paramsLen != 0 {
 			//tcp client response
 			if client := job.Client; client != nil {
-				w.Res.DataType = model.PDT_S_RETURN_DATA
-				w.Res.Ret = job.RetData
-				w.Res.RetLen = w.Req.RetLen
+				res := *w.Res
+				res.DataType = model.PDT_S_RETURN_DATA
+				res.Ret = job.RetData
+				res.RetLen = w.Req.RetLen
 
 				if client.ConnType == model.CONN_TYPE_CLIENT {
 					client.Lock()
-					resPack := w.Res.ResEncodePack()
+					resPack := res.ResEncodePack()
 					werr := client.Write(resPack)
 					client.Unlock()
 
@@ -237,7 +326,14 @@ func (w *SWorker) RunWorker() {
 	//worker return data
 	case model.PDT_W_RETURN_DATA:
 		{
-			w.returnData()
+			select {
+			case w.Results <- &ResultJob{
+				FuncName: w.Res.Handle,
+				JobId:    w.Res.JobId,
+			}:
+			default:
+				w.returnData(w.Res.Handle)
+			}
 		}
 	//heartbeat
 	case model.PDT_W_HEARTBEAT_PING:

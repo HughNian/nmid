@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/HughNian/nmid/pkg/alert"
@@ -20,8 +19,6 @@ import (
 //rpc tcp worker
 
 type Worker struct {
-	sync.Mutex
-
 	WorkerId   string
 	WorkerName string
 
@@ -135,14 +132,12 @@ func (w *Worker) Register(config EtcdConfig) {
 }
 
 func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
-	w.Lock()
 	if _, ok := w.Funcs[funcName]; ok {
 		return fmt.Errorf("function already exist")
 	}
 
 	w.Funcs[funcName] = NewFunction(jobFunc, funcName)
-	w.FuncsNum++
-	w.Unlock()
+	// w.FuncsNum++
 
 	if w.running {
 		go w.MsgBroadcast(funcName, model.PDT_W_ADD_FUNC)
@@ -152,14 +147,12 @@ func (w *Worker) AddFunction(funcName string, jobFunc JobFunc) (err error) {
 }
 
 func (w *Worker) DelFunction(funcName string) (err error) {
-	w.Lock()
 	if _, ok := w.Funcs[funcName]; !ok {
 		return fmt.Errorf("function not exist")
 	}
 
 	delete(w.Funcs, funcName)
-	w.FuncsNum--
-	w.Unlock()
+	// w.FuncsNum--
 
 	if w.running {
 		go w.MsgBroadcast(funcName, model.PDT_W_DEL_FUNC)
@@ -169,13 +162,11 @@ func (w *Worker) DelFunction(funcName string) (err error) {
 }
 
 func (w *Worker) GetFunction(funcName string) (function *Function, err error) {
-	if len(w.Funcs) == 0 || w.FuncsNum == 0 {
+	if len(w.Funcs) == 0 {
 		return nil, fmt.Errorf("worker have no funcs")
 	}
 
-	w.Lock()
 	f, ok := w.Funcs[funcName]
-	w.Unlock()
 
 	if f == nil || !ok {
 		return nil, fmt.Errorf("not found")
@@ -209,20 +200,24 @@ func (w *Worker) DoFunction(resp *Response) (err error) {
 				return fmt.Errorf("params error")
 			}
 
-			var ret []byte
-			if ret, err = function.Func(resp); err == nil {
-				resp.Agent.Req.HandleLen = resp.HandleLen
-				resp.Agent.Req.Handle = resp.Handle
-				resp.Agent.Req.ParamsLen = resp.ParamsLen
-				resp.Agent.Req.Params = resp.Params
-				resp.Agent.Req.JobIdLen = resp.JobIdLen
-				resp.Agent.Req.JobId = resp.JobId
+			go func() {
+				var ret []byte
+				if ret, err = function.Func(resp); err == nil {
+					resp.Agent.Req.HandleLen = resp.HandleLen
+					resp.Agent.Req.Handle = resp.Handle
+					resp.Agent.Req.ParamsLen = resp.ParamsLen
+					resp.Agent.Req.Params = resp.Params
+					resp.Agent.Req.JobIdLen = resp.JobIdLen
+					resp.Agent.Req.JobId = resp.JobId
 
-				resp.Agent.Lock()
-				resp.Agent.Req.RetPack(ret)
-				resp.Agent.Write()
-				resp.Agent.Unlock()
-			}
+					go func() {
+						resp.Agent.Lock()
+						resp.Agent.Req.RetPack(ret)
+						resp.Agent.Write()
+						resp.Agent.Unlock()
+					}()
+				}
+			}()
 		}
 	}
 
@@ -249,7 +244,7 @@ func (w *Worker) WorkerReady() (err error) {
 	if len(w.Agents) == 0 {
 		return errors.New("none active agents")
 	}
-	if w.FuncsNum == 0 || len(w.Funcs) == 0 {
+	if len(w.Funcs) == 0 {
 		return errors.New("none functions")
 	}
 
@@ -265,9 +260,7 @@ func (w *Worker) WorkerReady() (err error) {
 		w.MsgBroadcast(fn, model.PDT_W_ADD_FUNC)
 	}
 
-	w.Lock()
 	w.ready = true
-	w.Unlock()
 
 	return nil
 }
@@ -280,9 +273,7 @@ func (w *Worker) WorkerDo() {
 		}
 	}
 
-	w.Lock()
 	w.running = true
-	w.Unlock()
 
 	//nmid server timeout/close and reconnect
 	go func() {
@@ -325,26 +316,44 @@ func (w *Worker) WorkerDo() {
 		}
 	}()
 
-	for resp := range w.Resps {
-		switch resp.DataType {
-		case model.PDT_TOSLEEP:
-			time.Sleep(time.Duration(2) * time.Second)
-			go resp.Agent.Wakeup()
-
-			//fallthrough
-		case model.PDT_S_GET_DATA:
-			if err := w.DoFunction(resp); err != nil {
-				logger.Error(err)
+	for {
+		select {
+		case resp, ok := <-w.Resps:
+			if !ok {
+				logger.Info("Resps channel closed")
+				return
 			}
-			//fallthrough
-		case model.PDT_NO_JOB:
-			go resp.Agent.Grab()
-		case model.PDT_S_HEARTBEAT_PONG:
-			resp.Agent.lastTime = utils.GetNowSecond()
-		case model.PDT_WAKEUPED:
-		default:
-			go resp.Agent.Grab()
+
+			go w.handleResponse(resp)
+		case <-w.stop:
+			logger.Info("Received stop signal")
+			return
+		case <-time.After(100 * time.Millisecond):
+			// 定期检查，防止永久阻塞
+			if !w.running {
+				logger.Info("Worker not running, exiting")
+				return
+			}
 		}
+	}
+}
+
+func (w *Worker) handleResponse(resp *Response) {
+	switch resp.DataType {
+	case model.PDT_TOSLEEP:
+		time.Sleep(time.Duration(2) * time.Second)
+		go resp.Agent.Wakeup()
+	case model.PDT_S_GET_DATA:
+		if err := w.DoFunction(resp); err != nil {
+			logger.Error(err)
+		}
+	case model.PDT_NO_JOB:
+		go resp.Agent.Grab()
+	case model.PDT_S_HEARTBEAT_PONG:
+		resp.Agent.lastTime = utils.GetNowSecond()
+	case model.PDT_WAKEUPED:
+	default:
+		go resp.Agent.Grab()
 	}
 }
 

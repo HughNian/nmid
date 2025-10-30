@@ -1,0 +1,5 @@
+2025-10-28T14:40:59.916+0800	[34mINFO[0m	client/client.go:145	client read error here:EOF
+2025-10-28T14:44:15.791+0800	[34mINFO[0m	client/client.go:145	client read error here:EOF
+2025-10-28T14:46:27.156+0800	[34mINFO[0m	client/client.go:145	client read error here:EOF
+2025-10-28T14:48:53.964+0800	[34mINFO[0m	client/client.go:145	client read error here:EOF
+2025-10-28T14:51:27.852+0800	[34mINFO[0m	client/client.go:145	client read error here:EOF

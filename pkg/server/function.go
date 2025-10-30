@@ -177,7 +177,7 @@ Again:
 			//lru 最少使用率
 			case model.LOADBLANCE_LRU:
 				for _, val := range function.Workers {
-					if val.Jobs.GetJobNum() < best.Jobs.GetJobNum() {
+					if val.Jobs[name].GetJobNum() < best.Jobs[name].GetJobNum() {
 						best = val
 					}
 				}

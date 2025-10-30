@@ -37,9 +37,8 @@ type JobData struct {
 }
 
 type JobDataList struct {
-	sync.Mutex
-
-	JList *list.List
+	rwMutex sync.RWMutex
+	JList   *list.List
 }
 
 func NewJobData(Handle, Params string) (data *JobData) {
@@ -75,8 +74,8 @@ func (data *JobData) SetJobDataWorker(id string) {
 }
 
 func (jlist *JobDataList) GetJobNum() int {
-	jlist.Lock()
-	defer jlist.Unlock()
+	jlist.rwMutex.Lock()
+	defer jlist.rwMutex.Unlock()
 
 	return jlist.JList.Len()
 }
@@ -86,24 +85,24 @@ func (jlist *JobDataList) PushJobData(data *JobData) bool {
 		return false
 	}
 
-	jlist.Lock()
+	jlist.rwMutex.Lock()
 	jlist.JList.PushBack(data)
-	jlist.Unlock()
+	jlist.rwMutex.Unlock()
 
 	return true
 }
 
 func (jlist *JobDataList) PopJobData() (data *JobData) {
-	jlist.Lock()
+	jlist.rwMutex.Lock()
 	item := jlist.JList.Back()
 	if item == nil {
-		jlist.Unlock()
+		jlist.rwMutex.Unlock()
 		return nil
 	}
 
 	data = item.Value.(*JobData)
 	jlist.JList.Remove(item)
-	jlist.Unlock()
+	jlist.rwMutex.Unlock()
 
 	return data
 }
@@ -113,31 +112,31 @@ func (jlist *JobDataList) UnShiftJobData(data *JobData) bool {
 		return false
 	}
 
-	jlist.Lock()
+	jlist.rwMutex.Lock()
 	jlist.JList.PushFront(data)
-	jlist.Unlock()
+	jlist.rwMutex.Unlock()
 
 	return true
 }
 
 func (jlist *JobDataList) ShiftJobData() (data *JobData) {
-	jlist.Lock()
+	jlist.rwMutex.Lock()
 	item := jlist.JList.Front()
 	if item == nil {
-		jlist.Unlock()
+		jlist.rwMutex.Unlock()
 		return nil
 	}
 
 	data = item.Value.(*JobData)
 	jlist.JList.Remove(item)
-	jlist.Unlock()
+	jlist.rwMutex.Unlock()
 
 	return data
 }
 
 func (jlist *JobDataList) DelJobData(jobId string) bool {
-	jlist.Lock()
-	defer jlist.Unlock()
+	jlist.rwMutex.Lock()
+	defer jlist.rwMutex.Unlock()
 
 	for d := jlist.JList.Front(); d != nil; d = d.Next() {
 		data := d.Value.(*JobData)
@@ -151,8 +150,8 @@ func (jlist *JobDataList) DelJobData(jobId string) bool {
 }
 
 func (jlist *JobDataList) DelJobDataStats(status uint32) (delNum int) {
-	jlist.Lock()
-	defer jlist.Unlock()
+	jlist.rwMutex.Lock()
+	defer jlist.rwMutex.Unlock()
 
 	for d := jlist.JList.Front(); d != nil; d = d.Next() {
 		data := d.Value.(*JobData)
@@ -166,6 +165,9 @@ func (jlist *JobDataList) DelJobDataStats(status uint32) (delNum int) {
 }
 
 func (jlist *JobDataList) GetJobData(jobId string) (data *JobData) {
+	jlist.rwMutex.RLock()
+	defer jlist.rwMutex.RUnlock()
+
 	for d := jlist.JList.Front(); d != nil; d = d.Next() {
 		data = d.Value.(*JobData)
 		if data.JobId == jobId {

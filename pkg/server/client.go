@@ -76,10 +76,9 @@ func (c *SClient) doJob() {
 	job.ParamsHandleType = c.Req.ParamsHandleType
 	job.Unlock()
 
-	worker.Lock()
-	worker.Jobs.PushJobData(job)
+	worker.PushJobToList(job)
+	// worker.PushJobToChannel(job)
 	worker.doWork(job)
-	worker.Unlock()
 
 	//do prometheus request count
 	requestCount.Inc(worker.WorkerName, c.Req.Handle)
@@ -105,17 +104,4 @@ func (c *SClient) RunClient() {
 		}
 	}
 	// }
-}
-
-// AliveTimeOut 客户端长连接时长限制
-func (c *SClient) AliveTimeOut() {
-	go func(t *time.Timer) {
-		for {
-			select {
-			case <-t.C:
-				c.Connect.CloseConnect()
-				t.Reset(model.CLIENT_ALIVE_TIME)
-			}
-		}
-	}(c.Timer)
 }
