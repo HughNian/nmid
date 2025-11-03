@@ -1,12 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/HughNian/nmid/pkg/limiter"
 	"github.com/HughNian/nmid/pkg/model"
+	"github.com/go-kratos/kratos/pkg/log"
 
 	"github.com/joshbohde/codel"
 	"github.com/juju/ratelimit"
@@ -28,9 +28,6 @@ type SWorker struct {
 
 	Results chan *ResultJob
 
-	Req *Request
-	Res *Response
-
 	Sleep bool
 
 	CodelLimiter  *codel.Lock
@@ -42,6 +39,7 @@ type SWorker struct {
 type ResultJob struct {
 	JobId    string
 	FuncName string
+	Request  *Request
 }
 
 func NewSWorker(conn *Connect) *SWorker {
@@ -55,8 +53,6 @@ func NewSWorker(conn *Connect) *SWorker {
 		Jobs:          make(map[string]*JobDataList),
 		JobChannels:   make(map[string]chan *JobData),
 		Results:       make(chan *ResultJob, 1024),
-		Req:           NewReq(),
-		Res:           NewRes(),
 		Sleep:         false,
 		CodelLimiter:  limiter.NewCodelLimiter(),
 		BucketLimiter: limiter.NewBucketLimiter(),
@@ -70,7 +66,7 @@ func NewSWorker(conn *Connect) *SWorker {
 
 func (w *SWorker) processResults() {
 	for result := range w.Results {
-		w.returnData(result.FuncName)
+		w.returnData(result)
 	}
 }
 
@@ -130,9 +126,9 @@ func (w *SWorker) PushJobToList(job *JobData) bool {
 	return jobList.PushJobData(job)
 }
 
-func (w *SWorker) addFunction() {
-	if w.Req.DataLen > 0 {
-		functionName := w.Req.GetReqData()
+func (w *SWorker) addFunction(req *Request) {
+	if req.DataLen > 0 {
+		functionName := req.GetReqData()
 
 		if len(functionName) != 0 {
 			w.Connect.Ser.Funcs.AddFunc(w, string(functionName))
@@ -146,14 +142,15 @@ func (w *SWorker) addFunction() {
 		FuncCount.Add(1, string(functionName))
 	}
 
-	w.Res.DataType = model.PDT_OK
-	resPack := w.Res.ResEncodePack()
+	res := NewRes()
+	res.DataType = model.PDT_OK
+	resPack := res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
 
-func (w *SWorker) delFunction() {
-	if w.Req.DataLen > 0 {
-		functionName := w.Req.GetReqData()
+func (w *SWorker) delFunction(req *Request) {
+	if req.DataLen > 0 {
+		functionName := req.GetReqData()
 
 		if len(functionName) != 0 {
 			w.Connect.Ser.Funcs.DelWorkerFunc(w.WorkerId, string(functionName))
@@ -176,48 +173,45 @@ func (w *SWorker) doWork(job *JobData) {
 		params := job.Params
 		paramsLen := uint32(len(params))
 		if functionName != `` && paramsLen != 0 {
-			w.Res.DataType = model.PDT_S_GET_DATA
-			w.Res.Handle = functionName
-			w.Res.HandleLen = uint32(len(functionName))
-			w.Res.ParamsType = job.ParamsType
-			w.Res.ParamsHandleType = job.ParamsHandleType
-			w.Res.ParamsLen = paramsLen
-			w.Res.Params = params //append(w.Res.Params, params...)
-			w.Res.JobId = job.JobId
-			w.Res.JobIdLen = uint32(len(job.JobId))
+			res := NewRes()
+			res.DataType = model.PDT_S_GET_DATA
+			res.Handle = functionName
+			res.HandleLen = uint32(len(functionName))
+			res.ParamsType = job.ParamsType
+			res.ParamsHandleType = job.ParamsHandleType
+			res.ParamsLen = paramsLen
+			res.Params = params //append(w.Res.Params, params...)
+			res.JobId = job.JobId
+			res.JobIdLen = uint32(len(job.JobId))
 
-			resPack := w.Res.ResEncodePack()
+			resPack := res.ResEncodePack()
 			go func() {
 				w.Connect.Lock()
 				w.Connect.Write(resPack)
 				w.Connect.Unlock()
 			}()
+
+			job.Response = res
 		}
 	}
 }
 
-func (w *SWorker) returnData(handle string) {
-	job := w.Jobs[handle].PopJobData()
+func (w *SWorker) returnData(jobRet *ResultJob) {
+	job := w.Jobs[jobRet.FuncName].PopJobData()
 	// job := w.PopJobFromChannel(handle)
+	req := jobRet.Request
 
 	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
-		//解包获取数据内容
-		w.Req.ReqDecodePack()
-
 		//任务完成判断
-		if w.Res.HandleLen == w.Req.HandleLen &&
-			w.Res.Handle == w.Req.Handle &&
-			w.Res.ParamsLen == w.Req.ParamsLen &&
-			string(w.Res.Params) == string(w.Req.Params) {
-			job.RetData = append(job.RetData, w.Req.Ret...)
+		if job.Response != nil &&
+			job.Response.HandleLen == req.HandleLen &&
+			job.Response.Handle == req.Handle &&
+			job.Response.ParamsLen == req.ParamsLen &&
+			string(job.Response.Params) == string(req.Params) {
+			job.RetData = append(job.RetData, req.Ret...)
 			job.status = model.JOB_STATUS_DONE
 		} else {
-			fmt.Println("res handle len", w.Res.HandleLen)
-			fmt.Println("req handle len", w.Req.HandleLen)
-			fmt.Println("res handle", w.Res.Handle)
-			fmt.Println("req handle", w.Req.Handle)
-			fmt.Println("res params", string(w.Res.Params))
-			fmt.Println("req params", string(w.Req.Params))
+			log.Info("worker return data error")
 			return
 		}
 
@@ -228,10 +222,10 @@ func (w *SWorker) returnData(handle string) {
 		if clientId != `` && functionName != `` && paramsLen != 0 {
 			//tcp client response
 			if client := job.Client; client != nil {
-				res := *w.Res
+				res := *job.Response
 				res.DataType = model.PDT_S_RETURN_DATA
 				res.Ret = job.RetData
-				res.RetLen = w.Req.RetLen
+				res.RetLen = req.RetLen
 
 				if client.ConnType == model.CONN_TYPE_CLIENT {
 					client.Lock()
@@ -260,9 +254,9 @@ func (w *SWorker) returnData(handle string) {
 			}
 		} else if job.HTTPClientR != nil && functionName != `` && paramsLen != 0 {
 			//http client response data
-			w.Res.DataType = model.PDT_S_RETURN_DATA
-			w.Res.Ret = job.RetData
-			w.Res.RetLen = w.Req.RetLen
+			job.Response.DataType = model.PDT_S_RETURN_DATA
+			job.Response.Ret = job.RetData
+			job.Response.RetLen = req.RetLen
 
 			w.HttpResTag <- struct{}{}
 		}
@@ -274,45 +268,54 @@ func (w *SWorker) workerWakeup() {
 }
 
 func (w *SWorker) doLimit() {
-	w.Res.DataType = model.PDT_RATELIMIT
-	resPack := w.Res.ResEncodePack()
+	res := NewRes()
+	res.DataType = model.PDT_RATELIMIT
+	resPack := res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
 
 func (w *SWorker) heartBeatPong() {
+	res := NewRes()
 	// logger.Infof("server worker heartbeat pong")
-	w.Res.DataType = model.PDT_S_HEARTBEAT_PONG
-	resPack := w.Res.ResEncodePack()
+	res.DataType = model.PDT_S_HEARTBEAT_PONG
+	resPack := res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
 
-func (w *SWorker) setWorkerName() {
-	if w.Req.DataLen > 0 {
-		workerName := w.Req.GetReqData()
+func (w *SWorker) setWorkerName(req *Request) {
+	if req.DataLen > 0 {
+		workerName := req.GetReqData()
 
 		if len(workerName) != 0 {
 			w.WorkerName = string(workerName)
 		}
 	}
 
-	w.Res.DataType = model.PDT_OK
-	resPack := w.Res.ResEncodePack()
+	res := NewRes()
+	res.DataType = model.PDT_OK
+	resPack := res.ResEncodePack()
 	w.Connect.Write(resPack)
 }
 
-func (w *SWorker) RunWorker() {
-	dataType := w.Req.GetReqDataType()
+func (w *SWorker) RunWorker(data []byte) {
+	req := NewReq()
+	req.DataType = w.Connect.DataType
+	req.DataLen = w.Connect.DataLen
+	req.Data = data
 
-	switch dataType {
+	//解包获取数据内容
+	req.ReqDecodePack()
+
+	switch req.DataType {
 	//worker add function
 	case model.PDT_W_ADD_FUNC:
 		{
-			w.addFunction()
+			w.addFunction(req)
 		}
 	//worker del function
 	case model.PDT_W_DEL_FUNC:
 		{
-			w.delFunction()
+			w.delFunction(req)
 		}
 	case model.PDT_WAKEUP:
 		{
@@ -328,11 +331,16 @@ func (w *SWorker) RunWorker() {
 		{
 			select {
 			case w.Results <- &ResultJob{
-				FuncName: w.Res.Handle,
-				JobId:    w.Res.JobId,
+				FuncName: req.Handle,
+				JobId:    req.JobId,
+				Request:  req,
 			}:
 			default:
-				w.returnData(w.Res.Handle)
+				w.returnData(&ResultJob{
+					FuncName: req.Handle,
+					JobId:    req.JobId,
+					Request:  req,
+				})
 			}
 		}
 	//heartbeat
@@ -343,7 +351,7 @@ func (w *SWorker) RunWorker() {
 	//set worker name
 	case model.PDT_W_SET_NAME:
 		{
-			w.setWorkerName()
+			w.setWorkerName(req)
 		}
 	}
 }

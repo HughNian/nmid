@@ -31,6 +31,9 @@ type Connect struct {
 	RunClient *SClient
 
 	// isFree uint32
+
+	DataType uint32
+	DataLen  uint32
 }
 
 type ConnectPool struct {
@@ -261,8 +264,8 @@ func (c *Connect) Read(size int) (data []byte, err error) {
 		c.ConnType = connType
 		if c.ConnType == model.CONN_TYPE_WORKER {
 			worker := c.getSWClinet()
-			worker.Req.DataType = dataType
-			worker.Req.DataLen = uint32(dataLen)
+			worker.Connect.DataType = dataType
+			worker.Connect.DataLen = uint32(dataLen)
 		} else if c.ConnType == model.CONN_TYPE_CLIENT {
 			client := c.getSCClient()
 			client.Req.DataType = dataType
@@ -340,7 +343,7 @@ func (c *Connect) DoIO() {
 			}
 
 			allLen := uint32(len(data))
-			if worker.Req.DataLen > allLen {
+			if worker.Connect.DataLen > allLen {
 				continue
 			}
 
@@ -348,9 +351,8 @@ func (c *Connect) DoIO() {
 			// copy(content, data[model.MIN_DATA_SIZE:allLen])
 			content = append(content, data[model.MIN_DATA_SIZE:allLen]...)
 			clen := uint32(len(content))
-			if worker.Req.DataLen == clen {
-				worker.Req.Data = content
-				worker.RunWorker()
+			if worker.Connect.DataLen == clen {
+				worker.RunWorker(content)
 				content = nil
 				data = nil
 			}

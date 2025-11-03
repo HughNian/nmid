@@ -34,6 +34,8 @@ type JobData struct {
 	Params           []byte
 	RetData          []byte
 	BeginDuring      time.Time
+
+	Response *Response // job response
 }
 
 type JobDataList struct {
