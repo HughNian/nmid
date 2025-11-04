@@ -52,7 +52,7 @@ func NewSWorker(conn *Connect) *SWorker {
 		Connect:       conn,
 		Jobs:          make(map[string]*JobDataList),
 		JobChannels:   make(map[string]chan *JobData),
-		Results:       make(chan *ResultJob, 1024),
+		Results:       make(chan *ResultJob, model.QUEUE_SIZE),
 		Sleep:         false,
 		CodelLimiter:  limiter.NewCodelLimiter(),
 		BucketLimiter: limiter.NewBucketLimiter(),
@@ -197,8 +197,8 @@ func (w *SWorker) doWork(job *JobData) {
 }
 
 func (w *SWorker) returnData(jobRet *ResultJob) {
-	job := w.Jobs[jobRet.FuncName].PopJobData()
-	// job := w.PopJobFromChannel(handle)
+	// job := w.Jobs[jobRet.FuncName].PopJobData()
+	job := w.PopJobFromChannel(jobRet.FuncName)
 	req := jobRet.Request
 
 	if job != nil && job.WorkerId == w.WorkerId && job.status == model.JOB_STATUS_DOING {
@@ -206,8 +206,7 @@ func (w *SWorker) returnData(jobRet *ResultJob) {
 		if job.Response != nil &&
 			job.Response.HandleLen == req.HandleLen &&
 			job.Response.Handle == req.Handle &&
-			job.Response.ParamsLen == req.ParamsLen &&
-			string(job.Response.Params) == string(req.Params) {
+			job.Response.ParamsLen == req.ParamsLen {
 			job.RetData = append(job.RetData, req.Ret...)
 			job.status = model.JOB_STATUS_DONE
 		} else {

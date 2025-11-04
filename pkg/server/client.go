@@ -76,8 +76,8 @@ func (c *SClient) doJob() {
 	job.ParamsHandleType = c.Req.ParamsHandleType
 	job.Unlock()
 
-	worker.PushJobToList(job)
-	// worker.PushJobToChannel(job)
+	// worker.PushJobToList(job)
+	worker.PushJobToChannel(job)
 	worker.doWork(job)
 
 	//do prometheus request count

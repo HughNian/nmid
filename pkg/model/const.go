@@ -9,7 +9,7 @@ const VERSION = "v1.0.16"
 
 const (
 	MAX_POOL_SIZE        = 128
-	QUEUE_SIZE           = 1024
+	QUEUE_SIZE           = 2048
 	BUFFER_SIZE          = 512
 	MIN_DATA_SIZE        = 12
 	UINT32_SIZE          = 4
