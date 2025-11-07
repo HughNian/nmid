@@ -11,7 +11,6 @@ import (
 	"github.com/HughNian/nmid/pkg/alert"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/security"
 	"github.com/HughNian/nmid/pkg/utils"
 )
 
@@ -57,24 +56,30 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	if err != nil {
 		return nil
 	}
-	//DoWhiteList do whitelist
-	if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip) {
-		zinfo := utils.GetIPZone(ip)
-		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone)
-		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone))
-		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
-		conn.Close()
-		return nil
-	}
-	//DoBlackList do blacklist
-	if ser.SConfig.BlackList.Enable && security.DoBlackList(ip) {
-		zinfo := utils.GetIPZone(ip)
-		// logger.Infof("blacklist ip %s, ip zone %s", ip, zinfo.Zone)
-		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, zinfo.Zone))
-		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
-		conn.Close()
-		return nil
-	}
+
+	//DoWhiteList do whitelist (if use security goup for cloud services you can remove this whitelist)
+	// if ser.SConfig.WhiteList.Enable && !security.DoWhiteList(ip) {
+	// 	go func() {
+	// 		zinfo := utils.GetIPZone(ip)
+	// 		// logger.Infof("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone)
+	// 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("not in whitelist ip %s, ip zone %s", ip, zinfo.Zone))
+	// 		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
+	// 	}()
+	// 	conn.Close()
+	// 	return nil
+	// }
+
+	//DoBlackList do blacklist (if use security goup for cloud services you can remove this blacklist)
+	// if ser.SConfig.BlackList.Enable && security.DoBlackList(ip) {
+	// 	go func() {
+	// 		zinfo := utils.GetIPZone(ip)
+	// 		// logger.Infof("blacklist ip %s, ip zone %s", ip, zinfo.Zone)
+	// 		alert.SendMarkDownAtAll(alert.DWARNING, "threat ip", fmt.Sprintf("blacklist ip %s, ip zone %s", ip, zinfo.Zone))
+	// 		ThreatIpCount.Inc(ip, zinfo.Zone, zinfo.Country, zinfo.Prov, zinfo.City, zinfo.Lat, zinfo.Lon)
+	// 	}()
+	// 	conn.Close()
+	// 	return nil
+	// }
 
 	c = &Connect{}
 	c.Id = utils.GetId() //uuid.Must(uuid.NewRandom()).String()
