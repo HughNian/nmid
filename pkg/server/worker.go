@@ -71,11 +71,14 @@ func (w *SWorker) processResults() {
 }
 
 func (w *SWorker) GetJobChannel(funcName string) chan *JobData {
+	w.JobChannelsMutex.RLock()
 	if ch, exists := w.JobChannels[funcName]; exists {
+		w.JobChannelsMutex.RUnlock()
 		return ch
 	}
+	w.JobChannelsMutex.RUnlock()
 
-	ch := make(chan *JobData, 1024) // 缓冲 channel
+	ch := make(chan *JobData, 2048) //缓冲 channel
 	w.JobChannels[funcName] = ch
 	return ch
 }

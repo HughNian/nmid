@@ -163,6 +163,18 @@ func (ser *Server) ServerRun() {
 	for {
 		conn, err := ser.Ln.Accept()
 		if err != nil {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				logger.Info("nmid server accept timeout, shutting down")
+				break
+			}
+
+			if opErr, ok := err.(*net.OpError); ok {
+				if opErr.Err.Error() == "use of closed network connection" {
+					logger.Info("nmid server listener closed, shutting down")
+					break
+				}
+			}
+
 			logger.Errorf("accept err %s", err.Error())
 			continue
 		}
