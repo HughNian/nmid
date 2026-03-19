@@ -3,7 +3,7 @@ package model
 import "time"
 
 type ProxyServerOption struct {
-	ProtocolType     string        `yaml:"protocol_type""`
+	ProtocolType     string        `yaml:"protocol_type"`
 	BindNetWork      string        `yaml:"bind_network"`
 	BindAddress      string        `yaml:"bind_address"`
 	BindIP           string        `yaml:"bind_ip"`

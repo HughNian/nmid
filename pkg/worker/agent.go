@@ -1,13 +1,15 @@
 package worker
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/HughNian/nmid/pkg/utils"
@@ -18,6 +20,7 @@ type Agent struct {
 
 	net, addr string
 	conn      net.Conn
+	reader    *bufio.Reader
 	// rw        *bufio.ReadWriter
 
 	Worker   *Worker
@@ -48,6 +51,13 @@ func (a *Agent) Connect() (err error) {
 		log.Println("dial error:", err)
 		return err
 	}
+	a.reader = bufio.NewReaderSize(a.conn, 32*1024)
+
+	if tcpCon, ok := a.conn.(*net.TCPConn); ok {
+		_ = tcpCon.SetNoDelay(true)
+		_ = tcpCon.SetKeepAlive(true)
+		_ = tcpCon.SetKeepAlivePeriod(30 * time.Second)
+	}
 	// a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
 
 	go a.Work()
@@ -61,6 +71,7 @@ func (a *Agent) ReConnect() error {
 		return err
 	}
 	a.conn = conn
+	a.reader = bufio.NewReaderSize(a.conn, 32*1024)
 	// a.rw = bufio.NewReadWriter(bufio.NewReader(a.conn), bufio.NewWriter(a.conn))
 	a.lastTime = utils.GetNowSecond()
 
@@ -82,35 +93,41 @@ func (a *Agent) ReSetWorkerName(workerName string) {
 	a.Write()
 }
 
-func (a *Agent) Read() (data []byte, err error) {
-	n := 0
-	temp := utils.GetBuffer(model.MIN_DATA_SIZE)
-	var buf bytes.Buffer
+func (a *Agent) ReadFrame() (data []byte, err error) {
+	const maxFrameSize = 32 * 1024 * 1024
 
-	// if n, err = a.rw.Read(temp); err != nil {
-	// 	return []byte(``), err
-	// }
-
-	if n, err = a.conn.Read(temp); err != nil {
-		return []byte(``), err
+	if a.conn == nil {
+		return nil, fmt.Errorf("conn nil")
 	}
 
-	dataLen := int(binary.BigEndian.Uint32(temp[8:model.MIN_DATA_SIZE]))
-	buf.Write(temp[:n])
+	r := io.Reader(a.conn)
+	if a.reader != nil {
+		r = a.reader
+	}
 
-	for buf.Len() < model.MIN_DATA_SIZE+dataLen {
-		tmpcontent := utils.GetBuffer(dataLen)
-		// if n, err = a.rw.Read(tmpcontent); err != nil {
-		// 	return buf.Bytes(), err
-		// }
-		if n, err = a.conn.Read(tmpcontent); err != nil {
-			return buf.Bytes(), err
+	header := make([]byte, model.MIN_DATA_SIZE)
+	if _, err = io.ReadFull(r, header); err != nil {
+		return nil, err
+	}
+
+	connType := binary.BigEndian.Uint32(header[:4])
+	if connType != model.CONN_TYPE_SERVER {
+		return nil, fmt.Errorf("invalid conn type: %d", connType)
+	}
+	contentLen := int(binary.BigEndian.Uint32(header[8:model.MIN_DATA_SIZE]))
+	if contentLen < 0 || contentLen > maxFrameSize {
+		return nil, fmt.Errorf("invalid frame size: %d", contentLen)
+	}
+
+	data = make([]byte, model.MIN_DATA_SIZE+contentLen)
+	copy(data[:model.MIN_DATA_SIZE], header)
+	if contentLen > 0 {
+		if _, err = io.ReadFull(r, data[model.MIN_DATA_SIZE:]); err != nil {
+			return nil, err
 		}
-
-		buf.Write(tmpcontent[:n])
 	}
 
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 func (a *Agent) Write() (err error) {
@@ -132,13 +149,13 @@ func (a *Agent) Write() (err error) {
 
 func (a *Agent) Work() {
 	var err error
-	var data, leftData []byte
+	var data []byte
 	for {
 		select {
 		case <-a.ctx.Done():
 			return
 		default:
-			if data, err = a.Read(); err != nil {
+			if data, err = a.ReadFrame(); err != nil {
 				if opErr, ok := err.(*net.OpError); ok {
 					if opErr.Temporary() {
 						continue
@@ -149,28 +166,12 @@ func (a *Agent) Work() {
 					break
 				}
 			}
-
-			if len(leftData) > 0 {
-				data = append(leftData, data...)
-			}
-
-			if len(data) < model.MIN_DATA_SIZE {
-				leftData = data
+			resp, _, derr := DecodePack(data)
+			if derr != nil || resp == nil {
 				continue
 			}
-
-			if resp, l, err := DecodePack(data); err != nil {
-				leftData = data
-				continue
-			} else if l != len(data) {
-				leftData = data
-				continue
-			} else {
-				leftData = nil
-
-				resp.Agent = a
-				a.Worker.Resps <- resp
-			}
+			resp.Agent = a
+			a.Worker.Resps <- resp
 		}
 	}
 }

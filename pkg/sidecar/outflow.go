@@ -46,7 +46,8 @@ func (os *outflowServer) StartOutflow() {
 	if err := recover(); nil != err {
 		select {
 		case <-ctx.Done():
-			ctxs, _ := context.WithTimeout(context.Background(), 5*time.Second)
+			ctxs, cancelTimeout := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancelTimeout()
 			err := os.httpProxy.Server.Shutdown(ctxs)
 			if err != nil {
 				logger.Warnf("inflow server offline %v", err)

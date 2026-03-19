@@ -1,6 +1,8 @@
 package client
 
 import (
+	"bufio"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -11,7 +13,6 @@ import (
 
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
-	"github.com/HughNian/nmid/pkg/utils"
 )
 
 //rpc tcp client
@@ -19,9 +20,10 @@ import (
 type Client struct {
 	sync.Mutex
 
-	net  string
-	Addr string
-	conn net.Conn
+	net    string
+	Addr   string
+	conn   net.Conn
+	reader *bufio.Reader
 
 	Req      *Request
 	ResQueue chan *Response
@@ -60,9 +62,13 @@ func (c *Client) ClientConn() error {
 	if err != nil {
 		return err
 	}
-	//if tcpCon, ok := c.conn.(*net.TCPConn); ok {
-	//	tcpCon.SetLinger(0)
-	//}
+	c.reader = bufio.NewReaderSize(c.conn, 32*1024)
+
+	if tcpCon, ok := c.conn.(*net.TCPConn); ok {
+		_ = tcpCon.SetNoDelay(true)
+		_ = tcpCon.SetKeepAlive(true)
+		_ = tcpCon.SetKeepAlivePeriod(30 * time.Second)
+	}
 
 	return nil
 }
@@ -98,20 +104,37 @@ func (c *Client) Write() (err error) {
 	return nil
 }
 
-func (c *Client) Read(length int) (data []byte, err error) {
+func (c *Client) ReadFrame() (data []byte, err error) {
+	const maxFrameSize = 32 * 1024 * 1024
+
 	if c.conn == nil {
-		return data, errors.New("conn nil")
+		return nil, errors.New("conn nil")
 	}
 
-	n := 0
-	buf := utils.GetBuffer(length)
-	for i := length; i > 0 || len(data) < model.MIN_DATA_SIZE; i -= n {
-		if n, err = c.conn.Read(buf); err != nil {
-			return
-		}
-		data = append(data, buf[0:n]...)
-		if n < model.MIN_DATA_SIZE {
-			break
+	r := io.Reader(c.conn)
+	if c.reader != nil {
+		r = c.reader
+	}
+
+	header := make([]byte, model.MIN_DATA_SIZE)
+	if _, err = io.ReadFull(r, header); err != nil {
+		return nil, err
+	}
+
+	connType := binary.BigEndian.Uint32(header[:4])
+	if connType != model.CONN_TYPE_SERVER {
+		return nil, fmt.Errorf("invalid conn type: %d", connType)
+	}
+	contentLen := int(binary.BigEndian.Uint32(header[8:model.MIN_DATA_SIZE]))
+	if contentLen < 0 || contentLen > maxFrameSize {
+		return nil, fmt.Errorf("invalid frame size: %d", contentLen)
+	}
+
+	data = make([]byte, model.MIN_DATA_SIZE+contentLen)
+	copy(data[:model.MIN_DATA_SIZE], header)
+	if contentLen > 0 {
+		if _, err = io.ReadFull(r, data[model.MIN_DATA_SIZE:]); err != nil {
+			return nil, err
 		}
 	}
 
@@ -119,13 +142,12 @@ func (c *Client) Read(length int) (data []byte, err error) {
 }
 
 func (c *Client) ClientRead() {
-	var data, leftdata []byte
+	var data []byte
 	var err error
 	var res *Response
-	var resLen int
-Loop:
+
 	for c.conn != nil {
-		if data, err = c.Read(model.MIN_DATA_SIZE); err != nil {
+		if data, err = c.ReadFrame(); err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
 				if opErr.Timeout() {
 					log.Println(err)
@@ -152,40 +174,19 @@ Loop:
 			continue
 		}
 
-		if len(leftdata) > 0 {
-			data = append(leftdata, data...)
-			leftdata = nil
+		if res, _, err = DecodePack(data); err != nil {
+			continue
 		}
-
-		for {
-			l := len(data)
-			if l < model.MIN_DATA_SIZE {
-				leftdata = data
-				continue Loop
-			}
-
-			if len(leftdata) == 0 {
-				connType := GetConnType(data)
-				// fmt.Println("read conn type", connType)
-				if connType != model.CONN_TYPE_SERVER {
-					break
-				}
-			}
-
-			if res, resLen, err = DecodePack(data); err != nil {
-				leftdata = data[:resLen]
-				continue Loop
-			} else {
-				c.ResQueue <- res
-			}
-
-			data = data[l:]
-			if len(data) > 0 {
-				continue
-			}
-			break
-		}
+		c.ResQueue <- res
 	}
+}
+
+func (c *Client) resetReader() {
+	if c.conn == nil {
+		c.reader = nil
+		return
+	}
+	c.reader = bufio.NewReaderSize(c.conn, 32*1024)
 }
 
 func (c *Client) HandlerResp(resp *Response) {

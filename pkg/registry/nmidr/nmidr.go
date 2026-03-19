@@ -56,10 +56,9 @@ type Resolve struct {
 func (r *Resolve) Fetch() (info *registry.InstancesInfo, ret bool) {
 	if _, ok := <-r.event; ok {
 		ctx, cancel := context.WithCancel(r.nr.ctx)
+		defer cancel()
 		insInfo, err := r.nr.doFetchAll(ctx, r.sid) //fetch one serviceid instance info
 		if nil != err {
-			cancel()
-
 			ret = false
 			return
 		}
@@ -89,9 +88,10 @@ func (r *Resolve) Fetch() (info *registry.InstancesInfo, ret bool) {
 
 func (r *Resolve) Watch() <-chan struct{} {
 	ctx, cancel := context.WithCancel(r.nr.ctx)
+	defer cancel()
 	data, err := r.nr.doWatch(ctx, r.sid)
 	if nil != err {
-		cancel()
+		return r.event
 	}
 
 	if (data.WType == 0 || data.WType == 1) && data.WKey == r.sid {

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/HughNian/nmid/pkg/alert"
 	"github.com/HughNian/nmid/pkg/logger"
@@ -18,12 +20,15 @@ import (
 type Connect struct {
 	sync.RWMutex
 
-	Id   string
-	Addr string
-	Ip   string
-	Port string
-	Ser  *Server
-	Conn net.Conn
+	writeMu sync.Mutex
+
+	Id     string
+	Addr   string
+	Ip     string
+	Port   string
+	Ser    *Server
+	Conn   net.Conn
+	reader *bufio.Reader
 	// buf  bytes.Buffer
 	// rw        *bufio.ReadWriter
 	ConnType  uint32
@@ -88,13 +93,17 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	c.Ip = ip
 	c.Port = port
 	c.Ser = ser
-	pool.Lock()
 	c.Conn = conn
-	// c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-	pool.Unlock()
+	c.reader = bufio.NewReaderSize(conn, 32*1024)
 	c.ConnType = model.CONN_TYPE_INIT
 	c.RunWorker = nil
 	c.RunClient = nil
+
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		_ = tcpConn.SetNoDelay(true)
+		_ = tcpConn.SetKeepAlive(true)
+		_ = tcpConn.SetKeepAlivePeriod(30 * time.Second)
+	}
 
 	return c
 }
@@ -121,10 +130,13 @@ func (c *Connect) CloseConnect() {
 	if c.Conn != nil {
 		c.Conn.Close()
 		c.Conn = nil
+		c.reader = nil
 		c.RunWorker = nil
 
-		c.RunClient.Timer.Stop()
-		c.RunClient = nil
+		if c.RunClient != nil {
+			c.RunClient.Timer.Stop()
+			c.RunClient = nil
+		}
 	}
 }
 
@@ -132,6 +144,7 @@ func (c *Connect) CloseWorkerConnect() {
 	if c.Conn != nil {
 		c.Conn.Close()
 		c.Conn = nil
+		c.reader = nil
 		c.RunWorker.CloseSelfWorker()
 		c.RunWorker = nil
 	}
@@ -141,8 +154,11 @@ func (c *Connect) CloseClientConnect() {
 	if c.Conn != nil {
 		c.Conn.Close()
 		c.Conn = nil
-		c.RunClient.Timer.Stop()
-		c.RunClient = nil
+		c.reader = nil
+		if c.RunClient != nil {
+			c.RunClient.Timer.Stop()
+			c.RunClient = nil
+		}
 	}
 }
 
@@ -165,6 +181,9 @@ func (c *Connect) getSCClient() *SClient {
 }
 
 func (c *Connect) Write(resPack []byte) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
+
 	var n int
 	var err error
 	if c.ConnType == model.CONN_TYPE_WORKER {
@@ -183,7 +202,7 @@ func (c *Connect) Write(resPack []byte) error {
 		if worker.Connect.Conn != nil {
 			for i := 0; i < len(resPack); i += n {
 				// n, err = worker.Connect.rw.Write(resPack[i:])
-				n, err = worker.Connect.Conn.Write(resPack[:])
+				n, err = worker.Connect.Conn.Write(resPack[i:])
 				if err != nil {
 					//worker.CloseSelfWorker()
 					logger.Error("worker write err ", err.Error())
@@ -218,7 +237,7 @@ func (c *Connect) Write(resPack []byte) error {
 		if client.Connect.Conn != nil {
 			for i := 0; i < len(resPack); i += n {
 				// n, err = client.Connect.rw.Write(resPack[i:])
-				n, err = client.Connect.Conn.Write(resPack[:])
+				n, err = client.Connect.Conn.Write(resPack[i:])
 				if err != nil {
 					logger.Info("client write err", err.Error())
 					return err
@@ -241,80 +260,65 @@ func (c *Connect) Write(resPack []byte) error {
 	return nil
 }
 
-func (c *Connect) Read(size int) (data []byte, err error) {
-	var n = 0
-	var connType, dataType uint32
-	var dataLen int
+func (c *Connect) ReadFrame() (connType uint32, dataType uint32, payload []byte, err error) {
+	const maxFrameSize = 32 * 1024 * 1024
 
 	if c.Conn == nil {
-		return data, errors.New("conn nil")
+		return 0, 0, nil, errors.New("conn nil")
 	}
 
-	tmp := utils.GetBuffer(size)
-	if n, err = c.Conn.Read(tmp); err != nil {
-		return data, err
+	r := io.Reader(c.Conn)
+	if c.reader != nil {
+		r = c.reader
 	}
 
-	//读取数据头
-	if n >= model.MIN_DATA_SIZE {
-		connType = uint32(binary.BigEndian.Uint32(tmp[:4]))
-		dataType = uint32(binary.BigEndian.Uint32(tmp[4:8]))
-		dataLen = int(binary.BigEndian.Uint32(tmp[8:model.MIN_DATA_SIZE]))
-
-		if connType != model.CONN_TYPE_WORKER &&
-			connType != model.CONN_TYPE_CLIENT &&
-			connType != model.CONN_TYPE_SERVICE {
-			return []byte(``), nil
-		}
-
-		c.ConnType = connType
-		if c.ConnType == model.CONN_TYPE_WORKER {
-			worker := c.getSWClinet()
-			worker.Connect.DataType = dataType
-			worker.Connect.DataLen = uint32(dataLen)
-		} else if c.ConnType == model.CONN_TYPE_CLIENT {
-			client := c.getSCClient()
-			client.Req.DataType = dataType
-			client.Req.DataLen = uint32(dataLen)
-		}
-
-		data = append(data, tmp[:n]...)
-	} else {
-		data = append(data, tmp[:n]...)
-
-		return data, nil
+	header := make([]byte, model.MIN_DATA_SIZE)
+	if _, err = io.ReadFull(r, header); err != nil {
+		return 0, 0, nil, err
 	}
 
-	//读取所有内容
-	for len(data) < dataLen+model.MIN_DATA_SIZE {
-		tmpcontent := utils.GetBuffer(dataLen)
-		if n, err = c.Conn.Read(tmpcontent); err != nil {
-			logger.Error("read content error")
-			return data, err
-		}
+	connType = binary.BigEndian.Uint32(header[:4])
+	dataType = binary.BigEndian.Uint32(header[4:8])
+	dataLen := int(binary.BigEndian.Uint32(header[8:model.MIN_DATA_SIZE]))
 
-		data = append(data, tmpcontent[:n]...)
+	if connType != model.CONN_TYPE_WORKER && connType != model.CONN_TYPE_CLIENT && connType != model.CONN_TYPE_SERVICE {
+		return 0, 0, nil, fmt.Errorf("invalid conn type: %d", connType)
+	}
+	if dataLen < 0 || dataLen > maxFrameSize {
+		return 0, 0, nil, fmt.Errorf("invalid frame size: %d", dataLen)
+	}
+	if dataLen == 0 {
+		return connType, dataType, nil, nil
 	}
 
-	return data, err
+	payload = make([]byte, dataLen)
+	if _, err = io.ReadFull(r, payload); err != nil {
+		return 0, 0, nil, err
+	}
+
+	return connType, dataType, payload, nil
 }
 
 func (c *Connect) DoIO() {
 	var err error
-	var data, content []byte
-	var rsize = model.MIN_DATA_SIZE
+	var connType, dataType uint32
+	var payload []byte
 	var worker *SWorker
 	var client *SClient
 
 	for {
-		if data, err = c.Read(rsize); err != nil {
+		if connType, dataType, payload, err = c.ReadFrame(); err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
 				if opErr.Temporary() {
 					continue
 				} else {
 					if c.ConnType == model.CONN_TYPE_WORKER {
-						logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, c.RunWorker.WorkerName, err.Error())
-						alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, c.RunWorker.WorkerName))
+						workerName := ""
+						if c.RunWorker != nil {
+							workerName = c.RunWorker.WorkerName
+						}
+						logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, workerName, err.Error())
+						alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, workerName))
 						//do prometheus worker close count
 						WorkerCloseCount.Inc(c.Ip)
 
@@ -329,8 +333,12 @@ func (c *Connect) DoIO() {
 				}
 			} else if err == io.EOF {
 				if c.ConnType == model.CONN_TYPE_WORKER {
-					logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, c.RunWorker.WorkerName, err.Error())
-					alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, c.RunWorker.WorkerName))
+					workerName := ""
+					if c.RunWorker != nil {
+						workerName = c.RunWorker.WorkerName
+					}
+					logger.Errorf("server read worker error conntype:%d, worker ip:%s, worker name:%s, err:%s", c.ConnType, c.Ip, workerName, err.Error())
+					alert.SendMarkDownAtAll(alert.DERROR, "worker close", fmt.Sprintf("worker ip: %s, worker name: %s", c.Ip, workerName))
 					//do prometheus worker close count
 					WorkerCloseCount.Inc(c.Ip)
 
@@ -339,53 +347,29 @@ func (c *Connect) DoIO() {
 
 				break
 			}
+			logger.Error("server read error", err)
+			c.CloseConnect()
+			break
 		}
 
+		c.ConnType = connType
 		if c.ConnType == model.CONN_TYPE_WORKER {
-			worker = c.RunWorker
-
-			if nil == worker {
+			worker = c.getSWClinet()
+			if worker == nil {
 				continue
 			}
-
-			allLen := uint32(len(data))
-			if worker.Connect.DataLen > allLen {
-				continue
-			}
-
-			// content = make([]byte, worker.Req.DataLen)
-			// copy(content, data[model.MIN_DATA_SIZE:allLen])
-			content = append(content, data[model.MIN_DATA_SIZE:allLen]...)
-			clen := uint32(len(content))
-			if worker.Connect.DataLen == clen {
-				worker.RunWorker(content)
-				content = nil
-				data = nil
-			}
+			worker.Connect.DataType = dataType
+			worker.Connect.DataLen = uint32(len(payload))
+			worker.RunWorker(payload)
 		} else if c.ConnType == model.CONN_TYPE_CLIENT {
-			client = c.RunClient
-
-			if nil == client {
+			client = c.getSCClient()
+			if client == nil {
 				continue
 			}
-
-			allLen := uint32(len(data))
-			if client.Req.DataLen > allLen {
-				continue
-			}
-
-			// content = make([]byte, client.Req.DataLen)
-			// copy(content, data[model.MIN_DATA_SIZE:allLen])
-			content = append(content, data[model.MIN_DATA_SIZE:allLen]...)
-			clen := uint32(len(content))
-			if client.Req.DataLen == clen {
-				client.Req.Data = content
-				client.RunClient()
-				content = nil
-				data = nil
-			}
-		} else {
-			continue
+			client.Req.DataType = dataType
+			client.Req.DataLen = uint32(len(payload))
+			client.Req.Data = payload
+			client.RunClient()
 		}
 	}
 }
