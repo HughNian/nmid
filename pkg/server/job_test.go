@@ -116,3 +116,47 @@ func BenchmarkConnectReadFrame(b *testing.B) {
 
 	<-done
 }
+
+func BenchmarkConnectWriteQueue(b *testing.B) {
+	payload := make([]byte, 1024)
+	frame := make([]byte, model.MIN_DATA_SIZE+len(payload))
+	binary.BigEndian.PutUint32(frame[:4], model.CONN_TYPE_SERVER)
+	binary.BigEndian.PutUint32(frame[4:8], model.PDT_S_RETURN_DATA)
+	binary.BigEndian.PutUint32(frame[8:model.MIN_DATA_SIZE], uint32(len(payload)))
+	copy(frame[model.MIN_DATA_SIZE:], payload)
+
+	serverConn, clientConn := net.Pipe()
+	defer serverConn.Close()
+	defer clientConn.Close()
+
+	c := &Connect{
+		Conn:    serverConn,
+		writeCh: make(chan []byte, 4096),
+		closeCh: make(chan struct{}),
+	}
+	go c.writeLoop()
+
+	done := make(chan struct{})
+	go func() {
+		buf := make([]byte, 32*1024)
+		for {
+			_, err := clientConn.Read(buf)
+			if err != nil {
+				close(done)
+				return
+			}
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := c.Write(frame); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.StopTimer()
+
+	c.closeSignal()
+	_ = serverConn.Close()
+	<-done
+}

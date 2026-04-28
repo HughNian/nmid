@@ -188,11 +188,7 @@ func (w *SWorker) doWork(job *JobData) {
 			res.JobIdLen = uint32(len(job.JobId))
 
 			resPack := res.ResEncodePack()
-			go func() {
-				w.Connect.Lock()
-				w.Connect.Write(resPack)
-				w.Connect.Unlock()
-			}()
+			w.Connect.Write(resPack)
 
 			job.Response = res
 		}
@@ -230,10 +226,8 @@ func (w *SWorker) returnData(jobRet *ResultJob) {
 				res.RetLen = req.RetLen
 
 				if client.ConnType == model.CONN_TYPE_CLIENT {
-					client.Lock()
 					resPack := res.ResEncodePack()
 					werr := client.Write(resPack)
-					client.Unlock()
 
 					//do prometheus worker write success/fail num
 					if werr == nil {

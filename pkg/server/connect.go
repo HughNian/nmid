@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/HughNian/nmid/pkg/alert"
@@ -20,7 +21,11 @@ import (
 type Connect struct {
 	sync.RWMutex
 
-	writeMu sync.Mutex
+	closed    uint32
+	closeOnce sync.Once
+
+	writeCh chan []byte
+	closeCh chan struct{}
 
 	Id     string
 	Addr   string
@@ -87,7 +92,10 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		return nil
 	}
 
-	c = &Connect{}
+	c = &Connect{
+		writeCh: make(chan []byte, 4096),
+		closeCh: make(chan struct{}),
+	}
 	c.Id = utils.GetId() //uuid.Must(uuid.NewRandom()).String()
 	c.Addr = addr
 	c.Ip = ip
@@ -105,7 +113,18 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 		_ = tcpConn.SetKeepAlivePeriod(30 * time.Second)
 	}
 
+	go c.writeLoop()
+
 	return c
+}
+
+func (c *Connect) closeSignal() {
+	if atomic.SwapUint32(&c.closed, 1) != 0 {
+		return
+	}
+	c.closeOnce.Do(func() {
+		close(c.closeCh)
+	})
 }
 
 func (pool *ConnectPool) GetConnect(id string) *Connect {
@@ -128,6 +147,7 @@ func (pool *ConnectPool) DelConnect(id string) {
 
 func (c *Connect) CloseConnect() {
 	if c.Conn != nil {
+		c.closeSignal()
 		c.Conn.Close()
 		c.Conn = nil
 		c.reader = nil
@@ -142,6 +162,7 @@ func (c *Connect) CloseConnect() {
 
 func (c *Connect) CloseWorkerConnect() {
 	if c.Conn != nil {
+		c.closeSignal()
 		c.Conn.Close()
 		c.Conn = nil
 		c.reader = nil
@@ -152,6 +173,7 @@ func (c *Connect) CloseWorkerConnect() {
 
 func (c *Connect) CloseClientConnect() {
 	if c.Conn != nil {
+		c.closeSignal()
 		c.Conn.Close()
 		c.Conn = nil
 		c.reader = nil
@@ -181,83 +203,47 @@ func (c *Connect) getSCClient() *SClient {
 }
 
 func (c *Connect) Write(resPack []byte) error {
-	c.writeMu.Lock()
-	defer c.writeMu.Unlock()
+	if atomic.LoadUint32(&c.closed) != 0 {
+		return errors.New("connect closed")
+	}
+	if c.Conn == nil {
+		return errors.New("conn nil")
+	}
+	select {
+	case c.writeCh <- resPack:
+		return nil
+	default:
+		return errors.New("write queue full")
+	}
+}
 
-	var n int
-	var err error
-	if c.ConnType == model.CONN_TYPE_WORKER {
-		worker := c.RunWorker
-
-		if worker == nil {
-			logger.Info("worker nil")
-			return errors.New("worker nil")
-		}
-
-		if worker.Connect == nil {
-			logger.Info("worker connect nil")
-			return errors.New("worker connect nil")
-		}
-
-		if worker.Connect.Conn != nil {
-			for i := 0; i < len(resPack); i += n {
-				// n, err = worker.Connect.rw.Write(resPack[i:])
-				n, err = worker.Connect.Conn.Write(resPack[i:])
-				if err != nil {
-					//worker.CloseSelfWorker()
-					logger.Error("worker write err ", err.Error())
-					return err
-				}
+func (c *Connect) writeLoop() {
+	for {
+		select {
+		case <-c.closeCh:
+			return
+		case buf := <-c.writeCh:
+			if buf == nil {
+				continue
 			}
-
-			// worker.Connect.rw.Flush()
-
-			// _, err = worker.Connect.Conn.Write(resPack[:])
-			// if err != nil {
-			// 	logger.Info("worker write err", err.Error())
-			// 	return
-			// }
-		} else {
-			logger.Info("worker connect has close")
-			return errors.New("worker connect has close")
-		}
-	} else if c.ConnType == model.CONN_TYPE_CLIENT {
-		client := c.RunClient
-
-		if client == nil {
-			logger.Info("client nil")
-			return errors.New("client nil")
-		}
-
-		if client.Connect == nil {
-			logger.Info("client connect nil")
-			return errors.New("client connect nil")
-		}
-
-		if client.Connect.Conn != nil {
-			for i := 0; i < len(resPack); i += n {
-				// n, err = client.Connect.rw.Write(resPack[i:])
-				n, err = client.Connect.Conn.Write(resPack[i:])
-				if err != nil {
-					logger.Info("client write err", err.Error())
-					return err
-				}
+			conn := c.Conn
+			if conn == nil {
+				c.closeSignal()
+				return
 			}
-
-			// client.Connect.rw.Flush()
-
-			// n, err = client.Connect.Conn.Write(resPack[:])
-			// if err != nil {
-			// 	logger.Info("client write err", err.Error())
-			// 	return
-			// }
-		} else {
-			logger.Info("client connect has close")
-			return errors.New("client connect has close")
+			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			for len(buf) > 0 {
+				n, err := conn.Write(buf)
+				if err != nil {
+					logger.Error("conn write error", err)
+					c.closeSignal()
+					_ = conn.Close()
+					return
+				}
+				buf = buf[n:]
+			}
 		}
 	}
-
-	return nil
 }
 
 func (c *Connect) ReadFrame() (connType uint32, dataType uint32, payload []byte, err error) {
