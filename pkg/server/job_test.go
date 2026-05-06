@@ -133,6 +133,7 @@ func BenchmarkConnectWriteQueue(b *testing.B) {
 		Conn:    serverConn,
 		writeCh: make(chan []byte, 4096),
 		closeCh: make(chan struct{}),
+		maxPendingBytes: 64 * 1024 * 1024,
 	}
 	go c.writeLoop()
 

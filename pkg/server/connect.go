@@ -24,8 +24,10 @@ type Connect struct {
 	closed    uint32
 	closeOnce sync.Once
 
-	writeCh chan []byte
-	closeCh chan struct{}
+	writeCh         chan []byte
+	closeCh         chan struct{}
+	pendingBytes    int64
+	maxPendingBytes int64
 
 	Id     string
 	Addr   string
@@ -93,8 +95,9 @@ func (pool *ConnectPool) NewConnect(ser *Server, conn net.Conn) (c *Connect) {
 	}
 
 	c = &Connect{
-		writeCh: make(chan []byte, 4096),
-		closeCh: make(chan struct{}),
+		writeCh:         make(chan []byte, 256),
+		closeCh:         make(chan struct{}),
+		maxPendingBytes: 4 * 1024 * 1024,
 	}
 	c.Id = utils.GetId() //uuid.Must(uuid.NewRandom()).String()
 	c.Addr = addr
@@ -125,6 +128,18 @@ func (c *Connect) closeSignal() {
 	c.closeOnce.Do(func() {
 		close(c.closeCh)
 	})
+}
+
+func (c *Connect) CloseAll() {
+	if c.ConnType == model.CONN_TYPE_WORKER && c.RunWorker != nil {
+		c.CloseWorkerConnect()
+		return
+	}
+	if c.ConnType == model.CONN_TYPE_CLIENT && c.RunClient != nil {
+		c.CloseClientConnect()
+		return
+	}
+	c.CloseConnect()
 }
 
 func (pool *ConnectPool) GetConnect(id string) *Connect {
@@ -209,10 +224,20 @@ func (c *Connect) Write(resPack []byte) error {
 	if c.Conn == nil {
 		return errors.New("conn nil")
 	}
+	if len(resPack) == 0 {
+		return nil
+	}
+
+	n := int64(len(resPack))
+	if atomic.AddInt64(&c.pendingBytes, n) > c.maxPendingBytes {
+		atomic.AddInt64(&c.pendingBytes, -n)
+		return errors.New("write pending bytes exceeded")
+	}
 	select {
 	case c.writeCh <- resPack:
 		return nil
 	default:
+		atomic.AddInt64(&c.pendingBytes, -n)
 		return errors.New("write queue full")
 	}
 }
@@ -221,14 +246,25 @@ func (c *Connect) writeLoop() {
 	for {
 		select {
 		case <-c.closeCh:
-			return
+			for {
+				select {
+				case buf := <-c.writeCh:
+					if buf != nil {
+						atomic.AddInt64(&c.pendingBytes, -int64(len(buf)))
+					}
+				default:
+					return
+				}
+			}
 		case buf := <-c.writeCh:
 			if buf == nil {
 				continue
 			}
+			bufLen := int64(len(buf))
 			conn := c.Conn
 			if conn == nil {
 				c.closeSignal()
+				atomic.AddInt64(&c.pendingBytes, -bufLen)
 				return
 			}
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
@@ -238,10 +274,12 @@ func (c *Connect) writeLoop() {
 					logger.Error("conn write error", err)
 					c.closeSignal()
 					_ = conn.Close()
+					atomic.AddInt64(&c.pendingBytes, -bufLen)
 					return
 				}
 				buf = buf[n:]
 			}
+			atomic.AddInt64(&c.pendingBytes, -bufLen)
 		}
 	}
 }
@@ -291,6 +329,8 @@ func (c *Connect) DoIO() {
 	var payload []byte
 	var worker *SWorker
 	var client *SClient
+
+	defer c.CloseAll()
 
 	for {
 		if connType, dataType, payload, err = c.ReadFrame(); err != nil {

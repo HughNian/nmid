@@ -78,8 +78,14 @@ func (w *SWorker) GetJobChannel(funcName string) chan *JobData {
 	}
 	w.JobChannelsMutex.RUnlock()
 
-	ch := make(chan *JobData, 2048) //缓冲 channel
+	w.JobChannelsMutex.Lock()
+	if ch, exists := w.JobChannels[funcName]; exists {
+		w.JobChannelsMutex.Unlock()
+		return ch
+	}
+	ch := make(chan *JobData, 256)
 	w.JobChannels[funcName] = ch
+	w.JobChannelsMutex.Unlock()
 	return ch
 }
 
