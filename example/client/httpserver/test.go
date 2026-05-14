@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/HughNian/nmid/pkg/direct"
 	"github.com/HughNian/nmid/pkg/logger"
 	"github.com/HughNian/nmid/pkg/model"
 	"github.com/vmihailenco/msgpack"
@@ -23,6 +25,8 @@ const NMIDSERVERPORT = "6808"
 
 var client *cli.Client
 var err error
+var directPool chan *direct.Client
+var directOnce bool
 
 func getClient() *cli.Client {
 	serverAddr := NMIDSERVERHOST + ":" + NMIDSERVERPORT
@@ -34,7 +38,60 @@ func getClient() *cli.Client {
 	return client
 }
 
+func getDirectClient() *direct.Client {
+	if !directOnce {
+		directOnce = true
+		addr := os.Getenv("DIRECT_ADDR")
+		if addr == "" {
+			addr = "127.0.0.1:7900"
+		}
+		directPool = make(chan *direct.Client, 200)
+		for i := 0; i < cap(directPool); i++ {
+			c := direct.NewClient("tcp", addr)
+			c.Timeout = 1500 * time.Millisecond
+			directPool <- c
+		}
+	}
+	select {
+	case c := <-directPool:
+		return c
+	default:
+		return nil
+	}
+}
+
+func putDirectClient(c *direct.Client) {
+	if c == nil {
+		return
+	}
+	select {
+	case directPool <- c:
+	default:
+		_ = c.Close()
+	}
+}
+
 func Test(ctx *fasthttp.RequestCtx) {
+	if os.Getenv("NMID_MODE") == "direct" {
+		c := getDirectClient()
+		if c == nil {
+			ctx.SetStatusCode(fasthttp.StatusServiceUnavailable)
+			fmt.Fprint(ctx, "ER")
+			return
+		}
+		defer putDirectClient(c)
+		out, err := c.Call("ToUpper", []byte(`{"name":"nmid"}`))
+		if err != nil {
+			_ = c.Close()
+			ctx.SetStatusCode(fasthttp.StatusRequestTimeout)
+			fmt.Fprint(ctx, "ER")
+			return
+		}
+		ctx.SetStatusCode(fasthttp.StatusOK)
+		ctx.Write(out)
+		return
+	}
+
 	funcName := "ToUpper"
 
 	client := getClient()
