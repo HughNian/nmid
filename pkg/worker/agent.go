@@ -134,6 +134,10 @@ func (a *Agent) Write() (err error) {
 	var n int
 	buf := a.Req.EncodePack()
 
+	if a.conn == nil {
+		return fmt.Errorf("conn nil")
+	}
+
 	for i := 0; i < len(buf); i += n {
 		// if n, err = a.rw.Write(buf[i:]); err != nil {
 		// 	return err
