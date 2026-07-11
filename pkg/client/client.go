@@ -205,6 +205,12 @@ func (c *Client) HandlerResp(resp *Response) {
 	}
 }
 
+func (c *Client) safeErrHandler(err error) {
+	if c.ErrHandler != nil {
+		c.ErrHandler(err)
+	}
+}
+
 func (c *Client) ProcessResp() {
 	var timer = time.After(c.IoTimeOut)
 	select {
@@ -212,13 +218,13 @@ func (c *Client) ProcessResp() {
 		if nil != res {
 			switch res.DataType {
 			case model.PDT_ERROR:
-				c.ErrHandler(res.GetResError())
+				c.safeErrHandler(res.GetResError())
 				return
 			case model.PDT_CANT_DO:
-				c.ErrHandler(res.GetResError())
+				c.safeErrHandler(res.GetResError())
 				return
 			case model.PDT_RATELIMIT:
-				c.ErrHandler(res.GetResError())
+				c.safeErrHandler(res.GetResError())
 				return
 			case model.PDT_S_RETURN_DATA:
 				c.HandlerResp(res)
@@ -227,8 +233,7 @@ func (c *Client) ProcessResp() {
 		}
 	case <-timer:
 		fmt.Println("time out here")
-		c.ErrHandler(model.RESTIMEOUT)
-		//c.Close()
+		c.safeErrHandler(model.RESTIMEOUT)
 		return
 	}
 }

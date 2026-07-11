@@ -386,7 +386,7 @@ func (c *Connect) DoIO() {
 			}
 			worker.Connect.DataType = dataType
 			worker.Connect.DataLen = uint32(len(payload))
-			worker.RunWorker(payload)
+			worker.RunWorkerOptimized(payload)
 		} else if c.ConnType == model.CONN_TYPE_CLIENT {
 			client = c.getSCClient()
 			if client == nil {
@@ -395,7 +395,7 @@ func (c *Connect) DoIO() {
 			client.Req.DataType = dataType
 			client.Req.DataLen = uint32(len(payload))
 			client.Req.Data = payload
-			client.RunClient()
+			client.RunClientOptimized()
 		}
 	}
 }

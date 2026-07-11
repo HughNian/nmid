@@ -83,7 +83,7 @@ func (w *SWorker) GetJobChannel(funcName string) chan *JobData {
 		w.JobChannelsMutex.Unlock()
 		return ch
 	}
-	ch := make(chan *JobData, 256)
+	ch := make(chan *JobData, 1024)
 	w.JobChannels[funcName] = ch
 	w.JobChannelsMutex.Unlock()
 	return ch
