@@ -1,0 +1,4 @@
+com/nmidsdk/client/NmidError.class
+com/nmidsdk/client/Response.class
+com/nmidsdk/client/Request.class
+com/nmidsdk/client/Client.class

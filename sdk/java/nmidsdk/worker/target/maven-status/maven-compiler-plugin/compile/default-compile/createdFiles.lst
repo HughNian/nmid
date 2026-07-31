@@ -1,0 +1,5 @@
+com/nmidsdk/worker/Agent.class
+com/nmidsdk/worker/Request.class
+com/nmidsdk/worker/Function.class
+com/nmidsdk/worker/Response.class
+com/nmidsdk/worker/Worker.class
