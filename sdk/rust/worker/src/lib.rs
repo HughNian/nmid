@@ -444,7 +444,17 @@ impl Worker {
         }
     }
 
-    pub fn worker_close(&self) {
-        todo!()
+    pub async fn worker_close(&self) {
+        // 停止心跳与超时检测循环
+        self.running.store(false, Ordering::SeqCst);
+
+        // 关闭所有 agent 连接，reader task 会因 read 返回 0 而退出
+        let agents = {
+            let guard = self.inner.lock().await;
+            guard.agents.clone()
+        };
+        for agent in agents.iter() {
+            let _ = agent.conn_manager.close().await;
+        }
     }
 }

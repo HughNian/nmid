@@ -198,7 +198,21 @@ dependencies = [
 name = "client"
 version = "0.1.0"
 dependencies = [
+ "byteorder",
+ "log",
  "model",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
+name = "client1"
+version = "0.1.0"
+dependencies = [
+ "client",
+ "model",
+ "rmpv",
+ "tokio",
 ]
 
 [[package]]

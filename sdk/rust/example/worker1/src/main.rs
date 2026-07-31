@@ -77,5 +77,5 @@ async fn main() {
 
     // println!("Shutting down...");
 
-    wor_clone.worker_close();
+    wor_clone.worker_close().await;
 }

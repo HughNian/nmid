@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 model = { path = "../model" }
+tokio = { version = "1.0", features = ["full"] }
+byteorder = "1.5.0"
+thiserror = "1.0.61"
+log = "0.4"

@@ -2,11 +2,15 @@
 members = [
     "worker",
     "client",
-    "model"
-, "example/worker1"]
- 
+    "model",
+    "example/worker1",
+    "example/client",
+]
+
+resolver = "2"
+
 [profile.release]
-debug = true 
+debug = true
 
 [profile.bench]
-debug = true 
+debug = true
