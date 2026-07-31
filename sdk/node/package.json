@@ -1,0 +1,29 @@
+{
+  "name": "nmidsdk",
+  "version": "0.1.0",
+  "description": "nmid micro service framework node.js sdk",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "node test/protocol.test.js && node test/integration.test.js"
+  },
+  "keywords": [
+    "nmid",
+    "rpc",
+    "microservice",
+    "msgpack",
+    "sdk"
+  ],
+  "author": "hughnian",
+  "license": "MIT",
+  "homepage": "https://github.com/HughNian/nmid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HughNian/nmid.git"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^2.8.0"
+  }
+}

@@ -18,3 +18,5 @@ example/client/httpserver/nmid_log_dir/20230804_log_file.log
 /example/client/httpserver2/nmid_log_dir
 /example/client/httpserver/nmid_log_dir
 /sdk/rust/target
+/sdk/node/node_modules
+/sdk/node/package-lock.json

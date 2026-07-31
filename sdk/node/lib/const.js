@@ -1,0 +1,127 @@
+'use strict';
+
+// Constants for the nmid wire protocol.
+// Mirrors sdk/python3/nmidsdk/model/const.py and pkg/model/const.go.
+
+// sizes & timing
+const MAX_POOL_SIZE = 128;
+const QUEUE_SIZE = 1;
+const BUFFER_SIZE = 512;
+const MIN_DATA_SIZE = 12; // packet header size: ConnType(4) + DataType(4) + DataLen(4)
+const UINT32_SIZE = 4;
+const MAX_NOJOB_NUM = 10;
+const PARAMS_SCOPE = '::';
+const DIAL_TIME_OUT = 6; // seconds, connect timeout
+const DEFAULT_HEARTBEAT_TIME = 10; // seconds
+const NMID_SERVER_TIMEOUT = 60000; // ms, nmid server timeout
+
+// package data type
+const PDT_OK = 1;
+const PDT_ERROR = 2;
+const PDT_CAN_DO = 3;
+const PDT_CANT_DO = 4;
+const PDT_NO_JOB = 5;
+const PDT_HAVE_JOB = 6;
+const PDT_TOSLEEP = 7;
+const PDT_WAKEUP = 8;
+const PDT_WAKEUPED = 9;
+const PDT_S_GET_DATA = 10;
+const PDT_S_RETURN_DATA = 11;
+const PDT_S_HEARTBEAT_PONG = 23;
+const PDT_W_GRAB_JOB = 12;
+const PDT_W_ADD_FUNC = 13;
+const PDT_W_DEL_FUNC = 14;
+const PDT_W_RETURN_DATA = 15;
+const PDT_W_HEARTBEAT_PING = 22;
+const PDT_W_SET_NAME = 23;
+const PDT_C_DO_JOB = 16;
+const PDT_C_GET_DATA = 17;
+const PDT_RATELIMIT = 18;
+const PDT_BREAKER = 19;
+const PDT_SC_REG_SERVICE = 19;
+const PDT_SC_OFF_SERVICE = 20;
+const PDT_S_REG_SERVICE_OK = 21;
+
+// connect types & status
+const CONN_TYPE_INIT = 0;
+const CONN_TYPE_SERVER = 1;
+const CONN_TYPE_WORKER = 2;
+const CONN_TYPE_CLIENT = 3;
+const CONN_TYPE_SERVICE = 4;
+const PARAMS_TYPE_MSGPACK = 5;
+const PARAMS_TYPE_JSON = 6;
+const JOB_STATUS_INIT = 7;
+const JOB_STATUS_DOING = 8;
+const JOB_STATUS_DONE = 9;
+const PARAMS_HANDLE_TYPE_ENCODE = 10;
+const PARAMS_HANDLE_TYPE_ORIGINAL = 11;
+
+// error / http markers
+const RESTIMEOUT = 'RESTIMEOUT';
+const HTTPDOWORK = 'HTTP_DO_WORK';
+const HTTPADDSERVICE = 'HTTP_ADD_SERVICE';
+const PARAMSTYPEMSGPACK = '5';
+const PARAMSTYPEJSON = '6';
+const PARAMSHANDLETYPEENCODE = '10';
+const PARAMSHANDLETYPEORIGINAL = '11';
+
+// service discovery
+const EtcdBaseKey = 'nmid/';
+
+module.exports = {
+  MAX_POOL_SIZE,
+  QUEUE_SIZE,
+  BUFFER_SIZE,
+  MIN_DATA_SIZE,
+  UINT32_SIZE,
+  MAX_NOJOB_NUM,
+  PARAMS_SCOPE,
+  DIAL_TIME_OUT,
+  DEFAULT_HEARTBEAT_TIME,
+  NMID_SERVER_TIMEOUT,
+  PDT_OK,
+  PDT_ERROR,
+  PDT_CAN_DO,
+  PDT_CANT_DO,
+  PDT_NO_JOB,
+  PDT_HAVE_JOB,
+  PDT_TOSLEEP,
+  PDT_WAKEUP,
+  PDT_WAKEUPED,
+  PDT_S_GET_DATA,
+  PDT_S_RETURN_DATA,
+  PDT_S_HEARTBEAT_PONG,
+  PDT_W_GRAB_JOB,
+  PDT_W_ADD_FUNC,
+  PDT_W_DEL_FUNC,
+  PDT_W_RETURN_DATA,
+  PDT_W_HEARTBEAT_PING,
+  PDT_W_SET_NAME,
+  PDT_C_DO_JOB,
+  PDT_C_GET_DATA,
+  PDT_RATELIMIT,
+  PDT_BREAKER,
+  PDT_SC_REG_SERVICE,
+  PDT_SC_OFF_SERVICE,
+  PDT_S_REG_SERVICE_OK,
+  CONN_TYPE_INIT,
+  CONN_TYPE_SERVER,
+  CONN_TYPE_WORKER,
+  CONN_TYPE_CLIENT,
+  CONN_TYPE_SERVICE,
+  PARAMS_TYPE_MSGPACK,
+  PARAMS_TYPE_JSON,
+  JOB_STATUS_INIT,
+  JOB_STATUS_DOING,
+  JOB_STATUS_DONE,
+  PARAMS_HANDLE_TYPE_ENCODE,
+  PARAMS_HANDLE_TYPE_ORIGINAL,
+  RESTIMEOUT,
+  HTTPDOWORK,
+  HTTPADDSERVICE,
+  PARAMSTYPEMSGPACK,
+  PARAMSTYPEJSON,
+  PARAMSHANDLETYPEENCODE,
+  PARAMSHANDLETYPEORIGINAL,
+  EtcdBaseKey,
+};
